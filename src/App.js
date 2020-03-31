@@ -1,8 +1,8 @@
 import React from 'react';
 import './App.css';
-import Layout from './components/Layout'
 import Header from './components/Header'
 import Footer from './components/Footer'
+import Map from './components/Map'
 
 export default class APP extends React.Component {
 	
@@ -10,7 +10,7 @@ export default class APP extends React.Component {
 		return (
 			<div className="App">
 				<Header ></Header>
-				<Layout ></Layout>
+				<Map></Map>
 				<Footer></Footer>
 			</div>
 		)

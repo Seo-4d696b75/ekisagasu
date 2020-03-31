@@ -1,14 +1,7 @@
 import React from "react";
 import logo from '../logo.svg';
-import * as EventActions from "../Actions";
 
 export default class Layout extends React.Component {
-	onTextChanged(e){
-		EventActions.setHeaderText(e.target.value);
-	}
-	onImgClicked(){
-		EventActions.setHeaderTextSync();
-	}
 	render() {
 		let name = 'hoge';
 		return (
@@ -27,8 +20,6 @@ export default class Layout extends React.Component {
 					>
 						Learn React
         			</a>
-					<input onChange={this.onTextChanged}></input>
-					<button onClick={this.onImgClicked}>Sync</button>
 				</header>
 			</div>
 		);

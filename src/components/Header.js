@@ -26,7 +26,7 @@ export default class Header extends React.Component {
 
 	render() {
 		return (
-		<div>{this.state.text}</div>
+		<div className='Map-header'>{this.state.text}</div>
 		);
 	}
 }
