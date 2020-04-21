@@ -1,0 +1,15 @@
+.App-title{
+	display: table-cell; /* IE8から使用可能 */
+  	vertical-align: middle;
+	text-align: start;
+	height: 50px;
+	padding-left: 20px;
+	font-size: 2rem;
+}
+
+.Map-bounds{
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	font-size: x-small
+}

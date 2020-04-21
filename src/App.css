@@ -2,7 +2,6 @@
 
 .App {
   background-color: #154bb6;
-  color: white;
 	text-align: center;
 	width: 100%;
 	height: 100%;
@@ -11,6 +10,7 @@
 
 .Map-header {
   background-color: #154bb6;
+  color: white;
 	position: absolute;
 	width: 100%;
 	top: 0px;
@@ -20,7 +20,6 @@
 }
 
 .Map-container {
-	color: white;
 	position: absolute;
 	top: 60px;
 	bottom: 0px;

@@ -1,0 +1,304 @@
+* {
+	box-sizing: border-box;
+}
+
+.Info-dialog{
+	color:grey;
+	padding: 5px;
+	background-color: rgba(255,255,255,0.9);
+	pointer-events: all;
+}
+
+.Container-fixed{
+	width: 100%;
+	position: relative;
+}
+
+
+.Container-radar{
+	width: 100%;
+	position: relative;
+	opacity: 1.0;
+}
+
+@media screen and (min-width:800px){
+
+.Info-dialog{
+	width: 100%;
+	height: 100%;
+	box-shadow: 2px 0 4px grey;
+}
+
+
+.Container-fixed{
+	height: 300px;
+}
+
+.Container-radar{
+	height: calc(100% - 300px);
+}
+
+.Icon-action.radar{
+	visibility: hidden;
+	pointer-events: none;
+}
+
+
+}
+
+
+@media screen and (max-width:800px){
+
+.Info-dialog{
+	margin: 10px;
+	width: calc(100% - 20px);
+	height: fit-content;
+	border-radius: 4px 4px 4px 4px;
+	box-shadow: 2px 2px 4px grey;
+}
+
+.Container-fixed{
+	height: 200px;
+}
+
+.Container-radar{
+	height: 0;
+	visibility: hidden;
+}
+
+}
+
+.Container-main{
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	bottom: 0px;
+	right: 40px;
+}
+
+.Title-name{
+	font-size: large;
+	width: fit-content;
+  	margin: 0 auto;
+	height: fit-content;
+	overflow-x: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	max-width: 100%;
+}
+
+.Title-name.kana{
+	font-size: x-small;
+	padding-bottom: 1px;
+}
+
+.Title-container{
+	width: fit-content;
+	height: fit-content;
+	padding: 3px;
+	color: black;
+	max-width: 100%;
+}
+
+.Title-container.line{
+	max-width: calc(100% - 36px);
+}
+
+.Icon-station{
+	width: 27px;
+	height: 27px;
+	margin: 3px;
+}
+
+.Station-details{
+	font-size: small;
+	text-align: start;
+	height: fit-content;
+	overflow-x: hidden;
+	white-space: nowrap;
+	text-overflow: clip;
+	margin: auto;
+	margin-left: 0;
+} 
+
+.Horizontal-container{
+	display: flex;
+	width: 100%;
+	height: fit-content;
+}
+
+.Icon-line{
+	width: 16px;
+	height: 16px;
+	margin-right: 4px;
+	margin-top: 2px;
+	margin-bottom: 2px;
+	border-radius: 2px 2px 2px 2px;
+}
+
+.Icon-line.big{
+	width: 26px;
+	height: 26px;
+	margin: 5px;
+}
+
+table {
+	table-layout: fixed;
+	width: 100%;
+	max-width: 100%;
+	word-wrap: break-word;
+	word-break: break-all;
+	border-collapse: collapse;
+}
+
+.List-cell:hover{
+	background-color: rgba(0, 0, 0, 0.05);
+	border-radius: 2px 2px 2px 2px;
+}
+
+.Line-item.icon{
+	width: 20px;
+}
+.Line-item.line{
+	font-size: small;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	text-align: start;
+}
+
+
+.Station-cell{
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	text-align: start;
+}
+
+.Station-item.name{
+	font-size: small;
+	color: black;
+}
+
+.Station-item.name-kana{
+	font-size: x-small;
+	color: grey;
+}
+
+.Scroll-container{
+	overflow-y: scroll;
+	width: 100%;
+  -ms-overflow-style: none;    /* IE, Edge 対応 */
+  scrollbar-width: none;       /* Firefox 対応 */
+}
+
+.Scroll-container::-webkit-scrollbar {  /* Chrome, Safari 対応 */
+  display:none;
+}
+
+.Scroll-container.lines{
+	padding: 7px;
+	width: 100%;
+	height: 100px;
+}
+
+.Scroll-container.radar{
+	height: calc(100% - 40px);
+}
+
+.Scroll-container.stations{
+	padding: 7px;
+	width: 100%;
+	height: 100px;
+}
+
+.Icon-action.close{
+	position: absolute;
+	top: 10px;
+	right: 5px;
+}
+
+.Button-container{
+	position: absolute;
+	right: 5px;
+	bottom: 0px;
+}
+
+.Icon-action{
+	width: 30px;
+	height: 30px;
+}
+
+.Icon-action:hover {
+	filter: drop-shadow(2px 2px 2px grey);
+}
+
+
+.Container-radar.enter{
+	visibility: visible;
+	height: 0px;
+	opacity: 0.0;
+}
+
+.Container-radar.enter-active{
+	transition: all 300ms ease-in;
+	height: 300px;
+	opacity: 1.0;
+	visibility: visible;
+}
+
+.Container-radar.enter-done{
+	height: 300px;
+	visibility: visible;
+}
+
+
+.Container-radar.exit{
+	height: 300px;
+	visibility: visible;
+	opacity: 1.0;
+}
+
+.Container-radar.exit-active{
+	transition: all 300ms ease-out;
+	height: 0;
+	opacity: 0.0;
+	visibility: visible;
+}
+
+.Icon-radar{
+	width: 24px;
+	height: 24px;
+	margin: 3px;
+}
+
+.Radar-k{
+	margin: 3px;
+	height: 30px;
+	width: fit-content;
+	font-size: medium;
+}
+
+.Radar-item{
+	color: grey;
+	font-size: small;
+	vertical-align: middle;
+}
+
+.Radar-item.index{
+	color: blue;
+	width: 20px;
+}
+
+.Radar-item.dist{
+	color: black;
+	width: 40px;
+}
+
+.Radar-item.station{
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 240px;
+	text-align: start;
+}
