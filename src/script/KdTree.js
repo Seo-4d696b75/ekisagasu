@@ -98,26 +98,24 @@ export class StationKdTree{
 		this.r = r;
 	}
 
-	updateLocation(position,callback){
+	updateLocation(position){
 		if (this.k < 1) {
-			console.warn(`invalid k:${this.k}`);
+			return Promise.reject(`invalid k:${this.k}`);
 		} else if (!this.service) {
-			console.warn('sevrvice not initialized');
+			return Promise.reject('sevrvice not initialized');
 		} else if ( !this.root ) {
-			console.warn('tree root not initialized');
+			return Promise.reject('tree root not initialized');
 		} else if ( !this.last_position && this.last_position === position ){
-			callback(this.current_station);
-		} else if ( this.callbacks ){
-			this.callbacks.push(callback);
+			return Promise.resolve(this.current_station);
 		} else {
-			this.position = position;
-			this.search_list = [];
-			this.callbacks = [callback];
-			this.search(this.root).then(() => {
+			return Promise.resolve().then(() => {
+				this.position = position;
+				this.search_list = [];
+				return this.search(this.root);
+			}).then(() => {
 				this.current_station = this.search_list[0].station;
 				this.last_position = position;
-				this.callbacks.forEach(c=>c(this.current_station));
-				this.callbacks = null;
+				return this.current_station;
 			});
 		}
 	}

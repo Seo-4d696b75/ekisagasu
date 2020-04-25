@@ -3,6 +3,8 @@ import {StationKdTree} from "./KdTree";
 import {Station} from "./Station";
 import {Line, Polyline} from  "./Line";
 
+const TASK_STATIONS = "all-stations";
+const TASK_UPDATE = "update-location";
 
 export class StationService {
 
@@ -10,6 +12,7 @@ export class StationService {
 
 		this.stations = new Map();
 		this.lines = new Map();
+		this.tasks = new Map();
 		return new StationKdTree(this).initialize("root").then( tree =>{
 			this.tree = tree;
 			return axios.get(`https://raw.githubusercontent.com/Seo-4d696b75/station_database/master/out/line.json`);
@@ -36,11 +39,43 @@ export class StationService {
 	release(){
 		this.tree.release();
 		this.stations.clear();
+		this.tasks.clear();
 		console.log('service released');
 	}
 
-	get_station(code){
-		return this.stations.get(code);
+	update_location(position){
+		var task = this.tasks.get(TASK_UPDATE);
+		if ( !task ) task = Promise.resolve();
+		task = task.then( () => {
+			return this.tree.updateLocation(position);
+		});
+		this.tasks.set(TASK_UPDATE, task);
+		return task;
+	}
+
+	get_station(code, promise=false){
+		if ( promise ){
+			var s = this.stations.get(code);
+			if ( s ) return Promise.resolve(s);
+			var task = this.tasks.get(TASK_STATIONS);
+			if ( !task ) {
+				task = axios.get('https://raw.githubusercontent.com/Seo-4d696b75/station_database/master/out/station.json').then(res => {
+					res.data.forEach( item => {
+						var code = item['code'];
+						if ( !this.stations.has(code) ){
+							this.stations.set(code, new Station(item));
+						}
+					});
+				});
+				this.tasks.set(TASK_STATIONS, task);
+			}
+			return task.then( () => {
+				return this.get_station(code, false);
+			});
+		}else{
+			return this.stations.get(code);
+		}
+		
 	}
 
 	get_line(code){

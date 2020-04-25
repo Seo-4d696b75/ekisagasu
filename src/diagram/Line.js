@@ -69,7 +69,7 @@ export function equals(l1,l2){
 }
 
 export function getIntersection(l1,l2){
-	if ( l2.a && l2.b ){
+	if ( l2.a && l2.b && !l2.c ){
 		// l1:Line l2:Edge
 		var line = l1;
 		var edge = l2;

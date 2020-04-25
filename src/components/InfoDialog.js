@@ -39,22 +39,12 @@ export class StationDialog extends React.Component {
 		this.props.onShowLine(line);
 	}
 
-	onTest(){
-		this.props.onTest();
+	onShowRadar(station){
+		this.props.onShowRadar(station);
 	}
 
 	render() {
 		const station = this.props.station;
-		const service = this.props.service;
-		if ( !station || !service ) return null;
-		const radar_list = service.tree.getNearStations(this.props.radar_k).map(s => {
-			return {
-				station: s,
-				dist: service.measure(s.position, station.position),
-				lines: s.lines.map(code => service.get_line(code).name).join(' '),
-			};
-		});
-		const prefecture = service.get_prefecture(station.prefecture);
 		return (
 			<div className="Info-dialog">
 
@@ -68,7 +58,7 @@ export class StationDialog extends React.Component {
 						<div className="Horizontal-container">
 							<img src={img_station} alt="icon-details" className="Icon-station" />
 							<div className="Station-details">
-								所在：{prefecture}<br />
+								所在：{this.props.prefecture}<br />
 				        場所：E{station.position.lng} N{station.position.lat}
 							</div>
 						</div>
@@ -76,8 +66,7 @@ export class StationDialog extends React.Component {
 							<table>
 								<tbody>
 
-									{station.lines.map((code, index) => {
-										const line = service.get_line(code);
+									{this.props.lines.map((line, index) => {
 										return (
 											<tr key={index} 
 												onClick={this.onLineSelected.bind(this, line)}
@@ -98,7 +87,7 @@ export class StationDialog extends React.Component {
 						onClick={this.onClosed.bind(this)} />
 					<div className="Button-container">
 						<img
-							onClick={this.onTest.bind(this)}
+							onClick={this.onShowRadar.bind(this, station)}
 							src={img_voronoi}
 							alt="show voronoi"
 							className="Icon-action" /><br />
@@ -125,7 +114,7 @@ export class StationDialog extends React.Component {
 								<table>
 									<tbody>
 
-										{radar_list.map((e, index) => {
+										{this.props.radar_list.map((e, index) => {
 											var dist = e.dist < 1000.0 ? `${e.dist.toFixed(0)}m` : `${(e.dist / 1000).toFixed(1)}km`;
 											return (
 												<tr key={index}>
@@ -169,8 +158,6 @@ export class LineDialog extends React.Component {
 
 	render() {
 		const line = this.props.line;
-		const service = this.props.service;
-		if (!line || !service) return null;
 		return (
 			<div className="Info-dialog">
 

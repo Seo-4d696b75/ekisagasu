@@ -292,7 +292,12 @@ table {
 
 .Radar-item.dist{
 	color: black;
-	width: 40px;
+	width: 60px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 60px;
+	text-align: center;
 }
 
 .Radar-item.station{

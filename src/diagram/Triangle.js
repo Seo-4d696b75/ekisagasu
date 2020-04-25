@@ -64,7 +64,7 @@ export function getOppositeSide(triangle,point){
 	}
 }
 
-export function containsPoint(triangle, point) {
+export function containsPoint(triangle, point, error) {
 	var x1 = triangle.a.x - point.x;
 	var y1 = triangle.a.y - point.y;
 	var x2 = triangle.b.x - point.x;
@@ -74,7 +74,13 @@ export function containsPoint(triangle, point) {
 	var v1 = x1 * y2 - y1 * x2;
 	var v2 = x2 * y3 - y2 * x3;
 	var v3 = x3 * y1 - y3 * x1;
-	return (v1 >= 0 && v2 >= 0 && v3 >= 0 ) || (v1 <= 0 && v2 <= 0 && v3 <= 0 );
+	if ( error && error > 0 ){
+		return (v1 > -error && v2 > -error && v3 > -error ) 
+			|| (v1 < error && v2 < error && v3 < error);
+	} else {
+		return (v1 >= 0 && v2 >= 0 && v3 >= 0) || (v1 <= 0 && v2 <= 0 && v3 <= 0);
+
+	}
 }
 
 export function isVertex(triangle,point){
