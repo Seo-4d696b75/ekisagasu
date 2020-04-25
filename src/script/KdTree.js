@@ -108,6 +108,7 @@ export class StationKdTree{
 		} else if ( !this.last_position && this.last_position === position ){
 			return Promise.resolve(this.current_station);
 		} else {
+			const time = performance.now();
 			return Promise.resolve().then(() => {
 				this.position = position;
 				this.search_list = [];
@@ -115,6 +116,7 @@ export class StationKdTree{
 			}).then(() => {
 				this.current_station = this.search_list[0].station;
 				this.last_position = position;
+				console.log(`update done. k=${this.k} r=${this.r} time=${performance.now()-time}ms size:${this.search_list.length}`);
 				return this.current_station;
 			});
 		}
@@ -168,9 +170,8 @@ export class StationKdTree{
 			}
 			var x = (node.depth % 2 === 0);
 			div.value = ( x ? this.position.lng : this.position.lat);
-		  div.threshold = (x ? s.position.lng : s.position.lat);
+		  	div.threshold = (x ? s.position.lng : s.position.lat);
 
-		}).then(() => {
 			var next = (div.value < div.threshold) ? node.left : node.right;
 			if (next) {
 				return this.search(next);
