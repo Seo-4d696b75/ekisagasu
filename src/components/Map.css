@@ -6,11 +6,11 @@
 	left: 0px;
 	z-index: 5;
 	width: 100%;
-	max-width: 360px;
+	max-width: 320px;
 	pointer-events: none;
 }
 
-@media screen and (min-width:800px){
+@media screen and (min-width:900px){
 
 .Dialog-container{
 	transform: translateX(-120%);
@@ -42,7 +42,7 @@
 }
 
 
-@media screen and (max-width:800px) {
+@media screen and (max-width:900px) {
 
 .Dialog-container{
 	transform: translateY(-120%);

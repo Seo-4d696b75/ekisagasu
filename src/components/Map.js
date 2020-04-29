@@ -1,12 +1,11 @@
-import {GoogleApiWrapper, Map, Marker, Polygon, Polyline} from "google-maps-react";
+import {GoogleApiWrapper, Map, Marker, Polygon} from "google-maps-react";
 import React from "react";
 import * as EventActions from "../Actions";
 import "./Map.css";
 import {StationDialog, LineDialog} from "./InfoDialog";
 import {StationService} from "../script/StationService";
 import {CSSTransition} from "react-transition-group";
-import * as Rect from "../diagram/Rectangle";
-import {Voronoi} from "../diagram/HighVoronoi";
+import * as Rect from "../script/Rectangle";
 
 const VORONOI_COLOR = [
 	"#00AA00",
@@ -52,52 +51,80 @@ export class MapContainer extends React.Component {
 	}
 
 	showRadarVoronoi(station){
-		if ( this.state.high_voronoi_show ){
+		if ( this.state.worker_running ){
+			console.log("worker is running");
+			return;
+		}
+		if (this.state.high_voronoi_show) {
 			this.setState({
 				high_voronoi_show: false,
 				voronoi_show: true,
 			});
 			return;
 		}
+		const worker = new Worker('VoronoiWorker.js');
 		const service = this.service;
-		
-		const provider = function(point){
-			return Promise.resolve(point.code).then( code => {
-				var s = service.get_station(code);
-				return Promise.all(
-					s.next.map( code => service.get_station(code, true))
-				);
-			}).then( stations => {
-				return stations.map( s => {
-					var point = {
-						x: s.position.lng,
-						y: s.position.lat,
-						code: s.code
-					};
-					return point;
+		worker.addEventListener('error', err => {
+			console.error('error', err);
+			worker.terminate();
+		});
+		worker.addEventListener('message', messaage => {
+			var data = JSON.parse(messaage.data);
+			if ( data.type === 'points' ){
+				// point provide
+				Promise.resolve(data.code).then(code => {
+					var s = service.get_station(code);
+					return Promise.all(
+						s.next.map(code => service.get_station(code, true))
+					);
+				}).then(stations => {
+					var points = stations.map(s => {
+						var point = {
+							x: s.position.lng,
+							y: s.position.lat,
+							code: s.code
+						};
+						return point;
+					});
+					worker.postMessage(JSON.stringify({
+						type: 'points',
+						code: data.code,
+						points: points,
+					}));
 				});
-			});
-		};
+			} else if ( data.type === 'progress' ){
+				var list = this.state.high_voronoi;
+				list.push(data.polygon);
+				this.setState({
+					high_voronoi: list
+				});
+			} else if ( data.type === 'complete' ){
+				worker.terminate();
+				this.setState({
+					worker_running: false,
+				});
+			}
+		});
+
 		var boundary = Rect.init(127, 46, 146, 26);
-		var voronoi = new Voronoi(Rect.getContainer(boundary), provider);
+		var container = Rect.getContainer(boundary);
 		var center = {
 			x: station.position.lng,
 			y: station.position.lat,
 			code: station.code,
 		};
-		voronoi.execute(this.state.radar_k, center, (index,polygon) => {
-			console.log("progress", index, polygon);
-		}).then( result => {
-			this.setState({
-				high_voronoi_show: true,
-				high_voronoi: result.map(points =>{
-					return points.map(point => {
-						return {lat:point.y, lng:point.x};
-					});
-				}),
-				voronoi_show: false,
-			});
+		this.setState({
+			high_voronoi_show: true,
+			high_voronoi: [],
+			voronoi_show: false,
+			worker_running: true,
 		});
+		worker.postMessage(JSON.stringify({
+			type: 'start',
+			container: container,
+			k: this.state.radar_k,
+			center: center,
+		}));
 		
 		
 	}
@@ -227,19 +254,24 @@ export class MapContainer extends React.Component {
 	}
 
 	onMapDragStart(props,map){
+		if (this.state.high_voronoi_show) return;
 		this.onInfoDialogClosed();
 	}
 
 	onInfoDialogClosed(){
-		if ( this.state.high_voronoi_show ) return;
-		this.setState({
+		var state = {
 			clicked_marker: {
 				visible: false
 			},
 			info_dialog: Object.assign({}, this.state.info_dialog, {
 				visible: false
 			})
-		});
+		};
+		if (this.state.high_voronoi_show) {
+			state.high_voronoi_show = false;
+			state.voronoi_show = true;
+		}
+		this.setState(state);
 	}
 
 	focusAt(pos){
@@ -348,7 +380,7 @@ export class MapContainer extends React.Component {
 								<Polygon
 									key={i}
 									paths={points}
-									strokeColor={(i===this.state.high_voronoi.length-1)?"#000000":VORONOI_COLOR[i%VORONOI_COLOR.length]}
+									strokeColor={(i===this.state.radar_k-1)?"#000000":VORONOI_COLOR[i%VORONOI_COLOR.length]}
 									strokeWeight={1}
 									strokeOpacity={0.8}
 									fillOpacity={0.0}
@@ -369,7 +401,7 @@ export class MapContainer extends React.Component {
 										prefecture={this.state.info_dialog.prefecture}
 										lines={this.state.info_dialog.lines}
 										onClosed={this.onInfoDialogClosed.bind(this)}
-										onShowRadar={this.showRadarVoronoi.bind(this)}
+										onShowVoronoi={this.showRadarVoronoi.bind(this)}
 										onShowLine={this.showLine.bind(this)} />
 								) : ( this.state.info_dialog.type === "line" ? (
 									<LineDialog

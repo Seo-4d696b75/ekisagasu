@@ -5,6 +5,7 @@ import img_delete from "../img/ic_delete.png";
 import img_voronoi from "../img/voronoi.png";
 import img_radar from "../img/radar.png";
 import img_above from "../img/ic_above.png";
+import img_line from "../img/ic_line.png";
 import { CSSTransition } from "react-transition-group";
 
 
@@ -39,8 +40,8 @@ export class StationDialog extends React.Component {
 		this.props.onShowLine(line);
 	}
 
-	onShowRadar(station){
-		this.props.onShowRadar(station);
+	onShowVoronoi(station){
+		this.props.onShowVoronoi(station);
 	}
 
 	render() {
@@ -48,7 +49,7 @@ export class StationDialog extends React.Component {
 		return (
 			<div className="Info-dialog">
 
-				<div className="Container-fixed">
+				<div className="Container-fixed station">
 					<div className="Container-main">
 
 						<div className="Title-container station">
@@ -87,7 +88,7 @@ export class StationDialog extends React.Component {
 						onClick={this.onClosed.bind(this)} />
 					<div className="Button-container">
 						<img
-							onClick={this.onShowRadar.bind(this, station)}
+							onClick={this.onShowVoronoi.bind(this, station)}
 							src={img_voronoi}
 							alt="show voronoi"
 							className="Icon-action" /><br />
@@ -128,7 +129,7 @@ export class StationDialog extends React.Component {
 								</table>
 							</div>
 						</div>
-						<div className="Button-container">
+						<div className="Bottom-container radar">
 							<img
 								src={img_above}
 								alt="close radar"
@@ -146,6 +147,12 @@ export class StationDialog extends React.Component {
 export class LineDialog extends React.Component {
 
 
+	constructor() {
+		super();
+		this.state = {
+			expand_stations: false,
+		};
+	}
 
 	onClosed() {
 		this.props.onClosed();
@@ -156,12 +163,22 @@ export class LineDialog extends React.Component {
 		this.props.onShowStation(station);
 	}
 
+	toggleStationList(e){
+		console.log("toggle station list", e.target.checked);
+		this.setState({
+			expand_stations: e.target.checked
+		});
+	}
+
+	showPolyline(){
+		console.log("polyline");
+	}
+
 	render() {
 		const line = this.props.line;
 		return (
 			<div className="Info-dialog">
-
-				<div className="Container-fixed">
+				<div className="Container-fixed line">
 					<div className="Container-main">
 						<div className="Horizontal-container">
 							<div className="Icon-line big" style={{ backgroundColor: line.color }}></div>
@@ -177,6 +194,28 @@ export class LineDialog extends React.Component {
 								登録駅一覧
 							</div>
 						</div>
+
+						
+					</div>
+					<img
+						src={img_delete}
+						alt="close dialog"
+						className="Icon-action close"
+						onClick={this.onClosed.bind(this)} />
+					<div className="Button-container">
+						<img
+							src={img_line}
+							alt="show polyline"
+							onClick={this.showPolyline.bind(this)}
+							className="Icon-action" />
+					</div>
+				</div>
+				<CSSTransition
+					in={this.state.expand_stations}
+					className="Container-stations"
+					timeout={400}>
+					<div className="Container-stations">
+
 						{this.props.line_details ? (
 							<div className="Scroll-container stations">
 								<table>
@@ -198,25 +237,17 @@ export class LineDialog extends React.Component {
 								</table>
 							</div>
 						) : (
-							<p>Now Loading...</p>
+								<p>Now Loading...</p>
 						)}
-
-						
 					</div>
-					<img
-						src={img_delete}
-						alt="close dialog"
-						className="Icon-action close"
-						onClick={this.onClosed.bind(this)} />
-					<div className="Button-container">
-						<img
-							src={img_voronoi}
-							alt="show voronoi"
-							className="Icon-action" /><br />
-						<img
-							src={img_radar}
-							alt="show radar"
-							className="Icon-action radar" />
+
+				</CSSTransition>
+				<div className="Bottom-container stations">
+					<div className="Icon-action toggle">
+						<input type="checkbox" id="toggle-list" onChange={this.toggleStationList.bind(this)}></input>
+						<label className="toggle-button" htmlFor="toggle-list">
+						</label>
+
 					</div>
 				</div>
 			</div>

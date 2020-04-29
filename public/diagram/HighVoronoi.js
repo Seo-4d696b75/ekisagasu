@@ -1,8 +1,13 @@
-import * as Point from "./Point";
-import * as Line from "./Line";
-import * as Edge from "./Edge";
-import * as Triangle from "./Triangle";
-import {ObjectSet} from "./utils";
+
+
+importScripts(
+	"diagram/Point.js", 
+	"diagram/Line.js", 
+	"diagram/Edge.js", 
+	"diagram/Triangle.js", 
+	"diagram/Circle.js",
+	"diagram/utils.js"
+);
 
 
 const STEP_UP = 1;
@@ -299,7 +304,7 @@ class Bisector {
 
 }
 
-export class Voronoi {
+class Voronoi {
 
 	/**
 	 * 
