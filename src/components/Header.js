@@ -1,47 +1,88 @@
 import React from "react";
-import DataStore from "../DataStore";
-import {EVENT} from "../DataStore";
+import * as Action from "../script/Actions";
 import "./Header.css"
+import img_setting from "../img/ic_settings.png";
+import img_delete from "../img/ic_delete.png";
+import { CSSTransition } from "react-transition-group";
+import Data from "../script/DataStore";
+
 
 export default class Header extends React.Component {
 
 	constructor(){
 		super();
-		var data = DataStore.getData();
 		this.state = {
-			text: data.header_text.value,
-			map_bounds: data.map.bounds
-		};
-		this.onHeaderTextChnagedListener = ()=>{
-			this.setState(
-				{ text: DataStore.getData().header_text.value }
-			);
-		};
-		this.onMapBoundsChangedListener = ()=>{
-			this.setState({
-				map_bounds: DataStore.getData().map.bounds
-			});
+			show_setting: false,
 		};
 	}
 
-	componentDidMount(){
-		DataStore.on(EVENT.HEADER_TEXT_CHANGED, this.onHeaderTextChnagedListener);
-		DataStore.on(EVENT.MAP_BOUNDS_CHANGED, this.onMapBoundsChangedListener);
+	showSetting(){
+		this.setState({
+			show_setting: true,
+		});
 	}
 
-	componentWillUnmount() {
-		DataStore.removeListener(EVENT.HEADER_TEXT_CHANGED, this.onHeaderTextChnagedListener);
-		DataStore.removeListener(EVENT.MAP_BOUNDS_CHANGED, this.onMapBoundsChangedListener);
+	closeSetting(){
+		this.setState({
+			show_setting: false,
+		});
+	}
+
+	onRadarKChanged(e){
+		console.log("on change", e.target.value);
+		Action.setRadarK(e.target.value);
 	}
 
 	render() {
 		return (
 		<div className='Map-header'>
-					<div className="App-title">{this.state.text}</div>
-					<div className="Map-bounds">
-						south:{this.state.map_bounds.south} north:{this.state.map_bounds.north}<br/>
-						west:{this.state.map_bounds.west} east:{this.state.map_bounds.east}
+			<div className="Header-frame">
+				
+				<div className="App-title">駅サガース（仮）</div>
+				<img className="Action-setting"
+						src={img_setting}
+						alt="setting"
+						onClick={this.showSetting.bind(this)}></img>
+			</div>
+			<CSSTransition
+				in={this.state.show_setting}
+				className="Setting-container"
+				timeout={400}>
+
+					<div className="Setting-container">
+						<div className="Setting-frame">
+
+							<div className="Setting-title radar">レーダ検知数</div>
+							<div className="Setting-slider radar">
+								<span>12</span>
+								<input
+									type="range"
+									min="12"
+									max="18"
+									step="1"
+									name="radar"
+									onChange={this.onRadarKChanged.bind(this)}
+									list="radar-list">
+								</input><span>18</span>
+								<datalist id="radar-list">
+									<option value="12" label="12"></option>
+									<option value="13"></option>
+									<option value="14"></option>
+									<option value="15"></option>
+									<option value="16"></option>
+									<option value="17"></option>
+									<option value="18" label="18"></option>
+								</datalist>
+							</div>
+							<img
+								src={img_delete}
+								alt="close dialog"
+								className="Icon-action close"
+								onClick={this.closeSetting.bind(this)} />
+						</div>
 					</div>
+
+			</CSSTransition>
 		</div>
 		);
 	}

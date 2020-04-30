@@ -6,6 +6,7 @@ import img_voronoi from "../img/voronoi.png";
 import img_radar from "../img/radar.png";
 import img_above from "../img/ic_above.png";
 import img_line from "../img/ic_line.png";
+import img_location from "../img/ic_location.png";
 import { CSSTransition } from "react-transition-group";
 
 
@@ -35,13 +36,21 @@ export class StationDialog extends React.Component {
 		});
 	}
 
-	onLineSelected(line){
-		console.log("line selected",line);
+	onLineSelected(line) {
+		console.log("line selected", line);
 		this.props.onShowLine(line);
 	}
 
-	onShowVoronoi(station){
+	onShowVoronoi(station) {
 		this.props.onShowVoronoi(station);
+	}
+
+	formatDistance(dist) {
+		if (dist < 1000.0) {
+			return `${dist.toFixed(0)}m`;
+		} else {
+			return `${(dist / 1000).toFixed(1)}km`;
+		}
 	}
 
 	render() {
@@ -63,23 +72,36 @@ export class StationDialog extends React.Component {
 				        場所：E{station.position.lng} N{station.position.lat}
 							</div>
 						</div>
-						<div className="Scroll-container lines">
-							<table>
-								<tbody>
+						{this.props.lines ? (
+							<div className="Scroll-container lines">
 
-									{this.props.lines.map((line, index) => {
-										return (
-											<tr key={index} 
-												onClick={this.onLineSelected.bind(this, line)}
-												className="List-cell line">
-												<td className="Line-item icon"><div className="Icon-line" style={{ backgroundColor: line.color }} /></td>
-												<td className="Line-item line">{line.name}&nbsp;&nbsp;<small>{line.station_size}駅</small></td>
-											</tr>
-										);
-									})}
-								</tbody>
-							</table>
-						</div>
+								<table>
+									<tbody>
+
+										{this.props.lines.map((line, index) => {
+											return (
+												<tr key={index}
+													onClick={this.onLineSelected.bind(this, line)}
+													className="List-cell line">
+													<td className="Line-item icon"><div className="Icon-line" style={{ backgroundColor: line.color }} /></td>
+													<td className="Line-item line">{line.name}&nbsp;&nbsp;<small>{line.station_size}駅</small></td>
+												</tr>
+											);
+										})}
+									</tbody>
+								</table>
+							</div>
+
+						) : (this.props.location ? (
+							<div className="Horizontal-container">
+								<img src={img_location} alt="icon-details" className="Icon-station" />
+								<div className="Station-details">
+									距離：{this.formatDistance(this.props.location.dist)}<br />
+				        			地点：E{this.props.location.pos.lng.toFixed(6)} N{this.props.location.pos.lat.toFixed(6)}
+								</div>
+							</div>
+						) : null)}
+
 					</div>
 					<img
 						src={img_delete}
@@ -116,7 +138,7 @@ export class StationDialog extends React.Component {
 									<tbody>
 
 										{this.props.radar_list.map((e, index) => {
-											var dist = e.dist < 1000.0 ? `${e.dist.toFixed(0)}m` : `${(e.dist / 1000).toFixed(1)}km`;
+											var dist = this.formatDistance(e.dist);
 											return (
 												<tr key={index}>
 													<td className="Radar-item index">{index + 1}</td>
@@ -158,20 +180,23 @@ export class LineDialog extends React.Component {
 		this.props.onClosed();
 	}
 
-	onStationSelected(station){
+	onStationSelected(station) {
 		console.log("station selected", station);
 		this.props.onShowStation(station);
 	}
 
-	toggleStationList(e){
+	toggleStationList(e) {
 		console.log("toggle station list", e.target.checked);
 		this.setState({
 			expand_stations: e.target.checked
 		});
 	}
 
-	showPolyline(){
-		console.log("polyline");
+	showPolyline(line) {
+		console.log("polyline", line);
+		if (line.has_details) {
+			this.props.onShowPolyline(line);
+		}
 	}
 
 	render() {
@@ -195,7 +220,7 @@ export class LineDialog extends React.Component {
 							</div>
 						</div>
 
-						
+
 					</div>
 					<img
 						src={img_delete}
@@ -206,7 +231,7 @@ export class LineDialog extends React.Component {
 						<img
 							src={img_line}
 							alt="show polyline"
-							onClick={this.showPolyline.bind(this)}
+							onClick={this.showPolyline.bind(this, line)}
 							className="Icon-action" />
 					</div>
 				</div>
@@ -238,7 +263,7 @@ export class LineDialog extends React.Component {
 							</div>
 						) : (
 								<p>Now Loading...</p>
-						)}
+							)}
 					</div>
 
 				</CSSTransition>

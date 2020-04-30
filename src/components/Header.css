@@ -1,15 +1,105 @@
+*{
+	box-sizing: border-box;
+}
+
+
+.Header-frame{
+	background-color: #154bb6;
+	color: white;
+	z-index: 20;
+	position: relative;
+}
+
 .App-title{
-	display: table-cell; /* IE8から使用可能 */
+	display: table-cell; 
   	vertical-align: middle;
 	text-align: start;
-	height: 50px;
+	height: 60px;
 	padding-left: 20px;
 	font-size: 2rem;
 }
 
-.Map-bounds{
+
+.Action-setting{
+	position: absolute;
+	right: 10px;
+	top: 10px;
+	width: 40px;
+	height: 40px;
+
+}
+
+.Action-setting:hover {
+	filter: drop-shadow(2px 2px 2px grey);
+}
+
+.Setting-container{
+	position: absolute;
+	top: 60px;
+	right: 0px;
+	width: 200px;
+	height: 150px;
+	padding: 10px;
+	pointer-events: none;
+	z-index: 10;
+	transform: translateY(-100%);
+}
+
+.Setting-frame{
+	position: relative;
+	width: 100%;
+	height: 100%;
+	color:grey;
+	padding: 5px;
+	background-color: rgba(255,255,255,0.9);
+	border-radius: 4px 4px 4px 4px;
+	box-shadow: 2px 2px 4px grey;
+	pointer-events: all;
+
+}
+
+.Setting-container.enter{
+	transform: translateY(-100%);
+}
+
+.Setting-container.enter-active{
+	transition: all 300ms ease-in;
+	transform: translateY(0);
+}
+
+.Setting-container.enter-done{
+	transform: translateY(0);
+}
+
+.Setting-container.exit{
+	transform: translateY(0);
+}
+
+.Setting-container.exit-active{
+	transition: all 300ms ease-out;
+	transform: translateY(-100%);
+}
+
+.Setting-title{
+	padding: 15px;
+	width: 100%;
+	text-align: start;
+}
+
+.Setting-slider{
+	text-align: center;
+	font-size: xx-small;
+}
+
+
+.Icon-action{
+	width: 30px;
+	height: 30px;
 	position: absolute;
 	top: 10px;
 	right: 10px;
-	font-size: x-small
+}
+
+.Icon-action:hover {
+	filter: drop-shadow(2px 2px 2px grey);
 }

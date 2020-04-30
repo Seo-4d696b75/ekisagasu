@@ -1,8 +1,8 @@
 import React from 'react';
 import './App.css';
-import Header from './components/Header'
-import Footer from './components/Footer'
-import Map from './components/Map'
+import Header from './Header'
+import Footer from './Footer'
+import Map from './Map'
 
 export default class APP extends React.Component {
 	

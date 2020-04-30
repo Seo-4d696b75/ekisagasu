@@ -1,13 +1,10 @@
 import React from "react";
-import * as EventActions from "../Actions";
 
 export default class Footer extends React.Component {
 
 	onTextChanged(e) {
-		EventActions.setHeaderText(e.target.value);
 	}
 	onSynClicked() {
-		EventActions.setHeaderTextSync();
 	}
 
 	render() {

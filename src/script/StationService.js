@@ -43,10 +43,13 @@ export class StationService {
 		console.log('service released');
 	}
 
-	update_location(position){
+	update_location(position,k,r){
 		var task = this.tasks.get(TASK_UPDATE);
 		if ( !task ) task = Promise.resolve();
 		task = task.then( () => {
+			if ( !k || k <= 0 ) k = 1;
+			if ( !r || r < 0 ) r = 0;
+			this.tree.setSearchProperty(k,r);
 			return this.tree.updateLocation(position);
 		});
 		this.tasks.set(TASK_UPDATE, task);
@@ -99,6 +102,10 @@ export class StationService {
 				});
 				if (data.polyline_list) {
 					line.polyline_list = data["polyline_list"].map(d => new Polyline(d));
+					line.north = data['north'];
+					line.south = data['south'];
+					line.east = data['east'];
+					line.west = data['west'];
 				}
 				line.has_details = true;
 				return line;

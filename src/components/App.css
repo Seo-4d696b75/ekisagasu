@@ -9,14 +9,12 @@
 }
 
 .Map-header {
-  background-color: #154bb6;
-  color: white;
 	position: absolute;
 	width: 100%;
 	top: 0px;
 	left: 0px;
 	height: 60px;
-	z-index: 10;
+	z-index: 20;
 }
 
 .Map-container {

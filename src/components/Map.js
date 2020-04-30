@@ -1,11 +1,11 @@
-import {GoogleApiWrapper, Map, Marker, Polygon} from "google-maps-react";
+import {GoogleApiWrapper, Map, Marker, Polygon, Polyline} from "google-maps-react";
 import React from "react";
-import * as EventActions from "../Actions";
 import "./Map.css";
 import {StationDialog, LineDialog} from "./InfoDialog";
 import {StationService} from "../script/StationService";
 import {CSSTransition} from "react-transition-group";
 import * as Rect from "../script/Rectangle";
+import Data from "../script/DataStore";
 
 const VORONOI_COLOR = [
 	"#00AA00",
@@ -32,12 +32,15 @@ export class MapContainer extends React.Component {
 				type: null,
 			},
 			map_bounds: null,
-			solved_bounds: null,
 			voronoi: [],
 			voronoi_show: true,
 			high_voronoi_show: false,
+			high_voronoi: [],
+			polyline_show: false,
+			polyline_list: [],
 			radar_k: 18,
-		}
+		};
+		this.map_ref = React.createRef();
 	}
 
 	componentDidMount(){
@@ -48,6 +51,31 @@ export class MapContainer extends React.Component {
 				this.onBoundsChanged(null, this.map, true);
 			}
 		});
+		Data.on("onRadarKChanged", this.onRadarKChanged.bind(this));
+		this.onRadarKChanged();
+	}
+
+	onRadarKChanged(){
+		var type = this.state.info_dialog.type;
+		var k = Data.getData().radar_k;
+		if ( type && type === "station" ){
+			var pos = this.state.info_dialog.station.position;
+			if ( this.state.info_dialog.location ){
+				pos = this.state.info_dialog.location.pos;
+			}
+			this.service.update_location(pos, k, 0).then( () => {
+				this.setState({
+					radar_k: k,
+					info_dialog: Object.assign({}, this.state.info_dialog, {
+						radar_list: this.makeRadarList(pos, k),
+					})
+				});
+			});
+		}else{
+			this.setState({
+				radar_k: k
+			});
+		}
 	}
 
 	showRadarVoronoi(station){
@@ -117,6 +145,7 @@ export class MapContainer extends React.Component {
 			high_voronoi_show: true,
 			high_voronoi: [],
 			voronoi_show: false,
+			polyline_show: false,
 			worker_running: true,
 		});
 		worker.postMessage(JSON.stringify({
@@ -129,9 +158,28 @@ export class MapContainer extends React.Component {
 		
 	}
 
+	showPolyline(line){
+		if ( !line.has_details || !this.map) return;
+		this.setState({
+			polyline_show: true,
+			polyline_list: line.polyline_list,
+			high_voronoi_show: false,
+			voronoi_show: true,
+		});
+		var center = {
+			lat: (line.south + line.north)/2,
+			lng: (line.east + line.west)/2
+		};
+		var rect = this.map_ref.current.getBoundingClientRect();
+		var zoom = Math.log2(1.0 * Math.min(360 / (line.north - line.south) * rect.width / 256, 180 / (line.east - line.west) * rect.height / 256));
+		this.map.panTo(center);
+		this.map.setZoom(Math.round(zoom));
+	}
+
 	componentWillUnmount(){
 		this.service.release();
 		this.map = null;
+		Data.removeListener("onRadarKChanged", this.onRadarKChanged.bind(this));
 	}
 
 
@@ -187,19 +235,9 @@ export class MapContainer extends React.Component {
 		console.log("zoom", e);
 	}
 
-	checkShowVoronoi(map){
-		var show = !this.state.high_voronoi_show && this.state.voronoi && (map.getZoom() > 10 || this.state.voronoi.length < 200);
-		if (show !== this.state.voronoi_show) {
-			this.setState({
-				voronoi_show: show,
-			});
-		}
-	}
 
 	onBoundsChanged(props,map,idle=false){
-		EventActions.setMapBounds(map.getBounds());
-		this.checkShowVoronoi(map);
-		
+		if ( map.getZoom() <= 6 ) return;		
 		var bounds = map.getBounds();
 		var rect = {
 			south: bounds.Ya.g,
@@ -215,12 +253,12 @@ export class MapContainer extends React.Component {
 			(rect.north - rect.south) * (rect.north - rect.south) + 
 			(rect.east - rect.west) * (rect.east - rect.west)
 		) / 2;
-		if ( this.state.solved_bounds && !idle){
-			var dy = this.state.solved_bounds.center.lat - pos.lat;
-			var dx = this.state.solved_bounds.center.lng - pos.lng;
+		if ( this.solved_bounds && !idle){
+			var dy = this.solved_bounds.center.lat - pos.lat;
+			var dx = this.solved_bounds.center.lng - pos.lng;
 			var dist = Math.sqrt(dx*dx + dy*dy);
-			if ( dist > Math.abs(r-this.state.solved_bounds.radius)){
-				this.updateLocation(map,pos,r*3);
+			if ( dist + r > this.solved_bounds.radius ){
+				this.updateLocation(map,pos,Math.min(r*3,r+0.5));
 			} 
 		}else{
 			this.updateLocation(map,pos,r*3);
@@ -229,68 +267,105 @@ export class MapContainer extends React.Component {
 
 	onMapIdle(props,map){
 		console.log("idle");
-		this.onBoundsChanged(props,map,false);
+		this.onBoundsChanged(props,map,true);
+	}
+
+	canShowVoronoi(list){
+		if ( !this.map) return false;
+		if ( !list ) return false;
+		return (this.map.getZoom() > 10 || list.length < 200);
 	}
 
 	updateLocation(map,pos,r){
 		console.log("updateLocation",pos,r);
 		if ( this.service ){
 			
-			this.service.tree.setSearchProperty(this.state.radar_k,r);
-			this.service.update_location(pos).then(() => {
-				var list = this.service.tree.getAllNearStations();
-				this.setState({
-					voronoi: list,
-				});
-				this.checkShowVoronoi(map);
-			});
-			this.setState({
-				solved_bounds: {
-					center: pos,
-					radius: r * 0.7
+			this.service.update_location(pos, this.state.radar_k, r).then(() => {
+				if ( !this.state.high_voronoi_show ){
+					var list = this.service.tree.getAllNearStations();
+					this.setState({
+						voronoi: list,
+						voronoi_show: this.canShowVoronoi(list),
+					});
 				}
 			});
+			this.solved_bounds = {
+				center: pos,
+				radius: r * 0.7
+			}
 		}
 	}
 
 	onMapDragStart(props,map){
 		if (this.state.high_voronoi_show) return;
+		if ( this.state.polyline_show) return;
 		this.onInfoDialogClosed();
 	}
 
 	onInfoDialogClosed(){
-		var state = {
+		this.setState({
 			clicked_marker: {
 				visible: false
 			},
 			info_dialog: Object.assign({}, this.state.info_dialog, {
 				visible: false
-			})
-		};
-		if (this.state.high_voronoi_show) {
-			state.high_voronoi_show = false;
-			state.voronoi_show = true;
-		}
-		this.setState(state);
+			}),
+			high_voronoi_show: false,
+			polyline_show: false,
+			voronoi_show: this.canShowVoronoi(this.state.voronoi),
+		});
 	}
 
 	focusAt(pos){
 		if ( this.state.high_voronoi_show ) return;
-		this.map.panTo(pos);
-		this.setState({
-			clicked_marker: {
-				visible: true,
-				position: pos
-			},
-			//TODO
+		this.service.update_location(pos,this.state.radar_k,0).then( s => {
+			this.showPosition(pos,s);
 		});
+		
 	}
 
 	focusAtNearestStation(pos){
 		if (this.state.high_voronoi_show) return;
-		this.service.update_location(pos).then( s => {
+		this.service.update_location(pos, this.state.radar_k,0).then( s => {
 			console.log("update location", s);
 			this.showStation(s);
+		});
+	}
+
+	makeRadarList(pos,k){
+		if ( !k ) k = this.state.radar_k;
+		return this.service.tree.getNearStations(k).map(s => {
+			return {
+				station: s,
+				dist: this.service.measure(s.position, pos),
+				lines: s.lines.map(code => this.service.get_line(code).name).join(' '),
+			};
+		});
+	}
+
+	showPosition(pos,station){
+		if (this.map) {
+			this.map.panTo(pos);
+			if (this.map.getZoom() < 14) this.map.setZoom(14);
+		}
+		this.setState({
+			clicked_marker: {
+				visible: true,
+				position: pos
+			}, 
+			info_dialog: {
+				visible: true,
+				type: "station",
+				station: station,
+				radar_list: this.makeRadarList(pos),
+				prefecture: this.service.get_prefecture(station.prefecture),
+				location: {
+					pos: pos,
+					dist: this.service.measure(station.position, pos)
+				}
+			},
+			polyline_show: false,
+			high_voronoi_show: false,
 		});
 	}
 
@@ -300,19 +375,19 @@ export class MapContainer extends React.Component {
 				visible: true,
 				type: "station",
 				station: station,
-				radar_list: this.service.tree.getNearStations(this.state.radar_k).map(s => {
-					return {
-						station: s,
-						dist: this.service.measure(s.position, station.position),
-						lines: s.lines.map(code => this.service.get_line(code).name).join(' '),
-					};
-				}),
+				radar_list: this.makeRadarList(station.position),
 				prefecture: this.service.get_prefecture(station.prefecture),
 				lines: station.lines.map( code => this.service.get_line(code)),
-			}
+			},
+			clicked_marker: {
+				visible: false
+			},
+			polyline_show: false,
+			high_voronoi_show: false,
 		});
 		if ( this.map ){
 			this.map.panTo(station.position);
+			if ( this.map.getZoom() < 14 ) this.map.setZoom(14);
 		}
 	}
 
@@ -323,7 +398,12 @@ export class MapContainer extends React.Component {
 				type: "line",
 				line: line,
 				line_details: false,
-			}
+			},
+			clicked_marker: {
+				visible: false
+			},
+			polyline_show: false,
+			high_voronoi_show: false,
 		});
 		this.service.get_line_detail(line.code).then( l => {
 			this.setState({
@@ -332,7 +412,7 @@ export class MapContainer extends React.Component {
 					type: "line",
 					line: l,
 					line_details: true,
-				}
+				},
 			});
 		});
 	}
@@ -340,9 +420,9 @@ export class MapContainer extends React.Component {
 	render(){
 		return(
 			<div className='Map-container'>
-				<div className='Map-relative'>
+				<div className='Map-relative' ref={this.map_ref}>
 
-						<Map className='Map'
+						<Map className='Map' 
 							google={this.props.google}
 							zoom={14}
 							center={this.state.current_position}
@@ -386,6 +466,16 @@ export class MapContainer extends React.Component {
 									fillOpacity={0.0}
 									clickable={false} />
 							)) : null}
+							{this.state.polyline_show ? this.state.polyline_list.map((p,i)=>(
+								<Polyline
+									key={i}
+									path={p.points}
+									strokeColor="#FF0000"
+									strokeWeight={1}
+									strokeOpacity={0.8}
+									fillOpacity={0.0}
+									clickable={false}/>
+							)) : null}
 						</Map>
 						<CSSTransition
 							in={this.state.info_dialog.visible}
@@ -400,6 +490,7 @@ export class MapContainer extends React.Component {
 										radar_list={this.state.info_dialog.radar_list}
 										prefecture={this.state.info_dialog.prefecture}
 										lines={this.state.info_dialog.lines}
+										location={this.state.info_dialog.location}
 										onClosed={this.onInfoDialogClosed.bind(this)}
 										onShowVoronoi={this.showRadarVoronoi.bind(this)}
 										onShowLine={this.showLine.bind(this)} />
@@ -408,6 +499,7 @@ export class MapContainer extends React.Component {
 										line={this.state.info_dialog.line}
 										line_details={this.state.info_dialog.line_details}
 										onClosed={this.onInfoDialogClosed.bind(this)}
+										onShowPolyline={this.showPolyline.bind(this)}
 										onShowStation={this.showStation.bind(this)}/>
 								) : null )}
 
