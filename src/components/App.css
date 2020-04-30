@@ -13,13 +13,13 @@
 	width: 100%;
 	top: 0px;
 	left: 0px;
-	height: 60px;
+	height: 40px;
 	z-index: 20;
 }
 
 .Map-container {
 	position: absolute;
-	top: 60px;
+	top: 40px;
 	bottom: 0px;
 	left: 0px;
 	width: 100%;
