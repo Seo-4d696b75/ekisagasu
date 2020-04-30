@@ -1,0 +1,25 @@
+{
+  "files": {
+    "main.css": "/ekisagasu/static/css/main.d167a7b6.chunk.css",
+    "main.js": "/ekisagasu/static/js/main.76c65da9.chunk.js",
+    "main.js.map": "/ekisagasu/static/js/main.76c65da9.chunk.js.map",
+    "runtime-main.js": "/ekisagasu/static/js/runtime-main.6326e6bf.js",
+    "runtime-main.js.map": "/ekisagasu/static/js/runtime-main.6326e6bf.js.map",
+    "static/js/2.fcbdcc09.chunk.js": "/ekisagasu/static/js/2.fcbdcc09.chunk.js",
+    "static/js/2.fcbdcc09.chunk.js.map": "/ekisagasu/static/js/2.fcbdcc09.chunk.js.map",
+    "index.html": "/ekisagasu/index.html",
+    "precache-manifest.c4a323f01ea4d7648bd5b57fe54fd119.js": "/ekisagasu/precache-manifest.c4a323f01ea4d7648bd5b57fe54fd119.js",
+    "service-worker.js": "/ekisagasu/service-worker.js",
+    "static/css/main.d167a7b6.chunk.css.map": "/ekisagasu/static/css/main.d167a7b6.chunk.css.map",
+    "static/js/2.fcbdcc09.chunk.js.LICENSE.txt": "/ekisagasu/static/js/2.fcbdcc09.chunk.js.LICENSE.txt",
+    "static/media/ic_line.png": "/ekisagasu/static/media/ic_line.c2e75533.png",
+    "static/media/radar.png": "/ekisagasu/static/media/radar.63a59bd4.png",
+    "static/media/voronoi.png": "/ekisagasu/static/media/voronoi.95f8c7c4.png"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.6326e6bf.js",
+    "static/js/2.fcbdcc09.chunk.js",
+    "static/css/main.d167a7b6.chunk.css",
+    "static/js/main.76c65da9.chunk.js"
+  ]
+}
