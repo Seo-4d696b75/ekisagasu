@@ -4,7 +4,6 @@ import "./Header.css"
 import img_setting from "../img/ic_settings.png";
 import img_delete from "../img/ic_delete.png";
 import { CSSTransition } from "react-transition-group";
-import Data from "../script/DataStore";
 
 
 export default class Header extends React.Component {

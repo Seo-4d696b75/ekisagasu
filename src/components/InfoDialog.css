@@ -362,7 +362,6 @@ table {
 }
 
 .Button-container{
-	display: block;
 	position: absolute;
 	right: 0px;
 	top: 50px;
@@ -370,12 +369,12 @@ table {
 .Bottom-container.stations{
 	position: absolute;
 	right: 20px;
-	bottom: 25px;
+	bottom: 60px;
 }
 .Bottom-container.radar{
 	position: absolute;
 	right: 5px;
-	bottom: 0px;
+	bottom: 40px;
 }
 
 .Icon-action{

@@ -1,4 +1,3 @@
-// webworker
 importScripts("diagram/HighVoronoi.js");
 
 const state = {

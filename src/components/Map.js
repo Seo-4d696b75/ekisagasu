@@ -90,7 +90,7 @@ export class MapContainer extends React.Component {
 			});
 			return;
 		}
-		const worker = new Worker('VoronoiWorker.js');
+		const worker = new Worker(`${process.env.PUBLIC_URL}/VoronoiWorker.js`);
 		const service = this.service;
 		worker.addEventListener('error', err => {
 			console.error('error', err);
@@ -519,7 +519,8 @@ const LoadingContainer = (props) => (
 );
 
 export default GoogleApiWrapper({
-	apiKey: "AIzaSyAi5Nv266dJyucThSkO1dtMn0kJdp_16Z0",
+	apiKey: "AIzaSyCc9FnBVZiBYfXUrRPFDFTU4bh9kmDNKaQ",
+	//apiKey: "AIzaSyAi5Nv266dJyucThSkO1dtMn0kJdp_16Z0",
 	language: "ja",
 	LoadingContainer: LoadingContainer,
 })(MapContainer);

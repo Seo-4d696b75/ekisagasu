@@ -155,9 +155,11 @@ export class StationDialog extends React.Component {
 							<img
 								src={img_above}
 								alt="close radar"
-								className="Icon-action radar"
+								className="Icon-action close-radar"
 								onClick={this.onRadarClose.bind(this)} />
 						</div>
+						
+						
 					</div>
 				</CSSTransition>
 			</div>
