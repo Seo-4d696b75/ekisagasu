@@ -6,6 +6,7 @@ import {StationService} from "../script/StationService";
 import {CSSTransition} from "react-transition-group";
 import * as Rect from "../script/Rectangle";
 import Data from "../script/DataStore";
+import * as Config from "../config";
 
 const VORONOI_COLOR = [
 	"#00AA00",
@@ -519,7 +520,7 @@ const LoadingContainer = (props) => (
 );
 
 export default GoogleApiWrapper({
-	apiKey: "AIzaSyAi5Nv266dJyucThSkO1dtMn0kJdp_16Z0",
+	apiKey: Config.API_KEY,
 	language: "ja",
 	LoadingContainer: LoadingContainer,
 })(MapContainer);
