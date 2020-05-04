@@ -9,10 +9,10 @@ import Data from "../script/DataStore";
 import * as Config from "../config";
 
 const VORONOI_COLOR = [
+	"#0000FF",
 	"#00AA00",
 	"#FF0000",
-	"#AAAA00",
-	"#0000FF"
+	"#CCCC00"
 ];
 
 export class MapContainer extends React.Component {
@@ -37,6 +37,7 @@ export class MapContainer extends React.Component {
 			voronoi_show: true,
 			high_voronoi_show: false,
 			high_voronoi: [],
+			worker_running: false,
 			polyline_show: false,
 			polyline_list: [],
 			radar_k: 18,
@@ -483,6 +484,7 @@ export class MapContainer extends React.Component {
 							className="Dialog-container"
 							timeout={400}>
 							<div className="Dialog-container">
+								<div className="Dialog-frame">
 
 								{this.state.info_dialog.type === "station" ? (
 									<StationDialog
@@ -495,15 +497,28 @@ export class MapContainer extends React.Component {
 										onClosed={this.onInfoDialogClosed.bind(this)}
 										onShowVoronoi={this.showRadarVoronoi.bind(this)}
 										onShowLine={this.showLine.bind(this)} />
-								) : ( this.state.info_dialog.type === "line" ? (
+								) : (this.state.info_dialog.type === "line" ? (
 									<LineDialog
 										line={this.state.info_dialog.line}
 										line_details={this.state.info_dialog.line_details}
 										onClosed={this.onInfoDialogClosed.bind(this)}
 										onShowPolyline={this.showPolyline.bind(this)}
-										onShowStation={this.showStation.bind(this)}/>
-								) : null )}
+										onShowStation={this.showStation.bind(this)} />
+									) : null)}
+								<CSSTransition
+									in={this.state.worker_running}
+									className="Dialog-message"
+									timeout={0}>
+									<div className="Dialog-message">
+										<div className="Progress-circle">
+											<div className="Progress-circle-inside"></div>
+										</div>
+								<div className="Wait-message">計算中…{(this.state.high_voronoi.length).toString().padStart(2)}/{this.state.radar_k}</div>
+									</div>
+								</CSSTransition>
+								
 
+								</div>
 							
 							</div>
 						</CSSTransition>
