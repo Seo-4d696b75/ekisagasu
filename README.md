@@ -1,15 +1,6 @@
 # 駅サガース
 
-<table border="0" width="100%">
-  <tr>
-    <td width="45%">
-<img src="https://user-images.githubusercontent.com/25225028/81793250-145a5300-9544-11ea-81fa-bee3a8ecc8ac.png"/>
-    </td>
-    <td width="50%">
-      <img src="https://user-images.githubusercontent.com/25225028/76631346-e7f67a80-6584-11ea-9f6b-5e8885887363.png">
-    </td>
-  </tr>
-</table>
+<img src="https://user-images.githubusercontent.com/25225028/81793250-145a5300-9544-11ea-81fa-bee3a8ecc8ac.png" height="200"><img src="https://user-images.githubusercontent.com/25225028/76631346-e7f67a80-6584-11ea-9f6b-5e8885887363.png" height="200">
 
 位置情報ゲーム「駅メモ！」の支援ツールサイト
 
@@ -54,8 +45,11 @@
 - レスポンシブなデザイン  
   
   PC、スマホ、タブレットなど環境の違いによる画面サイズに合わせ表示デザインを最適化します。  
-  <img src="https://user-images.githubusercontent.com/25225028/81814497-d40acd00-9563-11ea-9e4a-1a85a70a633b.png" height="200">
-  <img src="https://user-images.githubusercontent.com/25225028/81814521-dbca7180-9563-11ea-8c8d-5367ba05e2ce.png" height="200"><br>
+  <img src="https://user-images.githubusercontent.com/25225028/81814497-d40acd00-9563-11ea-9e4a-1a85a70a633b.png" height="180">
+  <img src="https://user-images.githubusercontent.com/25225028/81814521-dbca7180-9563-11ea-8c8d-5367ba05e2ce.png" height="180"><br>
+
+### 使用データ
+このwebアプリで使用しているデータは[このリポジトリ](https://github.com/Seo-4d696b75/station_database)で管理されています。
 
 # 開発環境
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
