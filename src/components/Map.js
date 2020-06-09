@@ -241,11 +241,14 @@ export class MapContainer extends React.Component {
 	onBoundsChanged(props,map,idle=false){
 		if ( map.getZoom() <= 6 ) return;		
 		var bounds = map.getBounds();
+		var ne = bounds.getNorthEast();
+		var sw = bounds.getSouthWest();
+		console.log(ne.lat(), ne.lng(), sw.lat(), sw.lng());
 		var rect = {
-			south: bounds.Ya.g,
-			north: bounds.Ya.i,
-			west: bounds.Ta.g,
-			east: bounds.Ta.i
+			south: sw.lat(),
+			north: ne.lat(),
+			west: sw.lng(),
+			east: ne.lng()
 		};
 		var pos = {
 			lat: (rect.south + rect.north)/2,
