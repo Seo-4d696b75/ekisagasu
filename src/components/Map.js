@@ -41,6 +41,7 @@ export class MapContainer extends React.Component {
 			polyline_show: false,
 			polyline_list: [],
 			radar_k: 18,
+			screen_wide: false,
 		};
 		this.map_ref = React.createRef();
 	}
@@ -53,8 +54,20 @@ export class MapContainer extends React.Component {
 				this.onBoundsChanged(null, this.map, true);
 			}
 		});
-		Data.on("onRadarKChanged", this.onRadarKChanged.bind(this));
+		// set callback invoked when radar 'k' is changed
+		this.radarChangedCallback = this.onRadarKChanged.bind(this);
+		Data.on("onRadarKChanged", this.radarChangedCallback);
 		this.onRadarKChanged();
+		// set callback invoked when screen resized
+		this.screenResizedCallback = this.onScreenResized.bind(this);
+		window.addEventListener("resize", this.screenResizedCallback);
+	}
+
+	componentWillUnmount(){
+		this.service.release();
+		this.map = null;
+		Data.removeListener("onRadarKChanged", this.radarChangedCallback);
+		window.removeEventListener("resize", this.screenResizedCallback);
 	}
 
 	onRadarKChanged(){
@@ -76,6 +89,16 @@ export class MapContainer extends React.Component {
 		}else{
 			this.setState({
 				radar_k: k
+			});
+		}
+	}
+
+	onScreenResized(){
+		var wide = window.innerWidth >= 900;
+		console.log("resize", window.innerWidth, wide);
+		if ( wide !== this.state.screen_wide ){
+			this.setState({
+				screen_wide: wide,
 			});
 		}
 	}
@@ -177,13 +200,6 @@ export class MapContainer extends React.Component {
 		this.map.panTo(center);
 		this.map.setZoom(Math.round(zoom));
 	}
-
-	componentWillUnmount(){
-		this.service.release();
-		this.map = null;
-		Data.removeListener("onRadarKChanged", this.onRadarKChanged.bind(this));
-	}
-
 
 	onMouseDown(event) {
 		this.mouse_event = event.tb;
@@ -304,7 +320,9 @@ export class MapContainer extends React.Component {
 	onMapDragStart(props,map){
 		if (this.state.high_voronoi_show) return;
 		if ( this.state.polyline_show) return;
-		this.onInfoDialogClosed();
+		if ( !this.state.screen_wide ) {
+			this.onInfoDialogClosed();
+		}
 	}
 
 	onInfoDialogClosed(){
@@ -440,9 +458,9 @@ export class MapContainer extends React.Component {
 							onIdle={this.onMapIdle.bind(this)}
 							fullscreenControl={false}
 							streetViewControl={false}
-							zoomControl={false}
+							zoomControl={true}
 							gestureHandling={"greedy"}
-							mapTypeControl={false}
+							mapTypeControl={true}
 
 						>
 							<Marker
@@ -538,7 +556,7 @@ const LoadingContainer = (props) => (
 );
 
 export default GoogleApiWrapper({
-	apiKey: Config.API_KEY,
+	apiKey: Config.API_KEY_TEST,
 	language: "ja",
 	LoadingContainer: LoadingContainer,
 })(MapContainer);
