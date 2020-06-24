@@ -97,7 +97,7 @@ export class StationDialog extends React.Component {
 								<img src={img_location} alt="icon-details" className="Icon-station" />
 								<div className="Station-details">
 									距離：{this.formatDistance(this.props.location.dist)}<br />
-				        			地点：E{this.props.location.pos.lng.toFixed(6)} N{this.props.location.pos.lat.toFixed(6)}
+				        			選択：E{this.props.location.pos.lng.toFixed(6)} N{this.props.location.pos.lat.toFixed(6)}
 								</div>
 							</div>
 						) : null)}
