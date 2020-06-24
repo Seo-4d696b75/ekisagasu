@@ -563,7 +563,7 @@ const LoadingContainer = (props) => (
 );
 
 export default GoogleApiWrapper({
-	apiKey: Config.API_KEY_TEST,
+	apiKey: Config.API_KEY,
 	language: "ja",
 	LoadingContainer: LoadingContainer,
 })(MapContainer);
