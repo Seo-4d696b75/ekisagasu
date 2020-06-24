@@ -61,6 +61,7 @@ export class MapContainer extends React.Component {
 		// set callback invoked when screen resized
 		this.screenResizedCallback = this.onScreenResized.bind(this);
 		window.addEventListener("resize", this.screenResizedCallback);
+		this.onScreenResized();
 	}
 
 	componentWillUnmount(){
@@ -209,6 +210,12 @@ export class MapContainer extends React.Component {
 		console.log("map ready", props);
 		map.addListener("mousedown", this.onMouseDown.bind(this));
 		this.map = map;
+		this.map.setOptions({
+			// this option can not be set via props in google-maps-react
+			mapTypeControlOptions: {
+				position: this.props.google.maps.ControlPosition.TOP_RIGHT
+			}
+		});
 		navigator.geolocation.getCurrentPosition(
 			(pos) => {
 				this.setState({
@@ -494,7 +501,7 @@ export class MapContainer extends React.Component {
 									key={i}
 									path={p.points}
 									strokeColor="#FF0000"
-									strokeWeight={1}
+									strokeWeight={2}
 									strokeOpacity={0.8}
 									fillOpacity={0.0}
 									clickable={false}/>

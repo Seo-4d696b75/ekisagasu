@@ -37,7 +37,7 @@ export default class Header extends React.Component {
 		<div className='Map-header'>
 			<div className="Header-frame">
 				
-				<div className="App-title">駅サガース（仮）</div>
+				<div className="App-title">駅サガース</div>
 				<img className="Action-setting"
 						src={img_setting}
 						alt="setting"
