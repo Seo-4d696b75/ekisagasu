@@ -15,7 +15,7 @@ export default class Help extends React.Component {
 
                     <div className="App-title">駅サガース</div>
                     <div className="Action-container">
-                        <Link to="/ekisagasu">
+                        <Link to="/">
                             <div className="Action-app">▶ Webアプリを使う！</div>
                         </Link>
                     </div>
