@@ -44,7 +44,7 @@ export default class Header extends React.Component {
 
 					<div className="App-title">駅サガース</div>
 					<div className="Action-container">
-						<Link to="/ekisagasu/help" target="_blank">
+						<Link to="/help" target="_blank">
 							<img className="Action-button help"
 								src={img_help}
 								alt="help"
