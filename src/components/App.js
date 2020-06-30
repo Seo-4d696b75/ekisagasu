@@ -10,7 +10,7 @@ export default class APP extends React.Component {
 	render(){
 		return (
 			<div className="App">
-				<HashRouter >
+				<HashRouter basename='/'>
 						<Route exact path='/' render={()=>
 							<div>
 								<Header></Header>
