@@ -20,13 +20,25 @@
 }
 
 
-.Action-setting{
-	position: absolute;
-	right: 10px;
-	top: 5px;
+.Action-button{
 	width: 30px;
 	height: 30px;
 
+}
+
+.Action-button:hover {
+	filter: drop-shadow(2px 2px 2px grey);
+}
+
+
+.Action-button.help{
+	margin-right: 10px;
+}
+
+.Action-container{
+	position: absolute;
+	right: 10px;
+	top: 5px;
 }
 
 .Action-setting:hover {
