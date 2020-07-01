@@ -1,47 +1,78 @@
-.root-container{
+.root-container {
     background-color: white;
     margin: 0;
     padding: 0;
 }
 
-.main-container{
-    margin: 40px;
-    margin-top: 60px;
+.main-container {
+    margin-bottom: 20px;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.Text-container{
     text-align: left;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    width: min(100%, 600px);
 }
 
-h2{
-   padding: 0.4em;
-   border-left: solid 5px #154bb6; 
-   background-color: #154bb617;
+.Image {
+    width: 100%;
 }
 
-h4{
+.Picture-frame {
+    margin-top: 40px;
+    margin-left: auto;
+    margin-right: auto;
+    width: min(100%, 600px);
+}
+
+h1 {
+    white-space: normal;
+    text-align: center;
+}
+
+h2 {
+    padding: 0.4em;
+    border-left: solid 5px #154bb6;
+    background-color: #154bb617;
+}
+
+h4 {
     color: #0e327a;
-    font-size: 1em;
+    font-size: 1.2em;
     position: relative;
     padding-left: 1.5em;
 }
-h4:before{
-    font-family: "Font Awesome 5 Free";/*忘れずに*/
-    content: "✔";/*アイコンのユニコード*/
+
+h4:before {
+    font-family: "Font Awesome 5 Free";
+    /*忘れずに*/
+    content: "✔";
+    /*アイコンのユニコード*/
     font-weight: 900;
-    position: absolute;/*絶対位置*/
-    font-size: 1.4em;/*サイズ*/
-    left: 0em;/*アイコンの位置*/
-    top: -0.2em;/*アイコンの位置*/
-    color: #154bb6; /*アイコン色*/
+    position: absolute;
+    /*絶対位置*/
+    font-size: 1.4em;
+    /*サイズ*/
+    left: 0em;
+    /*アイコンの位置*/
+    top: -0.2em;
+    /*アイコンの位置*/
+    color: #154bb6;
+    /*アイコン色*/
 }
 
-*{
-	box-sizing: border-box;
+* {
+    box-sizing: border-box;
 }
 
-
-.Header-frame{
-	background-color: #154bb6;
-	color: white;
-	z-index: 20;
+.Header-frame {
+    background-color: #154bb6;
+    color: white;
+    z-index: 20;
     position: fixed;
     top: 0;
     left: 0;
@@ -49,29 +80,27 @@ h4:before{
     height: 40px;
 }
 
-
-.App-title{
-	display: table-cell; 
-  	vertical-align: middle;
-	text-align: start;
-	height: 40px;
-	padding-left: 12px;
-	font-size: 1.5rem;
+.App-title {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: start;
+    height: 40px;
+    padding-left: 12px;
+    font-size: 1.5rem;
 }
 
-
-.Action-container{
-	position: absolute;
-	right: 10px;
-	top: 5px;
+.Action-container {
+    position: absolute;
+    right: 10px;
+    top: 5px;
 }
 
-.Action-app{
+.Action-app {
     color: white;
-	height: 40px;
+    height: 40px;
 }
 
-.Tool-title{
+.Tool-title {
     color: black;
-    font-size: 1.5em;
+    font-size: 1.2em;
 }
