@@ -202,8 +202,17 @@ export class MapContainer extends React.Component {
 		this.map.setZoom(Math.round(zoom));
 	}
 
+	getMouseEvent(clickEvent){
+		// googlemap onClick などのコールバック関数に渡させるイベントオブジェクトの中にあるMouseEventを抽出
+		// property名が謎
+		for ( var p in clickEvent){
+			if ( clickEvent[p] instanceof  MouseEvent ) return clickEvent[p];
+		}
+		return null;
+	}
+
 	onMouseDown(event) {
-		this.mouse_event = event.tb;
+		this.mouse_event = this.getMouseEvent(event);
 	}
 
 	onMapReady(props,map){
@@ -247,7 +256,7 @@ export class MapContainer extends React.Component {
 			lat: event.latLng.lat(),
 			lng: event.latLng.lng()
 		};
-		if ( event.tb.timeStamp - this.mouse_event.timeStamp > 300 ){
+		if ( this.getMouseEvent(event).timeStamp - this.mouse_event.timeStamp > 300 ){
 			console.log("map long clicked", pos, event);
 			this.focusAt(pos);
 		}else{
