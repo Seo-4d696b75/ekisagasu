@@ -56,6 +56,16 @@ export class StationService {
 		return task;
 	}
 
+	update_rect(rect, max){
+		var task = this.tasks.get(TASK_UPDATE);
+		if ( !task ) task = Promise.resolve();
+		task = task.then( () => {
+			return this.tree.updateRectRegion(rect, max);
+		});
+		this.tasks.set(TASK_UPDATE, task);
+		return task;
+	}
+
 	get_station(code, promise=false){
 		if ( promise ){
 			var s = this.stations.get(code);
@@ -139,6 +149,24 @@ export class StationService {
 		var lng = (lng1 - lng2)/2;
 		var lat = (lat1 - lat2)/2;
 		return 6378137.0 * 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(lat),2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(lng),2)));
+	}
+
+	inside_rect(position, rect){
+		if ( position.lat && position.lng ){
+			return (
+				position.lat >= rect.south && 
+				position.lat <= rect.north &&
+				position.lng >= rect.west &&
+				position.lng <= rect.east
+			);
+		} else {
+			return (
+				position.south >= rect.south
+				&& position.north <= rect.north
+				&& position.east <= rect.east
+				&& position.west >= rect.west
+			);
+		}
 	}
 
 }

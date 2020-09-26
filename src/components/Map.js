@@ -14,6 +14,9 @@ const VORONOI_COLOR = [
 	"#CCCC00"
 ];
 
+const ZOOM_TH = 10;
+const VORONOI_SIZE_TH = 500;
+
 export class MapContainer extends React.Component {
 
 	constructor(){
@@ -79,17 +82,17 @@ export class MapContainer extends React.Component {
 				pos = this.state.info_dialog.location.pos;
 			}
 			this.service.update_location(pos, k, 0).then( () => {
-				this.setState({
+				this.setState(Object.assign({}, this.state, {
 					radar_k: k,
 					info_dialog: Object.assign({}, this.state.info_dialog, {
 						radar_list: this.makeRadarList(pos, k),
 					})
-				});
+				}));
 			});
 		}else{
-			this.setState({
+			this.setState(Object.assign({}, this.state, {
 				radar_k: k
-			});
+			}));
 		}
 	}
 
@@ -97,9 +100,9 @@ export class MapContainer extends React.Component {
 		var wide = window.innerWidth >= 900;
 		console.log("resize", window.innerWidth, wide);
 		if ( wide !== this.state.screen_wide ){
-			this.setState({
+			this.setState(Object.assign({}, this.state, {
 				screen_wide: wide,
-			});
+			}));
 		}
 	}
 
@@ -109,10 +112,10 @@ export class MapContainer extends React.Component {
 			return;
 		}
 		if (this.state.high_voronoi_show) {
-			this.setState({
+			this.setState(Object.assign({}, this.state, {
 				high_voronoi_show: false,
 				voronoi_show: true,
-			});
+			}));
 			return;
 		}
 		const worker = new Worker(`${process.env.PUBLIC_URL}/VoronoiWorker.js`);
@@ -148,14 +151,14 @@ export class MapContainer extends React.Component {
 			} else if ( data.type === 'progress' ){
 				var list = this.state.high_voronoi;
 				list.push(data.polygon);
-				this.setState({
+				this.setState(Object.assign({}, this.state, {
 					high_voronoi: list
-				});
+				}));
 			} else if ( data.type === 'complete' ){
 				worker.terminate();
-				this.setState({
+				this.setState(Object.assign({}, this.state, {
 					worker_running: false,
-				});
+				}));
 			}
 		});
 
@@ -166,13 +169,13 @@ export class MapContainer extends React.Component {
 			y: station.position.lat,
 			code: station.code,
 		};
-		this.setState({
+		this.setState(Object.assign({}, this.state, {
 			high_voronoi_show: true,
 			high_voronoi: [],
 			voronoi_show: false,
 			polyline_show: false,
 			worker_running: true,
-		});
+		}));
 		worker.postMessage(JSON.stringify({
 			type: 'start',
 			container: container,
@@ -185,12 +188,12 @@ export class MapContainer extends React.Component {
 
 	showPolyline(line){
 		if ( !line.has_details || !this.map) return;
-		this.setState({
+		this.setState(Object.assign({}, this.state, {
 			polyline_show: true,
 			polyline_list: line.polyline_list,
 			high_voronoi_show: false,
 			voronoi_show: true,
-		});
+		}));
 		var center = {
 			lat: (line.south + line.north)/2,
 			lng: (line.east + line.west)/2
@@ -226,12 +229,12 @@ export class MapContainer extends React.Component {
 		});
 		navigator.geolocation.getCurrentPosition(
 			(pos) => {
-				this.setState({
+				this.setState(Object.assign({}, this.state, {
 					current_position: {
 						lat: pos.coords.latitude,
 						lng: pos.coords.longitude
 					}
-				});
+				}));
 				console.log("current position", pos.coords);
 			},
 			(err) => {
@@ -270,65 +273,55 @@ export class MapContainer extends React.Component {
 
 
 	onBoundsChanged(props,map,idle=false){
-		if ( map.getZoom() <= 6 ) return;		
 		var bounds = map.getBounds();
 		var ne = bounds.getNorthEast();
 		var sw = bounds.getSouthWest();
-		console.log(ne.lat(), ne.lng(), sw.lat(), sw.lng());
+		//console.log(ne.lat(), ne.lng(), sw.lat(), sw.lng());
 		var rect = {
 			south: sw.lat(),
 			north: ne.lat(),
 			west: sw.lng(),
 			east: ne.lng()
 		};
-		var pos = {
-			lat: (rect.south + rect.north)/2,
-			lng: (rect.east + rect.west)/2
-		};
-		var r = Math.sqrt(
-			(rect.north - rect.south) * (rect.north - rect.south) + 
-			(rect.east - rect.west) * (rect.east - rect.west)
-		) / 2;
 		if ( this.solved_bounds && !idle){
-			var dy = this.solved_bounds.center.lat - pos.lat;
-			var dx = this.solved_bounds.center.lng - pos.lng;
-			var dist = Math.sqrt(dx*dx + dy*dy);
-			if ( dist + r > this.solved_bounds.radius ){
-				this.updateLocation(map,pos,Math.min(r*3,r+0.5));
+			var inside = this.service.inside_rect(rect, this.solved_bounds);
+			var width1 = rect.east - rect.west;
+			var height1 = rect.north - rect.south;
+			var width2 = this.solved_bounds.east - this.solved_bounds.west;
+			var height2 = this.solved_bounds.north - this.solved_bounds.south;
+			if ( !inside || width1 < width2/6 || height1 < height2/6  ){
+				this.updateBounds(rect);
 			} 
 		}else{
-			this.updateLocation(map,pos,r*3);
+			this.updateBounds(rect);
 		}
 	}
 
 	onMapIdle(props,map){
-		console.log("idle");
+		//console.log("idle");
 		this.onBoundsChanged(props,map,true);
 	}
 
-	canShowVoronoi(list){
-		if ( !this.map) return false;
-		if ( !list ) return false;
-		return (this.map.getZoom() > 10 || list.length < 200);
-	}
-
-	updateLocation(map,pos,r){
-		console.log("updateLocation",pos,r);
+	updateBounds(rect){
+		//console.log("updateBounds", rect);
 		if ( this.service ){
-			
-			this.service.update_location(pos, this.state.radar_k, r).then(() => {
-				if ( !this.state.high_voronoi_show ){
-					var list = this.service.tree.getAllNearStations();
-					this.setState({
-						voronoi: list,
-						voronoi_show: this.canShowVoronoi(list),
-					});
-				}
+			const margin_width = Math.min(rect.east - rect.west, 0.5);
+			const margin_height = Math.min(rect.north - rect.south, 0.5);
+			const bounds = {
+				north: rect.north + margin_height,
+				south: rect.south - margin_height,
+				east: rect.east + margin_width,
+				west: rect.west - margin_width
+			};
+			const zoom = this.map.getZoom();
+			const limit = zoom < ZOOM_TH ? VORONOI_SIZE_TH : undefined; 
+			this.service.update_rect(bounds, limit).then( list => {
+				this.setState(Object.assign({}, this.state, {
+					voronoi: list,
+					voronoi_show: !this.state.high_voronoi_show && (zoom >= ZOOM_TH || list.length < VORONOI_SIZE_TH),
+				}));
 			});
-			this.solved_bounds = {
-				center: pos,
-				radius: r * 0.7
-			}
+			this.solved_bounds = bounds;
 		}
 	}
 
@@ -341,7 +334,7 @@ export class MapContainer extends React.Component {
 	}
 
 	onInfoDialogClosed(){
-		this.setState({
+		this.setState(Object.assign({}, this.state, {
 			clicked_marker: {
 				visible: false
 			},
@@ -350,8 +343,8 @@ export class MapContainer extends React.Component {
 			}),
 			high_voronoi_show: false,
 			polyline_show: false,
-			voronoi_show: this.canShowVoronoi(this.state.voronoi),
-		});
+			voronoi_show: this.state.voronoi.length < VORONOI_SIZE_TH || this.map.getZoom() >= ZOOM_TH,
+		}));
 	}
 
 	focusAt(pos){
@@ -386,7 +379,7 @@ export class MapContainer extends React.Component {
 			this.map.panTo(pos);
 			if (this.map.getZoom() < 14) this.map.setZoom(14);
 		}
-		this.setState({
+		this.setState(Object.assign({}, this.state, {
 			clicked_marker: {
 				visible: true,
 				position: pos
@@ -404,11 +397,11 @@ export class MapContainer extends React.Component {
 			},
 			polyline_show: false,
 			high_voronoi_show: false,
-		});
+		}));
 	}
 
 	showStation(station){
-		this.setState({
+		this.setState(Object.assign({}, this.state, {
 			info_dialog: {
 				visible: true,
 				type: "station",
@@ -422,7 +415,7 @@ export class MapContainer extends React.Component {
 			},
 			polyline_show: false,
 			high_voronoi_show: false,
-		});
+		}));
 		if ( this.map ){
 			this.map.panTo(station.position);
 			if ( this.map.getZoom() < 14 ) this.map.setZoom(14);
@@ -430,7 +423,7 @@ export class MapContainer extends React.Component {
 	}
 
 	showLine(line){
-		this.setState({
+		this.setState(Object.assign({}, this.state, {
 			info_dialog: {
 				visible: true,
 				type: "line",
@@ -442,16 +435,16 @@ export class MapContainer extends React.Component {
 			},
 			polyline_show: false,
 			high_voronoi_show: false,
-		});
+		}));
 		this.service.get_line_detail(line.code).then( l => {
-			this.setState({
+			this.setState(Object.assign({}, this.state, {
 				info_dialog: {
 					visible: true,
 					type: "line",
 					line: l,
 					line_details: true,
 				},
-			});
+			}));
 		});
 	}
 

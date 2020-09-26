@@ -2,38 +2,57 @@
 
 class StationNode{
 
-	constructor(depth,data,service,data_map){
+	constructor(depth,data,tree,data_map,region){
 		this.depth = depth;
 		this.code = data.code;
-		this.build(data,service,data_map);
+		this.region = region;
+		this.build(data,tree,data_map);
 	}
 
-	build(data,service,data_map){
+	build(data,tree,data_map){
 		if (data.segment) {
 			this.segment_name = data.segment;
-			this.service = service;
+			this.tree = tree;
 			this.station = null;
+			this.tree.unknown_region.push(this);
 		} else {
-			this.station = service.get_station(this.code);
+			this.station = tree.service.get_station(this.code);
 			if (!this.station){
 				console.error("station not found", this.code);
 				return;
 			} 
+			if (!tree.service.inside_rect(this.station.position, this.region) ){
+				console.error("station pos out of bouuds", this.station, this.region);
+				return;
+			}
+			const x = (this.depth % 2 === 0);
 			if (data.left ) {
 				var left = data_map.get(data.left);
 				if (!left) console.error("node not found", data.left);
-				this.left = new StationNode(this.depth + 1, left, service, data_map);
+				var left_region = {
+					north: x ? this.region.north : this.station.position.lat,
+					south: this.region.south,
+					east: x ? this.station.position.lng : this.region.east,
+					west: this.region.west 
+				};
+				this.left = new StationNode(this.depth + 1, left, tree, data_map, left_region);
 			}
 			if (data.right ) {
 				var right = data_map.get(data.right);
 				if (!right) console.error("node not found", data.right);
-				this.right = new StationNode(this.depth + 1, right, service, data_map);
+				var right_region = {
+					north: this.region.north,
+					south: x ? this.region.south : this.station.position.lat,
+					east: this.region.east,
+					west: x ? this.station.position.lng : this.region.west
+				};
+				this.right = new StationNode(this.depth + 1, right, tree, data_map, right_region);
 			}
 		}
 	}
 
 	release(){
-		this.service = null;
+		this.tree = null;
 		this.station = null;
 		if ( this.left ) this.left.release();
 		if ( this.right ) this.right.release();
@@ -43,7 +62,7 @@ class StationNode{
 
 	get(){
 		if (!this.station) {
-			return this.service.get_tree_segment(this.segment_name).then(data => {
+			return this.tree.service.get_tree_segment(this.segment_name).then(data => {
 				if (data.root !== this.code) {
 					return Promise.reject(`root mismatch. name:${this.segment_name}`);
 				} else {
@@ -51,7 +70,7 @@ class StationNode{
 					data.node_list.forEach(element => {
 						map.set(element.code, element);
 					});
-					this.build(map.get(this.code), this.service, map);
+					this.build(map.get(this.code), this.tree, map);
 					if ( this.station ){
 						return this.station;
 					}else{
@@ -74,12 +93,19 @@ export class StationKdTree{
 	}
 
 	initialize(root_name){
+		this.unknown_region = [];
 		return this.service.get_tree_segment(root_name).then(data => {
 			var map = new Map();
 			data.node_list.forEach(element => {
 				map.set(element.code, element);
 			});
-			this.root = new StationNode(0, map.get(data.root), this.service, map);
+			var regin = {
+				north: 90,
+				south: -90,
+				east: 180,
+				west: -180,
+			};
+			this.root = new StationNode(0, map.get(data.root), this, map, regin);
 			console.log("Kd-tree initialized.", this);
 			return this;
 		});
@@ -118,6 +144,20 @@ export class StationKdTree{
 				this.last_position = position;
 				console.log(`update done. k=${this.k} r=${this.r} time=${performance.now()-time}ms size:${this.search_list.length}`);
 				return this.current_station;
+			});
+		}
+	}
+
+	updateRectRegion(rect, max){
+		if (!this.service) {
+			return Promise.reject('sevrvice not initialized');
+		} else if ( !this.root ) {
+			return Promise.reject('tree root not initialized');
+		} else {
+			const time = performance.now();
+			return this.search_rect(this.root, rect, [], max).then( dst => {
+				console.log(`update region done. time=${performance.now() - time}ms size:${dst.length}`);
+				return dst;
 			});
 		}
 	}
@@ -185,6 +225,35 @@ export class StationKdTree{
 				return this.search(next);
 			}
 			
+		});
+	}
+
+	search_rect(node, rect, dst, max){
+		return node.get().then( station => {
+			if ( this.service.inside_rect(station.position, rect) ){
+				dst.push(station);
+			}
+			if ( max && dst.length >= max ){
+				return;
+			}
+			var tasks = [];
+			// check left
+			if ( node.left && (
+				(node.depth % 2 === 0 && rect.west < station.position.lng)
+				|| (node.depth % 2 === 1 && rect.south < station.position.lat)
+			) ){
+				tasks.push(this.search_rect(node.left, rect, dst, max));
+			} 
+			// check right
+			if ( node.right && (
+				(node.depth % 2 === 0 && station.position.lng < rect.east)
+				|| (node.depth % 2 === 1 && station.position.lat < rect.north)
+			) ){
+				tasks.push(this.search_rect(node.right, rect, dst, max));
+			}
+			return Promise.all(tasks);
+		}).then( () => {
+			return dst;
 		});
 	}
 	
