@@ -6,7 +6,7 @@ class DataStore extends EventEmitter {
 	constructor(){
 		super();
 		this.data = {
-			radar_k: 18,
+			radar_k: 18
 		};
 	}
 
@@ -18,8 +18,12 @@ class DataStore extends EventEmitter {
 		//console.log("DataStore recived an action", action);
 		switch(action.type){
 			case "radar-k": {
-				this.data.radar_k = action.value;
-				this.emit("onRadarKChanged");
+				if ( action.value < 1 ) action.value = 1;
+				if ( action.value > 20 ) action.value = 20;
+				if ( action.value !== this.data.radar_k ){
+					this.data.radar_k = action.value;
+					this.emit("onRadarKChanged");
+				}
 				break;
 			}
 			default: {
