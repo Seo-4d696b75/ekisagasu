@@ -30,7 +30,7 @@ export default class Help extends React.Component {
                 </div>
                 <div className="Picture-frame">
 
-                    <img className="Image header" alt="app image" src="https://user-images.githubusercontent.com/25225028/81793250-145a5300-9544-11ea-81fa-bee3a8ecc8ac.png" />
+                    <img className="Image header" alt="app logo" src="https://user-images.githubusercontent.com/25225028/81793250-145a5300-9544-11ea-81fa-bee3a8ecc8ac.png" />
 
                 </div>
                 <div className="main-container">

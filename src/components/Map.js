@@ -204,17 +204,19 @@ export class MapContainer extends React.Component {
 		this.map.setZoom(Math.round(zoom));
 	}
 
-	getMouseEvent(clickEvent){
-		// googlemap onClick などのコールバック関数に渡させるイベントオブジェクトの中にあるMouseEventを抽出
+	getUIEvent(clickEvent){
+		// googlemap onClick などのコールバック関数に渡させるイベントオブジェクトの中にあるUIEventを抽出
 		// property名が謎
+		// スマホではTouchEvent, マウスでは MouseEvent
 		for ( var p in clickEvent){
-			if ( clickEvent[p] instanceof  MouseEvent ) return clickEvent[p];
+			if ( clickEvent[p] instanceof  UIEvent ) return clickEvent[p];
 		}
 		return null;
 	}
 
 	onMouseDown(event) {
-		this.mouse_event = this.getMouseEvent(event);
+		this.mouse_event = this.getUIEvent(event);
+		//console.log('mousedown', this.mouse_event, event);
 	}
 
 	onMapReady(props,map){
@@ -249,7 +251,7 @@ export class MapContainer extends React.Component {
 			lat: event.latLng.lat(),
 			lng: event.latLng.lng()
 		};
-		console.log("right click", pos, event);
+		//console.log("right click", pos, event);
 		this.focusAt(pos);
 	}
 
@@ -258,7 +260,7 @@ export class MapContainer extends React.Component {
 			lat: event.latLng.lat(),
 			lng: event.latLng.lng()
 		};
-		if ( this.getMouseEvent(event).timeStamp - this.mouse_event.timeStamp > 300 ){
+		if ( this.mouse_event && this.getUIEvent(event).timeStamp - this.mouse_event.timeStamp > 300 ){
 			console.log("map long clicked", pos, event);
 			this.focusAt(pos);
 		}else{
@@ -268,12 +270,13 @@ export class MapContainer extends React.Component {
 	}
 
 	onMapZoomChanged(props,map,e){
-		console.log("zoom", e);
+		//console.log("zoom", e);
 	}
 
 
 	onBoundsChanged(props,map,idle=false){
 		var bounds = map.getBounds();
+		if ( !bounds ) return;
 		var ne = bounds.getNorthEast();
 		var sw = bounds.getSouthWest();
 		//console.log(ne.lat(), ne.lng(), sw.lat(), sw.lng());
