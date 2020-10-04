@@ -8,6 +8,7 @@ import * as Rect from "../script/Rectangle";
 import Data from "../script/DataStore";
 import pin_station from "../img/map_pin_station.svg";
 import pin_location from "../img/map_pin.svg";
+import {Polyline as PolyLineData} from "../script/Line";
 
 const VORONOI_COLOR = [
 	"#0000FF",
@@ -32,10 +33,7 @@ export class MapContainer extends React.Component {
 				position: null,
 				visible: false,
 			},
-			station_marker:{
-				position: null,
-				visible: false,
-			},
+			station_marker:[],
 			info_dialog:{
 				visible: false,
 				type: null,
@@ -194,18 +192,33 @@ export class MapContainer extends React.Component {
 
 	showPolyline(line){
 		if ( !line.has_details || !this.map) return;
+		var polyline = undefined;
+		var bounds = undefined;
+		if ( line.polyline_list ){
+			polyline = line.polyline_list;
+			bounds = line;
+		} else {
+			var data = new PolyLineData(line.station_list);
+			polyline = [data];
+			bounds = data.bounds;
+		}
 		this.setState(Object.assign({}, this.state, {
 			polyline_show: true,
-			polyline_list: line.polyline_list,
+			polyline_list: polyline,
 			high_voronoi_show: false,
 			voronoi_show: true,
+			station_marker: line.station_list.map(s => {
+				return {
+					position: s.position
+				}
+			})
 		}));
 		var center = {
-			lat: (line.south + line.north)/2,
-			lng: (line.east + line.west)/2
+			lat: (bounds.south + bounds.north)/2,
+			lng: (bounds.east + bounds.west)/2
 		};
 		var rect = this.map_ref.current.getBoundingClientRect();
-		var zoom = Math.floor(Math.log2(Math.min(360 / (line.north - line.south) * rect.width / 256, 180 / (line.east - line.west) * rect.height / 256)));
+		var zoom = Math.floor(Math.log2(Math.min(360 / (bounds.north - bounds.south) * rect.width / 256, 180 / (bounds.east - bounds.west) * rect.height / 256)));
 		this.map.panTo(center);
 		this.map.setZoom(zoom);
 		console.log('zoom to', zoom, center);
@@ -348,9 +361,7 @@ export class MapContainer extends React.Component {
 			clicked_marker: {
 				visible: false
 			},
-			station_marker: {
-				visible: false,
-			},
+			station_marker: [],
 			info_dialog: Object.assign({}, this.state.info_dialog, {
 				visible: false
 			}),
@@ -397,10 +408,9 @@ export class MapContainer extends React.Component {
 				visible: true,
 				position: pos
 			}, 
-			station_marker: {
-				visible: true,
+			station_marker: [{
 				position: station.position
-			},
+			}],
 			info_dialog: {
 				visible: true,
 				type: "station",
@@ -430,10 +440,9 @@ export class MapContainer extends React.Component {
 			clicked_marker: {
 				visible: false
 			},
-			station_marker: {
-				visible: true,
+			station_marker: [{
 				position: station.position,
-			},
+			}],
 			polyline_show: false,
 			high_voronoi_show: false,
 		}));
@@ -454,9 +463,7 @@ export class MapContainer extends React.Component {
 			clicked_marker: {
 				visible: false
 			},
-			station_marker: {
-				visible: false,
-			},
+			station_marker: [],
 			polyline_show: false,
 			high_voronoi_show: false,
 		}));
@@ -501,11 +508,13 @@ export class MapContainer extends React.Component {
 								position={this.state.clicked_marker.position}
 								icon={pin_location} >
 								</Marker>
-							<Marker
-								visible={this.state.station_marker.visible}
-								position={this.state.station_marker.position}
-								icon={pin_station} >
+							{this.state.station_marker.map( (marker,i) => (
+								<Marker
+									key={i}
+									position={marker.position}
+									icon={pin_station}>
 								</Marker>
+							))}
 							{this.state.voronoi_show ? this.state.voronoi.map( (s,i) => (
 								<Polygon
 									key={i}
