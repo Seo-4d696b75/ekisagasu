@@ -103,12 +103,12 @@ export class StationDialog extends React.Component {
 						) : null)}
 
 					</div>
-					<img
-						src={img_delete}
-						alt="close dialog"
-						className="Icon-action close"
-						onClick={this.onClosed.bind(this)} />
 					<div className="Button-container">
+						<img
+							src={img_delete}
+							alt="close dialog"
+							className="Icon-action close"
+							onClick={this.onClosed.bind(this)} /><br/>
 						<img
 							onClick={this.onShowVoronoi.bind(this, station)}
 							src={img_voronoi}
@@ -155,7 +155,7 @@ export class StationDialog extends React.Component {
 							<img
 								src={img_above}
 								alt="close radar"
-								className="Icon-action close-radar"
+								className="Icon-action"
 								onClick={this.onRadarClose.bind(this)} />
 						</div>
 						
@@ -224,12 +224,12 @@ export class LineDialog extends React.Component {
 
 
 					</div>
-					<img
-						src={img_delete}
-						alt="close dialog"
-						className="Icon-action close"
-						onClick={this.onClosed.bind(this)} />
 					<div className="Button-container">
+						<img
+							src={img_delete}
+							alt="close dialog"
+							className="Icon-action"
+							onClick={this.onClosed.bind(this)} />
 						<img
 							src={img_line}
 							alt="show polyline"
@@ -266,17 +266,18 @@ export class LineDialog extends React.Component {
 						) : (
 								<p>Now Loading...</p>
 							)}
+
+						<div className="Bottom-container">
+							<div className="Icon-action toggle">
+								<input type="checkbox" id="toggle-list" onChange={this.toggleStationList.bind(this)}></input>
+								<label className="toggle-button" htmlFor="toggle-list">
+								</label>
+
+							</div>
+						</div>
 					</div>
 
 				</CSSTransition>
-				<div className="Bottom-container stations">
-					<div className="Icon-action toggle">
-						<input type="checkbox" id="toggle-list" onChange={this.toggleStationList.bind(this)}></input>
-						<label className="toggle-button" htmlFor="toggle-list">
-						</label>
-
-					</div>
-				</div>
 			</div>
 		);
 

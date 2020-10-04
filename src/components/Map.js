@@ -6,6 +6,8 @@ import {StationService} from "../script/StationService";
 import {CSSTransition} from "react-transition-group";
 import * as Rect from "../script/Rectangle";
 import Data from "../script/DataStore";
+import pin_station from "../img/map_pin_station.svg";
+import pin_location from "../img/map_pin.svg";
 
 const VORONOI_COLOR = [
 	"#0000FF",
@@ -28,7 +30,11 @@ export class MapContainer extends React.Component {
 			},
 			clicked_marker:{
 				position: null,
-				visible: false
+				visible: false,
+			},
+			station_marker:{
+				position: null,
+				visible: false,
 			},
 			info_dialog:{
 				visible: false,
@@ -42,7 +48,7 @@ export class MapContainer extends React.Component {
 			worker_running: false,
 			polyline_show: false,
 			polyline_list: [],
-			radar_k: 18,
+			radar_k: Data.getData().radar_k,
 			screen_wide: false,
 		};
 		this.map_ref = React.createRef();
@@ -199,9 +205,10 @@ export class MapContainer extends React.Component {
 			lng: (line.east + line.west)/2
 		};
 		var rect = this.map_ref.current.getBoundingClientRect();
-		var zoom = Math.log2(1.0 * Math.min(360 / (line.north - line.south) * rect.width / 256, 180 / (line.east - line.west) * rect.height / 256));
+		var zoom = Math.floor(Math.log2(Math.min(360 / (line.north - line.south) * rect.width / 256, 180 / (line.east - line.west) * rect.height / 256)));
 		this.map.panTo(center);
-		this.map.setZoom(Math.round(zoom));
+		this.map.setZoom(zoom);
+		console.log('zoom to', zoom, center);
 	}
 
 	getUIEvent(clickEvent){
@@ -270,7 +277,7 @@ export class MapContainer extends React.Component {
 	}
 
 	onMapZoomChanged(props,map,e){
-		//console.log("zoom", e);
+		console.log("zoom", map.getZoom());
 	}
 
 
@@ -341,6 +348,9 @@ export class MapContainer extends React.Component {
 			clicked_marker: {
 				visible: false
 			},
+			station_marker: {
+				visible: false,
+			},
 			info_dialog: Object.assign({}, this.state.info_dialog, {
 				visible: false
 			}),
@@ -387,6 +397,10 @@ export class MapContainer extends React.Component {
 				visible: true,
 				position: pos
 			}, 
+			station_marker: {
+				visible: true,
+				position: station.position
+			},
 			info_dialog: {
 				visible: true,
 				type: "station",
@@ -416,6 +430,10 @@ export class MapContainer extends React.Component {
 			clicked_marker: {
 				visible: false
 			},
+			station_marker: {
+				visible: true,
+				position: station.position,
+			},
 			polyline_show: false,
 			high_voronoi_show: false,
 		}));
@@ -435,6 +453,9 @@ export class MapContainer extends React.Component {
 			},
 			clicked_marker: {
 				visible: false
+			},
+			station_marker: {
+				visible: false,
 			},
 			polyline_show: false,
 			high_voronoi_show: false,
@@ -464,6 +485,7 @@ export class MapContainer extends React.Component {
 							onReady={this.onMapReady.bind(this)}
 							onClick={this.onMapClicked.bind(this)}
 							onBounds_changed={this.onBoundsChanged.bind(this)}
+							onZoom_changed={this.onMapZoomChanged.bind(this)}
 							onDragstart={this.onMapDragStart.bind(this)}
 							onRightclick={this.onMapRightClicked.bind(this)}
 							onIdle={this.onMapIdle.bind(this)}
@@ -476,10 +498,14 @@ export class MapContainer extends React.Component {
 						>
 							<Marker
 								visible={this.state.clicked_marker.visible}
-								position={this.state.clicked_marker.position}>
-
-
-							</Marker>
+								position={this.state.clicked_marker.position}
+								icon={pin_location} >
+								</Marker>
+							<Marker
+								visible={this.state.station_marker.visible}
+								position={this.state.station_marker.position}
+								icon={pin_station} >
+								</Marker>
 							{this.state.voronoi_show ? this.state.voronoi.map( (s,i) => (
 								<Polygon
 									key={i}
@@ -511,6 +537,7 @@ export class MapContainer extends React.Component {
 									clickable={false}/>
 							)) : null}
 						</Map>
+						
 						<CSSTransition
 							in={this.state.info_dialog.visible}
 							className="Dialog-container"
