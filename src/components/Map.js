@@ -218,10 +218,13 @@ export class MapContainer extends React.Component {
 			lng: (bounds.east + bounds.west)/2
 		};
 		var rect = this.map_ref.current.getBoundingClientRect();
-		var zoom = Math.floor(Math.log2(Math.min(360 / (bounds.north - bounds.south) * rect.width / 256, 180 / (bounds.east - bounds.west) * rect.height / 256)));
+		var zoom = Math.floor(Math.log2(Math.min(
+			360 / (bounds.north - bounds.south) * rect.width / 256 * Math.cos(center.lat * Math.PI / 180),
+			360 / (bounds.east - bounds.west) * rect.height / 256 
+		)));
 		this.map.panTo(center);
 		this.map.setZoom(zoom);
-		console.log('zoom to', zoom, center);
+		console.log('zoom to', zoom, center, line);
 	}
 
 	getUIEvent(clickEvent){
@@ -492,7 +495,7 @@ export class MapContainer extends React.Component {
 							onReady={this.onMapReady.bind(this)}
 							onClick={this.onMapClicked.bind(this)}
 							onBounds_changed={this.onBoundsChanged.bind(this)}
-							onZoom_changed={this.onMapZoomChanged.bind(this)}
+							onZoomChanged={this.onMapZoomChanged.bind(this)}
 							onDragstart={this.onMapDragStart.bind(this)}
 							onRightclick={this.onMapRightClicked.bind(this)}
 							onIdle={this.onMapIdle.bind(this)}
