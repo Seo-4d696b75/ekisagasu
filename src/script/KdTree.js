@@ -119,14 +119,16 @@ export class StationKdTree{
 		this.service = null;
 	}
 
-	setSearchProperty(k,r){
-		this.k = k;
-		this.r = r;
-	}
-
-	updateLocation(position){
-		if (this.k < 1) {
-			return Promise.reject(`invalid k:${this.k}`);
+	/**
+	 * 指定した座標の近傍探索. k, r による探索範囲はorで解釈
+	 * @param {*} position 探索の中心
+	 * @param {*} k 中心からk番目に近い近傍まで探索
+	 * @param {*} r 中心からの距離r以内の近傍まで探索
+	 * @returns {Promise} resolve -> 近い順にソートされた近傍の配列
+	 */
+	updateLocation(position, k, r){
+		if (k < 1) {
+			return Promise.reject(`invalid k:${k}`);
 		} else if (!this.service) {
 			return Promise.reject('sevrvice not initialized');
 		} else if ( !this.root ) {
@@ -138,11 +140,11 @@ export class StationKdTree{
 			return Promise.resolve().then(() => {
 				this.position = position;
 				this.search_list = [];
-				return this.search(this.root);
+				return this.search(this.root, k, r);
 			}).then(() => {
 				this.current_station = this.search_list[0].station;
 				this.last_position = position;
-				console.log(`update done. k=${this.k} r=${this.r} time=${performance.now()-time}ms size:${this.search_list.length}`);
+				console.log(`update done. k=${k} r=${this.r} time=${performance.now()-time}ms size:${this.search_list.length}`);
 				return this.current_station;
 			});
 		}
@@ -155,7 +157,8 @@ export class StationKdTree{
 			return Promise.reject('tree root not initialized');
 		} else {
 			const time = performance.now();
-			return this.search_rect(this.root, rect, [], max).then( dst => {
+			const dst = [];
+			return this.search_rect(this.root, rect, dst, max).then( () => {
 				console.log(`update region done. time=${performance.now() - time}ms size:${dst.length}`);
 				return dst;
 			});
@@ -179,7 +182,7 @@ export class StationKdTree{
 		return Math.sqrt(lat*lat + lng*lng);
 	}
 
-	search(node){
+	search(node, k, r){
 		const div = {
 			value: null,
 			threshold: null
@@ -204,7 +207,7 @@ export class StationKdTree{
 					station: s
 				};
 				this.search_list.splice(index, 0, e);
-				if (size >= this.k && this.search_list[size].dist > this.r) {
+				if (size >= k && this.search_list[size].dist > r) {
 					this.search_list.pop();
 				}
 			}
@@ -214,15 +217,15 @@ export class StationKdTree{
 
 			var next = (div.value < div.threshold) ? node.left : node.right;
 			if (next) {
-				return this.search(next);
+				return this.search(next, k, r);
 			}
 		}).then(() => {
 			var value = div.value;
 			var th = div.threshold;
 			var next = (value < th) ? node.right : node.left;
 			var list = this.search_list;
-			if (next && Math.abs(value - th) < Math.max(list[list.length - 1].dist, this.r)) {
-				return this.search(next);
+			if (next && Math.abs(value - th) < Math.max(list[list.length - 1].dist, r)) {
+				return this.search(next, k, r);
 			}
 			
 		});
@@ -230,11 +233,12 @@ export class StationKdTree{
 
 	search_rect(node, rect, dst, max){
 		return node.get().then( station => {
-			if ( this.service.inside_rect(station.position, rect) ){
-				dst.push(station);
-			}
+			
 			if ( max && dst.length >= max ){
 				return;
+			}
+			if ( this.service.inside_rect(station.position, rect) ){
+				dst.push(station);
 			}
 			var tasks = [];
 			// check left
@@ -252,8 +256,6 @@ export class StationKdTree{
 				tasks.push(this.search_rect(node.right, rect, dst, max));
 			}
 			return Promise.all(tasks);
-		}).then( () => {
-			return dst;
 		});
 	}
 	

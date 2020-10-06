@@ -3,8 +3,8 @@ import {StationKdTree} from "./KdTree";
 import {Station} from "./Station";
 import {Line, Polyline} from  "./Line";
 
-const TASK_STATIONS = "all-stations";
-const TASK_UPDATE = "update-location";
+const TAG_STATIONS = "all-stations";
+const TAG_SEGMENT_PREFIX = "station-segment:";
 
 export class StationService {
 
@@ -12,6 +12,8 @@ export class StationService {
 
 		this.stations = new Map();
 		this.lines = new Map();
+
+		// 同一データの非同期取得が重ならないようにスケジューリングする
 		this.tasks = new Map();
 		return new StationKdTree(this).initialize("root").then( tree =>{
 			this.tree = tree;
@@ -44,34 +46,26 @@ export class StationService {
 	}
 
 	update_location(position,k,r){
-		var task = this.tasks.get(TASK_UPDATE);
-		if ( !task ) task = Promise.resolve();
-		task = task.then( () => {
-			if ( !k || k <= 0 ) k = 1;
-			if ( !r || r < 0 ) r = 0;
-			this.tree.setSearchProperty(k,r);
-			return this.tree.updateLocation(position);
-		});
-		this.tasks.set(TASK_UPDATE, task);
-		return task;
+		if ( !k || k <= 0 ) k = 1;
+		if ( !r || r < 0 ) r = 0;
+		return this.tree.updateLocation(position, k, r);
 	}
 
 	update_rect(rect, max){
-		var task = this.tasks.get(TASK_UPDATE);
-		if ( !task ) task = Promise.resolve();
-		task = task.then( () => {
-			return this.tree.updateRectRegion(rect, max);
-		});
-		this.tasks.set(TASK_UPDATE, task);
-		return task;
+		if ( max < 1 ) max = 1;
+		return this.tree.updateRectRegion(rect, max);
 	}
 
 	get_station(code, promise=false){
 		if ( promise ){
 			var s = this.stations.get(code);
 			if ( s ) return Promise.resolve(s);
-			var task = this.tasks.get(TASK_STATIONS);
-			if ( !task ) {
+			var task = this.tasks.get(TAG_STATIONS);
+			if ( task && task instanceof Promise ){
+				return task.then( () => {
+					return this.get_station(code, false);
+				});
+			} else {
 				task = axios.get('https://raw.githubusercontent.com/Seo-4d696b75/station_database/master/out/station.json').then(res => {
 					res.data.forEach( item => {
 						var code = item['code'];
@@ -79,12 +73,12 @@ export class StationService {
 							this.stations.set(code, new Station(item));
 						}
 					});
+					this.tasks.set(TAG_STATIONS, null);
+					return this.get_station(code, false);
 				});
-				this.tasks.set(TASK_STATIONS, task);
+				this.tasks.set(TAG_STATIONS, task);
+				return task;
 			}
-			return task.then( () => {
-				return this.get_station(code, false);
-			});
 		}else{
 			return this.stations.get(code);
 		}
@@ -128,7 +122,12 @@ export class StationService {
 	}
 
 	get_tree_segment(name){
-		return axios.get(`https://raw.githubusercontent.com/Seo-4d696b75/station_database/master/out/tree/${name}.json`).then(res => {
+		const tag = `${TAG_SEGMENT_PREFIX}${name}`;
+		var task  = this.tasks.get(tag);
+		if ( task && task instanceof Promise ){
+			return task;
+		}
+		task = axios.get(`https://raw.githubusercontent.com/Seo-4d696b75/station_database/master/out/tree/${name}.json`).then(res => {
 			console.log("tree-segment", name, res.data); 
 			const data = res.data;
 			data.node_list.filter(e => {
@@ -137,8 +136,11 @@ export class StationService {
 				var s = new Station(e);
 				this.stations.set(s.code, s);
 			});
+			this.tasks.set(tag, null);
 			return data;
 		});
+		this.tasks.set(tag, task);
+		return task;
 	}
 
 	measure(pos1,pos2){
