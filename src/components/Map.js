@@ -8,7 +8,7 @@ import * as Rect from "../script/Rectangle";
 import Data from "../script/DataStore";
 import pin_station from "../img/map_pin_station.svg";
 import pin_location from "../img/map_pin.svg";
-import {Polyline as PolyLineData} from "../script/Line";
+import * as Utils from "../script/Utils";
 
 const VORONOI_COLOR = [
 	"#0000FF",
@@ -124,16 +124,17 @@ export class MapContainer extends React.Component {
 		}
 		const worker = new Worker(`${process.env.PUBLIC_URL}/VoronoiWorker.js`);
 		const service = this.service;
+		// error callback
 		worker.addEventListener('error', err => {
 			console.error('error', err);
 			worker.terminate();
 		});
+		// register callback so that this process can listen message from worker
 		worker.addEventListener('message', messaage => {
 			var data = JSON.parse(messaage.data);
 			if ( data.type === 'points' ){
 				// point provide
-				Promise.resolve(data.code).then(code => {
-					var s = service.get_station(code);
+				service.get_station(data.code, true).then( s => {
 					return Promise.all(
 						s.next.map(code => service.get_station(code, true))
 					);
@@ -163,6 +164,14 @@ export class MapContainer extends React.Component {
 				this.setState(Object.assign({}, this.state, {
 					worker_running: false,
 				}));
+				this.worker = null;
+				if ( this.map ){
+					var rect = this.map_ref.current.getBoundingClientRect();
+					var bounds = Utils.get_bounds(this.state.high_voronoi[this.state.radar_k-1]);
+					var [center, zoom] = Utils.get_zoom_property(bounds, rect.width, rect.height, ZOOM_TH, station.position, 100);
+					this.map.panTo(center);
+					this.map.setZoom(zoom);
+				}
 			}
 		});
 
@@ -180,6 +189,7 @@ export class MapContainer extends React.Component {
 			polyline_show: false,
 			worker_running: true,
 		}));
+		this.worker = worker;
 		worker.postMessage(JSON.stringify({
 			type: 'start',
 			container: container,
@@ -198,9 +208,9 @@ export class MapContainer extends React.Component {
 			polyline = line.polyline_list;
 			bounds = line;
 		} else {
-			var data = new PolyLineData(line.station_list);
+			var data = Utils.get_bounds(line.station_list);
 			polyline = [data];
-			bounds = data.bounds;
+			bounds = data;
 		}
 		this.setState(Object.assign({}, this.state, {
 			polyline_show: true,
@@ -213,15 +223,9 @@ export class MapContainer extends React.Component {
 				}
 			})
 		}));
-		var center = {
-			lat: (bounds.south + bounds.north)/2,
-			lng: (bounds.east + bounds.west)/2
-		};
 		var rect = this.map_ref.current.getBoundingClientRect();
-		var zoom = Math.floor(Math.log2(Math.min(
-			360 / (bounds.north - bounds.south) * rect.width / 256 * Math.cos(center.lat * Math.PI / 180),
-			360 / (bounds.east - bounds.west) * rect.height / 256 
-		)));
+		var [center, zoom] = Utils.get_zoom_property(bounds, rect.width, rect.height);
+	
 		this.map.panTo(center);
 		this.map.setZoom(zoom);
 		console.log('zoom to', zoom, center, line);
@@ -360,10 +364,17 @@ export class MapContainer extends React.Component {
 	}
 
 	onInfoDialogClosed(){
+		// if any worker is running, terminate it
+		if ( this.state.worker_running && this.worker ){
+			this.worker.terminate();
+			this.worker = null;
+			console.log("worker terminated");
+		}
 		this.setState(Object.assign({}, this.state, {
 			clicked_marker: {
 				visible: false
 			},
+			worker_running: false,
 			station_marker: [],
 			info_dialog: Object.assign({}, this.state.info_dialog, {
 				visible: false

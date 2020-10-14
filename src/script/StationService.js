@@ -1,7 +1,8 @@
 import axios from "axios";
 import {StationKdTree} from "./KdTree";
 import {Station} from "./Station";
-import {Line, Polyline} from  "./Line";
+import {Line} from  "./Line";
+import * as Utils from "./Utils";
 
 const TAG_STATIONS = "all-stations";
 const TAG_SEGMENT_PREFIX = "station-segment:";
@@ -105,7 +106,7 @@ export class StationService {
 					return s;
 				});
 				if (data.polyline_list) {
-					line.polyline_list = data["polyline_list"].map(d => new Polyline(d));
+					line.polyline_list = data["polyline_list"].map(d => Utils.parse_polyline(d));
 					line.north = data['north'];
 					line.south = data['south'];
 					line.east = data['east'];
