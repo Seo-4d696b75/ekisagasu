@@ -2,53 +2,23 @@
 
 <img src="https://user-images.githubusercontent.com/25225028/81793250-145a5300-9544-11ea-81fa-bee3a8ecc8ac.png" height="200"><img src="https://user-images.githubusercontent.com/25225028/76631346-e7f67a80-6584-11ea-9f6b-5e8885887363.png" height="200">
 
-位置情報ゲーム「駅メモ！」の支援ツールサイト
+位置情報ゲーム「駅メモ！」の支援ツールサイト  
 
-## 駅メモとは？
-全国の鉄道駅の座標位置を対象にした位置ゲーであり、ユーザは現在地から最も近い駅へアクセスできます。しかし他の位置ゲーと異なり、プレイ画面で現在位置が地図上に描画されることもなく、現在位置からアクセスできるスポット（ここでは駅）もほぼ表示されず、正直プレイしにくい。このような動機より、アクセスできる駅の範囲を地図上に視覚化するツールが有志によって多く開発されてきました。
+<img src="https://user-images.githubusercontent.com/25225028/81814521-dbca7180-9563-11ea-8c8d-5367ba05e2ce.png" height="300"/>  
 
-## 何が出来るの？
+駅や路線の役立つ情報が見つかる！駅や路線のデータを確認したり，チェックインする駅やレーダーでアクセスできる範囲をGoogleMap上で視覚化します．
+  
+- [アプリを使う](https://seo-4d696b75.github.io/ekisagasu/)
+- [アプリの詳細](https://seo-4d696b75.github.io/ekisagasu/#/help)
 
-- チェックインできる駅の範囲を地図上に表示する  
-  
-  <img src="https://user-images.githubusercontent.com/25225028/81809751-d1f14000-955c-11ea-80e3-c3b0108a0a24.png" width="300"><br>
-  アプリのデフォルトの表示画面です。  
-  
-- 駅の情報を表示する  
-  
-  地図をタップすると、その位置からチェックインできる駅の情報を表示します。  
-  <img src="https://user-images.githubusercontent.com/25225028/81813802-e33d4b00-9562-11ea-8cf2-33a1bb51cec1.png" width="300"><br>
-  
-- 駅からレーダーでアクセスできる駅一覧を表示する  
-  
-  駅情報のダイアログにおいて、<img width="24" alt="radar" src="https://user-images.githubusercontent.com/25225028/81815235-b5590600-9564-11ea-9ba1-a5f8e655a7df.png">アイコンをクリックすると、その駅から近い順に一覧表示します。  
-  <img src="https://user-images.githubusercontent.com/25225028/81813926-0a941800-9563-11ea-95d8-51771d34b221.png" width="300"><br>
-  
-- 任意の地点からレーダーでアクセスできる駅一覧を表示する  
-  
-  選択したい地点を右クリック（スマホではロングタップ）すると、選択地点の最寄り駅に関するダイアログが開きます。そのダイアログの<img width="24" alt="radar" src="https://user-images.githubusercontent.com/25225028/81815235-b5590600-9564-11ea-9ba1-a5f8e655a7df.png">アイコンをクリックします。  
-  <img src="https://user-images.githubusercontent.com/25225028/81814045-331c1200-9563-11ea-89dc-b9b7ba270e24.png" width="300"><br>
+## 技術スタック
+<img src="https://user-images.githubusercontent.com/25225028/96458500-f5cb5700-125b-11eb-901c-1aaf0653f999.jpg" height="100"/><img src="https://user-images.githubusercontent.com/25225028/96459186-c9640a80-125c-11eb-9871-5f9dc485dab4.png" height="100"/><img src="https://user-images.githubusercontent.com/25225028/96458574-0bd91780-125c-11eb-8307-05d60bf3f5f0.png" height="100"/><img src="https://user-images.githubusercontent.com/25225028/96458641-1b586080-125c-11eb-80dd-65ce67712f81.png" height="100"/>
 
-- 駅へレーダでアクセスできる範囲を表示する  
-  
-  対象の駅のダイアログにおいて、<img width="24" alt="voronoi" src="https://user-images.githubusercontent.com/25225028/81815691-40d29700-9565-11ea-810b-504c11d0826d.png">アイコンをクリックするとアクセス範囲を表示します。内側から描画される各ポリゴンがレーダーで１,２,３...番目にアクセスできる範囲を表します。つまり一番外側の黒いポリゴンの内側なら、その駅までレーダーが届きます。   
-  <img src="https://user-images.githubusercontent.com/25225028/81814170-652d7400-9563-11ea-9c7c-07ecd69732ef.png" width="300"><br>
-  
-- 路線情報の確認  
-  
-  駅情報のダイアログでは、その駅が登録されている路線一覧が表示されます。その各項目をクリックすると路線情報のダイアログが開きます。  
-  <img src="https://user-images.githubusercontent.com/25225028/81814286-93ab4f00-9563-11ea-956b-9497e9b7eda4.png" height="240">
-  <img src="https://user-images.githubusercontent.com/25225028/81814303-98700300-9563-11ea-88aa-6e8a2c4896cb.png" height="240"><br>
-  
-  登録駅一覧に表示される各駅をクリックすると、その駅のダイアログが開きます。  
-    
-- レスポンシブなデザイン  
-  
-  PC、スマホ、タブレットなど環境の違いによる画面サイズに合わせ表示デザインを最適化します。  
-  <img src="https://user-images.githubusercontent.com/25225028/81814497-d40acd00-9563-11ea-9e4a-1a85a70a633b.png" height="180">
-  <img src="https://user-images.githubusercontent.com/25225028/81814521-dbca7180-9563-11ea-8c8d-5367ba05e2ce.png" height="180"><br>
+- React + JavaScript による高速開発
+- Maps JavaScript API による地図表示機能
+- ホスティング・その他静的コンテンツを GitHub Pages で配信
 
-### 使用データ
+## 使用データ
 このwebアプリで使用しているデータは[このリポジトリ](https://github.com/Seo-4d696b75/station_database)で管理されています。
 
 # 開発環境
