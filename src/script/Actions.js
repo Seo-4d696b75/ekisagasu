@@ -6,3 +6,17 @@ export function setRadarK(value){
 		value: value,
 	});
 }
+
+export function setWatchCurrentPosition(value){
+	dispatcher.dispatch({
+		type: "watch_position",
+		value: value,
+	});
+}
+
+export function setCurrentPosition(pos){
+	dispatcher.dispatch({
+		type: "current_position",
+		value: pos,
+	});
+}

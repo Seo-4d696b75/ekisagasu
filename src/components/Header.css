@@ -105,7 +105,7 @@
 }
 
 
-.Icon-action{
+.Action-close{
 	width: 30px;
 	height: 30px;
 	position: absolute;
@@ -113,6 +113,6 @@
 	right: 10px;
 }
 
-.Icon-action:hover {
+.Action-close:hover {
 	filter: drop-shadow(2px 2px 2px grey);
 }

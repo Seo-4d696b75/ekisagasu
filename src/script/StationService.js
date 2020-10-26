@@ -2,14 +2,38 @@ import axios from "axios";
 import {StationKdTree} from "./KdTree";
 import {Station} from "./Station";
 import {Line} from  "./Line";
+import Data from "./DataStore";
 import * as Utils from "./Utils";
+import * as Actions from "./Actions";
 
 const TAG_STATIONS = "all-stations";
 const TAG_SEGMENT_PREFIX = "station-segment:";
 
 export class StationService {
 
+	constructor(){
+		this.initialized = false;
+
+		// geolocation
+		this.position_options = {
+			timeout: 5000,
+			maximumAge: 100,
+			enableHighAccuracy: false,
+		};
+	}
+
 	initialize(){
+		if ( this.initialized ) {
+			return Promise.resolve(this);
+		}
+
+		
+		if ( Data.getData().watch_position ){
+			this.watch_current_position(true);
+		}
+		Data.on("onWatchPositionChanged", this.watch_current_position.bind(this));
+		
+
 
 		this.stations = new Map();
 		this.lines = new Map();
@@ -35,15 +59,64 @@ export class StationService {
 				}
 			});
 			console.log('service initialized', this);
+			this.initialized = true;
 			return this;
 		})
 	}
 
 	release(){
+		this.initialized = false;
 		this.tree.release();
 		this.stations.clear();
 		this.tasks.clear();
+		this.watch_current_position(false);
+		Data.removeAllListeners("onWatchPositionChanged");
 		console.log('service released');
+	}
+
+	watch_current_position(enable){
+		if ( enable ){
+			if ( navigator.geolocation ){
+				if ( this.navigator_id ){
+					console.log("already set");
+					return;
+				}
+				this.navigator_id = navigator.geolocation.watchPosition(
+					(pos) => {
+						Actions.setCurrentPosition(pos);
+					},
+					(err) => {
+						console.log(err);
+					},
+					this.position_options
+				);
+			} else {
+				console.log("this device does not support Geolocation");
+			}
+		} else {
+			if ( this.navigator_id ){
+				navigator.geolocation.clearWatch(this.navigator_id);
+				this.navigator_id = null;
+			}
+		}
+	}
+
+	get_current_position(){
+		if ( navigator.geolocation ){
+			return new Promise((resolve, reject) => {
+				navigator.geolocation.getCurrentPosition(
+					(pos) => {
+						resolve(pos);
+					},
+					(err) => {
+						reject(err)
+					},
+					this.position_options
+				);
+			});
+		} else {
+			return Promise.reject("this device does not support Geolocation")
+		}
 	}
 
 	update_location(position,k,r){
@@ -173,3 +246,6 @@ export class StationService {
 	}
 
 }
+
+const service = new StationService();
+export default service;

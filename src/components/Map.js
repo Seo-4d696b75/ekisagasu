@@ -1,8 +1,8 @@
-import {GoogleApiWrapper, Map, Marker, Polygon, Polyline} from "google-maps-react";
+import {GoogleApiWrapper, Map, Marker, Polygon, Polyline, Circle} from "google-maps-react";
 import React from "react";
 import "./Map.css";
 import {StationDialog, LineDialog} from "./InfoDialog";
-import {StationService} from "../script/StationService";
+import StationService from "../script/StationService";
 import {CSSTransition} from "react-transition-group";
 import * as Rect from "../script/Rectangle";
 import Data from "../script/DataStore";
@@ -25,10 +25,9 @@ export class MapContainer extends React.Component {
 	constructor(){
 		super();
 		this.state = {
-			current_position:{
-				lat: null,
-				lng: null
-			},
+			show_current_position: Data.getData().watch_position,
+			current_position: null,
+			current_accuracy: 0,
 			clicked_marker:{
 				position: null,
 				visible: false,
@@ -54,16 +53,15 @@ export class MapContainer extends React.Component {
 
 	componentDidMount(){
 		
-		new StationService().initialize().then( service => {
-			this.service = service;
+		StationService.initialize().then( service => {
 			if ( this.map ){
 				this.onBoundsChanged(null, this.map, true);
 			}
 		});
 		// set callback invoked when radar 'k' is changed
-		this.radarChangedCallback = this.onRadarKChanged.bind(this);
-		Data.on("onRadarKChanged", this.radarChangedCallback);
-		this.onRadarKChanged();
+		Data.on("onRadarKChanged", this.onRadarKChanged.bind(this));
+		Data.on("onCurrentPositionChanged", this.onCurrentPositionChanged.bind(this));
+		Data.on("onWatchPositionChanged", this.showCurrentPosition.bind(this));
 		// set callback invoked when screen resized
 		this.screenResizedCallback = this.onScreenResized.bind(this);
 		window.addEventListener("resize", this.screenResizedCallback);
@@ -71,21 +69,22 @@ export class MapContainer extends React.Component {
 	}
 
 	componentWillUnmount(){
-		this.service.release();
+		StationService.release();
 		this.map = null;
-		Data.removeListener("onRadarKChanged", this.radarChangedCallback);
+		Data.removeAllListeners("onRadarKChanged");
+		Data.removeAllListeners("onCurrentPositionChanged");
+		Data.removeListener("onWatchPositionChanged")
 		window.removeEventListener("resize", this.screenResizedCallback);
 	}
 
-	onRadarKChanged(){
+	onRadarKChanged(k){
 		var type = this.state.info_dialog.type;
-		var k = Data.getData().radar_k;
 		if ( type && type === "station" ){
 			var pos = this.state.info_dialog.station.position;
 			if ( this.state.info_dialog.location ){
 				pos = this.state.info_dialog.location.pos;
 			}
-			this.service.update_location(pos, k, 0).then( () => {
+			StationService.update_location(pos, k, 0).then( () => {
 				this.setState(Object.assign({}, this.state, {
 					radar_k: k,
 					info_dialog: Object.assign({}, this.state.info_dialog, {
@@ -98,6 +97,22 @@ export class MapContainer extends React.Component {
 				radar_k: k
 			}));
 		}
+	}
+
+	onCurrentPositionChanged(pos){
+		this.setState(Object.assign({}, this.state, {
+			current_position: {
+				lat: pos.coords.latitude,
+				lng: pos.coords.longitude
+			},
+			current_accuracy: pos.coords.accuracy,
+		}));
+	}
+
+	showCurrentPosition(enable){
+		this.setState(Object.assign({}, this.state, {
+			show_current_position: enable,
+		}));
 	}
 
 	onScreenResized(){
@@ -123,7 +138,7 @@ export class MapContainer extends React.Component {
 			return;
 		}
 		const worker = new Worker(`${process.env.PUBLIC_URL}/VoronoiWorker.js`);
-		const service = this.service;
+		const service = StationService;
 		// error callback
 		worker.addEventListener('error', err => {
 			console.error('error', err);
@@ -253,23 +268,23 @@ export class MapContainer extends React.Component {
 		this.map.setOptions({
 			// this option can not be set via props in google-maps-react
 			mapTypeControlOptions: {
-				position: this.props.google.maps.ControlPosition.TOP_RIGHT
+				position: this.props.google.maps.ControlPosition.TOP_RIGHT,
+				style: this.props.google.maps.MapTypeControlStyle.DROPDOWN_MENU
 			}
 		});
-		navigator.geolocation.getCurrentPosition(
-			(pos) => {
-				this.setState(Object.assign({}, this.state, {
-					current_position: {
-						lat: pos.coords.latitude,
-						lng: pos.coords.longitude
-					}
-				}));
-				console.log("current position", pos.coords);
-			},
-			(err) => {
-				console.log(err);
-			}
-		);
+		StationService.get_current_position().then(pos => {
+			var latlng = {
+				lat: pos.coords.latitude,
+				lng: pos.coords.longitude
+			};
+			this.map.setCenter(latlng);
+			this.setState(Object.assign({}, this.state, {
+				current_position: latlng,
+			}));
+		}).catch(err => {
+			console.log(err);
+		});
+
 	}
 
 	onMapRightClicked(props,map,event){
@@ -314,7 +329,7 @@ export class MapContainer extends React.Component {
 			east: ne.lng()
 		};
 		if ( this.solved_bounds && !idle){
-			var inside = this.service.inside_rect(rect, this.solved_bounds);
+			var inside = StationService.inside_rect(rect, this.solved_bounds);
 			var width1 = rect.east - rect.west;
 			var height1 = rect.north - rect.south;
 			var width2 = this.solved_bounds.east - this.solved_bounds.west;
@@ -334,7 +349,7 @@ export class MapContainer extends React.Component {
 
 	updateBounds(rect){
 		//console.log("updateBounds", rect);
-		if ( this.service ){
+		if ( StationService.initialized ){
 			const margin_width = Math.min(rect.east - rect.west, 0.5);
 			const margin_height = Math.min(rect.north - rect.south, 0.5);
 			const bounds = {
@@ -345,7 +360,7 @@ export class MapContainer extends React.Component {
 			};
 			const zoom = this.map.getZoom();
 			const limit = zoom < ZOOM_TH ? VORONOI_SIZE_TH : undefined; 
-			this.service.update_rect(bounds, limit).then( list => {
+			StationService.update_rect(bounds, limit).then( list => {
 				this.setState(Object.assign({}, this.state, {
 					voronoi: list,
 					voronoi_show: !this.state.high_voronoi_show && (zoom >= ZOOM_TH || list.length < VORONOI_SIZE_TH),
@@ -386,16 +401,18 @@ export class MapContainer extends React.Component {
 	}
 
 	focusAt(pos){
+		if ( !StationService.initialized ) return;
 		if ( this.state.high_voronoi_show ) return;
-		this.service.update_location(pos,this.state.radar_k,0).then( s => {
+		StationService.update_location(pos,this.state.radar_k,0).then( s => {
 			this.showPosition(pos,s);
 		});
 		
 	}
 
 	focusAtNearestStation(pos){
+		if ( !StationService.initialized ) return;
 		if (this.state.high_voronoi_show) return;
-		this.service.update_location(pos, this.state.radar_k,0).then( s => {
+		StationService.update_location(pos, this.state.radar_k,0).then( s => {
 			console.log("update location", s);
 			this.showStation(s);
 		});
@@ -403,11 +420,11 @@ export class MapContainer extends React.Component {
 
 	makeRadarList(pos,k){
 		if ( !k ) k = this.state.radar_k;
-		return this.service.tree.getNearStations(k).map(s => {
+		return StationService.tree.getNearStations(k).map(s => {
 			return {
 				station: s,
-				dist: this.service.measure(s.position, pos),
-				lines: s.lines.map(code => this.service.get_line(code).name).join(' '),
+				dist: StationService.measure(s.position, pos),
+				lines: s.lines.map(code => StationService.get_line(code).name).join(' '),
 			};
 		});
 	}
@@ -430,10 +447,10 @@ export class MapContainer extends React.Component {
 				type: "station",
 				station: station,
 				radar_list: this.makeRadarList(pos),
-				prefecture: this.service.get_prefecture(station.prefecture),
+				prefecture: StationService.get_prefecture(station.prefecture),
 				location: {
 					pos: pos,
-					dist: this.service.measure(station.position, pos)
+					dist: StationService.measure(station.position, pos)
 				}
 			},
 			polyline_show: false,
@@ -448,8 +465,8 @@ export class MapContainer extends React.Component {
 				type: "station",
 				station: station,
 				radar_list: this.makeRadarList(station.position),
-				prefecture: this.service.get_prefecture(station.prefecture),
-				lines: station.lines.map( code => this.service.get_line(code)),
+				prefecture: StationService.get_prefecture(station.prefecture),
+				lines: station.lines.map( code => StationService.get_line(code)),
 			},
 			clicked_marker: {
 				visible: false
@@ -481,7 +498,7 @@ export class MapContainer extends React.Component {
 			polyline_show: false,
 			high_voronoi_show: false,
 		}));
-		this.service.get_line_detail(line.code).then( l => {
+		StationService.get_line_detail(line.code).then( l => {
 			this.setState(Object.assign({}, this.state, {
 				info_dialog: {
 					visible: true,
@@ -501,7 +518,6 @@ export class MapContainer extends React.Component {
 						<Map className='Map' 
 							google={this.props.google}
 							zoom={14}
-							center={this.state.current_position}
 							initialCenter={{ lat: 35.681236, lng: 139.767125 }}
 							onReady={this.onMapReady.bind(this)}
 							onClick={this.onMapClicked.bind(this)}
@@ -517,6 +533,23 @@ export class MapContainer extends React.Component {
 							mapTypeControl={true}
 
 						>
+							{this.state.show_current_position && this.state.current_position ? (
+							<Marker
+								visible={true}
+								position={this.state.current_position}></Marker>
+							) : null}
+							{this.state.show_current_position && this.state.current_position ? (
+
+							<Circle
+								visible={this.state.current_accuracy > 1}
+								center={this.state.current_position}
+								radius={this.state.current_accuracy}
+								strokeColor="#0088ff"
+								strokeOpacity={0.8}
+								strokeWeight={1}
+								fillColor="#0088ff"
+								fillOpacity={0.2}></Circle>
+							) : null}
 							<Marker
 								visible={this.state.clicked_marker.visible}
 								position={this.state.clicked_marker.position}

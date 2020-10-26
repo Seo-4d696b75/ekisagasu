@@ -6,7 +6,9 @@ class DataStore extends EventEmitter {
 	constructor(){
 		super();
 		this.data = {
-			radar_k: 18
+			radar_k: 18,
+			watch_position: false,
+			current_position: null,
 		};
 	}
 
@@ -22,7 +24,22 @@ class DataStore extends EventEmitter {
 				if ( action.value > 20 ) action.value = 20;
 				if ( action.value !== this.data.radar_k ){
 					this.data.radar_k = action.value;
-					this.emit("onRadarKChanged");
+					this.emit("onRadarKChanged", this.data.radar_k);
+				}
+				break;
+			}
+			case "watch_position": {
+				var bool = !!action.value;
+				if ( this.data.watch_position !== bool ){
+					this.data.watch_position = bool;
+					this.emit("onWatchPositionChanged", bool);
+				}
+				break;
+			}
+			case "current_position": {
+				if ( this.data.current_position !== action.value ){
+					this.data.current_position = action.value;
+					this.emit("onCurrentPositionChanged", action.value);
 				}
 				break;
 			}

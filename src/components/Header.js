@@ -95,7 +95,7 @@ export default class Header extends React.Component {
 							<img
 								src={img_delete}
 								alt="close dialog"
-								className="Icon-action close"
+								className="Action-close"
 								onClick={this.closeSetting.bind(this)} />
 						</div>
 					</div>
