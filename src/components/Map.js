@@ -106,6 +106,7 @@ export class MapContainer extends React.Component {
 				lng: pos.coords.longitude
 			},
 			current_accuracy: pos.coords.accuracy,
+			current_heading: pos.coords.heading,
 		}));
 	}
 
@@ -535,20 +536,45 @@ export class MapContainer extends React.Component {
 						>
 							{this.state.show_current_position && this.state.current_position ? (
 							<Marker
-								visible={true}
-								position={this.state.current_position}></Marker>
+								position={this.state.current_position}
+								icon={{
+									path: this.props.google.maps.SymbolPath.CIRCLE,
+									fillColor: "#154bb6",
+									fillOpacity: 1.0,
+									strokeColor: "white",
+									strokeWeight: 1.2,
+									scale: 8,
+								}}></Marker>
 							) : null}
+							{this.state.show_current_position 
+								&& this.state.current_position
+								&& this.state.current_heading
+								&& !isNaN(this.state.current_heading) ? (
+								<Marker
+									position={this.state.current_position}
+									icon={{
+										//url: require("../img/direction_pin.svg"),
+										anchor: new this.props.google.maps.Point(64, 64),
+										path: "M 44 36 A 40 40 0 0 1 84 36 L 64 6 Z",
+										fillColor: "#154bb6",
+										fillOpacity: 1.0,
+										strokeColor: "white",
+										strokeWeight: 1.2,
+										scale: 0.3,
+										rotation: this.state.current_heading,
+									}}></Marker>
+								) : null}
 							{this.state.show_current_position && this.state.current_position ? (
-
 							<Circle
-								visible={this.state.current_accuracy > 1}
+								visible={this.state.current_accuracy > 10}
 								center={this.state.current_position}
 								radius={this.state.current_accuracy}
 								strokeColor="#0088ff"
 								strokeOpacity={0.8}
 								strokeWeight={1}
 								fillColor="#0088ff"
-								fillOpacity={0.2}></Circle>
+								fillOpacity={0.2}
+								clickable={false}></Circle>
 							) : null}
 							<Marker
 								visible={this.state.clicked_marker.visible}

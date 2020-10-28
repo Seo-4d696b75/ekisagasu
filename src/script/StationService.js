@@ -28,11 +28,20 @@ export class StationService {
 		}
 
 		
-		if ( Data.getData().watch_position ){
+		var data = Data.getData();
+		this.position_options.enableHighAccuracy = data.high_accuracy;
+		if ( data.watch_position ){
 			this.watch_current_position(true);
 		}
 		Data.on("onWatchPositionChanged", this.watch_current_position.bind(this));
-		
+		Data.on("onPositionAccuracyChanged", value => {
+			console.log("position accuracy changed", value);
+			this.position_options.enableHighAccuracy = value;
+			if ( this.navigator_id ){
+				this.watch_current_position(false);
+				this.watch_current_position(true);
+			}
+		});
 
 
 		this.stations = new Map();
@@ -71,6 +80,7 @@ export class StationService {
 		this.tasks.clear();
 		this.watch_current_position(false);
 		Data.removeAllListeners("onWatchPositionChanged");
+		Data.removeAllListeners("onPositionAccuracyChanged");
 		console.log('service released');
 	}
 
@@ -90,6 +100,7 @@ export class StationService {
 					},
 					this.position_options
 				);
+				console.log("start watching position", this.position_options);
 			} else {
 				console.log("this device does not support Geolocation");
 			}
@@ -97,6 +108,7 @@ export class StationService {
 			if ( this.navigator_id ){
 				navigator.geolocation.clearWatch(this.navigator_id);
 				this.navigator_id = null;
+				console.log("stop watching position");
 			}
 		}
 	}

@@ -49,8 +49,8 @@
 	position: absolute;
 	top: 40px;
 	right: 0px;
-	width: 200px;
-	height: 150px;
+	width: 240px;
+	height: 220px;
 	padding: 10px;
 	pointer-events: none;
 	z-index: 10;
@@ -63,6 +63,7 @@
 	height: 100%;
 	color:grey;
 	padding: 5px;
+	padding-top: 20px;
 	background-color: rgba(255,255,255,0.9);
 	border-radius: 4px 4px 4px 4px;
 	box-shadow: 2px 2px 4px grey;
@@ -94,8 +95,9 @@
 }
 
 .Setting-title{
-	padding: 15px;
+	padding: 8px;
 	width: 100%;
+	font-size: small;
 	text-align: start;
 }
 
@@ -115,4 +117,72 @@
 
 .Action-close:hover {
 	filter: drop-shadow(2px 2px 2px grey);
+}
+
+.toggle-input {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  opacity: 0;
+  cursor: pointer;
+	display: none;
+}
+
+.toggle-label {
+  width: 75px;
+  height: 42px;
+  background: #ccc;
+  position: relative;
+  display: inline-block;
+  border-radius: 46px;
+  transition: 0.4s;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.toggle-label::after{
+	content: '';
+	position: absolute;
+	width: 42px;
+	height: 42px;
+	border-radius: 100%;
+	left: 0;
+	top: 0;
+	z-index: 2;
+	background: #fff;
+	box-shadow: 0 0 5px rgba(0, 0, 0, 0.4);
+	transition: 0.4s;
+
+}
+
+.toggle-input[type="checkbox"]:checked +.toggle-label{
+	background-color: #154bb6;
+}
+
+.toggle-input[type="checkbox"]:checked +.toggle-label::after{
+	left: 40px;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 75px;
+  height: 42px;
+  margin: auto;
+}
+
+.switch-container{
+	display: flex;
+	margin-top: 10px;
+	width: 100%;
+}
+
+.toggle-switch.position{
+	transform: scale(0.6);
+}
+
+.toggle-switch.accuracy{
+	transform: scale(0.6);
 }

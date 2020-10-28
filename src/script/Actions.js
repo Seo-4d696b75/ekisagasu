@@ -20,3 +20,10 @@ export function setCurrentPosition(pos){
 		value: pos,
 	});
 }
+
+export function setPositionAccuracy(high){
+	dispatcher.dispatch({
+		type: "high_accuracy",
+		value: high,
+	});
+}

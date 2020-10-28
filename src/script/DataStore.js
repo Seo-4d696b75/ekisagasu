@@ -5,10 +5,12 @@ import dispatcher from "./Dispatcher";
 class DataStore extends EventEmitter {
 	constructor(){
 		super();
+		// initial value
 		this.data = {
 			radar_k: 18,
 			watch_position: false,
 			current_position: null,
+			high_accuracy: false,
 		};
 	}
 
@@ -40,6 +42,14 @@ class DataStore extends EventEmitter {
 				if ( this.data.current_position !== action.value ){
 					this.data.current_position = action.value;
 					this.emit("onCurrentPositionChanged", action.value);
+				}
+				break;
+			}
+			case "high_accuracy": {
+				bool = !!action.value;
+				if ( this.data.high_accuracy !== bool ){
+					this.data.high_accuracy = bool;
+					this.emit("onPositionAccuracyChanged", bool);
 				}
 				break;
 			}

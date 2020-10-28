@@ -12,9 +12,12 @@ export default class Header extends React.Component {
 
 	constructor() {
 		super();
+		var data = Data.getData();
 		this.state = {
 			show_setting: false,
-			radar_k: Data.getData().radar_k,
+			radar_k: data.radar_k,
+			show_position: data.watch_position,
+			high_accuracy: data.high_accuracy,
 		};
 	}
 
@@ -33,10 +36,24 @@ export default class Header extends React.Component {
 	}
 
 	onRadarKChanged(e) {
-		console.log("on change", e.target.value);
+		console.log("radar-k chnaged", e.target.value);
 		Action.setRadarK(e.target.value);
 		this.setState(Object.assign({}, this.state, {
 			radar_k: e.target.value
+		}));
+	}
+
+	onShowPositionChanged(e){
+		Action.setWatchCurrentPosition(e.target.checked);
+		this.setState(Object.assign({}, this.state, {
+			show_position: e.target.checked,
+		}));
+	}
+
+	onPositionAccuracyChanged(e) {
+		Action.setPositionAccuracy(e.target.checked);
+		this.setState(Object.assign({}, this.state, {
+			high_accuracy: e.target.checked,
 		}));
 	}
 
@@ -66,6 +83,12 @@ export default class Header extends React.Component {
 
 					<div className="Setting-container">
 						<div className="Setting-frame">
+							
+							<img
+								src={img_delete}
+								alt="close dialog"
+								className="Action-close"
+								onClick={this.closeSetting.bind(this)} />
 
 							<div className="Setting-title radar">レーダ検知数</div>
 							<div className="Setting-slider radar">
@@ -92,11 +115,22 @@ export default class Header extends React.Component {
 									<option value="20" label="20"></option>
 								</datalist>
 							</div>
-							<img
-								src={img_delete}
-								alt="close dialog"
-								className="Action-close"
-								onClick={this.closeSetting.bind(this)} />
+							<div className="switch-container">
+								<div className="Setting-title position">現在位置の表示</div>
+								<div className="toggle-switch position">
+									<input id="toggle-position" className="toggle-input" type='checkbox'
+										checked={this.state.show_position} onChange={this.onShowPositionChanged.bind(this)} />
+									<label htmlFor="toggle-position" className="toggle-label" />
+								</div>
+							</div>
+							<div className="switch-container">
+								<div className="Setting-title accuracy">高精度な位置情報</div>
+								<div className="toggle-switch accuracy">
+									<input id="toggle-accuracy" className="toggle-input" type='checkbox'
+										checked={this.state.high_accuracy} onChange={this.onPositionAccuracyChanged.bind(this)} />
+									<label htmlFor="toggle-accuracy" className="toggle-label" />
+								</div>
+							</div>
 						</div>
 					</div>
 
