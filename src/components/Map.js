@@ -2,6 +2,7 @@ import {GoogleApiWrapper, Map, Marker, Polygon, Polyline, Circle} from "google-m
 import React from "react";
 import "./Map.css";
 import {StationDialog, LineDialog} from "./InfoDialog";
+import ProgressBar from "./ProgressBar";
 import StationService from "../script/StationService";
 import {CSSTransition} from "react-transition-group";
 import * as Rect from "../script/Rectangle";
@@ -62,6 +63,7 @@ export class MapContainer extends React.Component {
 		Data.on("onRadarKChanged", this.onRadarKChanged.bind(this));
 		Data.on("onCurrentPositionChanged", this.onCurrentPositionChanged.bind(this));
 		Data.on("onWatchPositionChanged", this.showCurrentPosition.bind(this));
+		Data.on("onShowStationItemRequested", this.onShowStationItem.bind(this));
 		// set callback invoked when screen resized
 		this.screenResizedCallback = this.onScreenResized.bind(this);
 		window.addEventListener("resize", this.screenResizedCallback);
@@ -73,7 +75,8 @@ export class MapContainer extends React.Component {
 		this.map = null;
 		Data.removeAllListeners("onRadarKChanged");
 		Data.removeAllListeners("onCurrentPositionChanged");
-		Data.removeListener("onWatchPositionChanged")
+		Data.removeAllListeners("onWatchPositionChanged");
+		Data.removeAllListeners("onShowStationItemRequested");
 		window.removeEventListener("resize", this.screenResizedCallback);
 	}
 
@@ -96,6 +99,24 @@ export class MapContainer extends React.Component {
 			this.setState(Object.assign({}, this.state, {
 				radar_k: k
 			}));
+		}
+	}
+
+	onShowStationItem(item){
+		switch(item.type){
+			case "station": {
+				StationService.get_station(item.code, true).then( s => {
+					this.showStation(s);
+				})
+				break;
+			}
+			case "line": {
+				StationService.get_line_detail(item.code).then( line => {
+					this.showLine(line);
+				})
+				break;
+			}
+			default:
 		}
 	}
 
@@ -537,6 +558,7 @@ export class MapContainer extends React.Component {
 							{this.state.show_current_position && this.state.current_position ? (
 							<Marker
 								position={this.state.current_position}
+								clickable={false}
 								icon={{
 									path: this.props.google.maps.SymbolPath.CIRCLE,
 									fillColor: "#154bb6",
@@ -552,6 +574,7 @@ export class MapContainer extends React.Component {
 								&& !isNaN(this.state.current_heading) ? (
 								<Marker
 									position={this.state.current_position}
+									clickable={false}
 									icon={{
 										//url: require("../img/direction_pin.svg"),
 										anchor: new this.props.google.maps.Point(64, 64),
@@ -651,10 +674,10 @@ export class MapContainer extends React.Component {
 									className="Dialog-message"
 									timeout={0}>
 									<div className="Dialog-message">
-										<div className="Progress-circle">
-											<div className="Progress-circle-inside"></div>
+										<div className="Progress-container">
+											<ProgressBar visible={this.state.worker_running}></ProgressBar>
 										</div>
-								<div className="Wait-message">計算中…{(this.state.high_voronoi.length).toString().padStart(2)}/{this.state.radar_k}</div>
+										<div className="Wait-message">計算中…{(this.state.high_voronoi.length).toString().padStart(2)}/{this.state.radar_k}</div>
 									</div>
 								</CSSTransition>
 								

@@ -1,12 +1,16 @@
 import React from "react";
 import * as Action from "../script/Actions";
 import "./Header.css"
+import img_search from "../img/ic_search.png";
 import img_setting from "../img/ic_settings.png";
 import img_delete from "../img/ic_delete.png";
 import img_help from "../img/ic_help.png";
 import { CSSTransition } from "react-transition-group";
 import { Link } from "react-router-dom";
 import Data from "../script/DataStore";
+import StationSearchBox from "./StationSearchBox";
+import * as Actions from "../script/Actions";
+
 
 export default class Header extends React.Component {
 
@@ -18,21 +22,22 @@ export default class Header extends React.Component {
 			radar_k: data.radar_k,
 			show_position: data.watch_position,
 			high_accuracy: data.high_accuracy,
+			show_search_box: false,
 		};
 	}
 
 	showSetting() {
-		this.setState({
+		this.setState(Object.assign({}, this.state, {
 			show_setting: true,
 			radar_k: this.state.radar_k,
-		});
+		}));
 	}
 
 	closeSetting() {
-		this.setState({
+		this.setState(Object.assign({}, this.state, {
 			show_setting: false,
 			radar_k: this.state.radar_k,
-		});
+		}));
 	}
 
 	onRadarKChanged(e) {
@@ -43,7 +48,7 @@ export default class Header extends React.Component {
 		}));
 	}
 
-	onShowPositionChanged(e){
+	onShowPositionChanged(e) {
 		Action.setWatchCurrentPosition(e.target.checked);
 		this.setState(Object.assign({}, this.state, {
 			show_position: e.target.checked,
@@ -57,13 +62,43 @@ export default class Header extends React.Component {
 		}));
 	}
 
+	showSearchBox() {
+		if (!this.state.show_search_box) {
+			console.log("show search box");
+			this.setState(Object.assign({}, this.state, {
+				show_search_box: true,
+			}));
+		}
+	}
+
+	showStationItem(item) {
+		Actions.requestShowStationItem(item);
+		this.setState(Object.assign({}, this.state, {
+			show_search_box: false,
+		}));
+	}
+
 	render() {
 		return (
 			<div className='Map-header'>
 				<div className="Header-frame">
 
 					<div className="App-title">駅サガース</div>
+					<CSSTransition
+						in={this.state.show_search_box}
+						className="search-box"
+						timeout={300}>
+						<div className="search-box">
+							<StationSearchBox
+								onSuggestionSelected={this.showStationItem.bind(this)}></StationSearchBox>
+						</div>
+					</CSSTransition>
 					<div className="Action-container">
+						<img className="Action-button search"
+							src={img_search}
+							alt="search"
+							style={{display: this.state.show_search_box ? 'none' : 'inline-block'}}
+							onClick={this.showSearchBox.bind(this)}></img>
 						<Link to="/help" target="_blank">
 							<img className="Action-button help"
 								src={img_help}
@@ -83,7 +118,7 @@ export default class Header extends React.Component {
 
 					<div className="Setting-container">
 						<div className="Setting-frame">
-							
+
 							<img
 								src={img_delete}
 								alt="close dialog"

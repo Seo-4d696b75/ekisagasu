@@ -53,6 +53,10 @@ class DataStore extends EventEmitter {
 				}
 				break;
 			}
+			case "show_station": {
+				this.emit("onShowStationItemRequested", action.value);
+				break;
+			}
 			default: {
 				console.log("unknown action type.", action.type);
 			}

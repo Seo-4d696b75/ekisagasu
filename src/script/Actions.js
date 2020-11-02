@@ -27,3 +27,10 @@ export function setPositionAccuracy(high){
 		value: high,
 	});
 }
+
+export function requestShowStationItem(item){
+	dispatcher.dispatch({
+		type: "show_station",
+		value: item,
+	});
+}

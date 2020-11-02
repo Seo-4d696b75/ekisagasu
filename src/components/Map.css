@@ -121,114 +121,11 @@
 	padding: 0;
 }
 
-.Progress-circle{
-	display: inline-block;
-	position: relative;
-	width: 34px;
-	height: 34px;
-	margin: 3px;
-	border-radius: 50%;
-	z-index: 1;
-	overflow: hidden;
-	background: #154bb6;
-	transform-origin: center;
-	animation: rotate-circle 2.2s linear infinite;
+.Progress-container{
+	width: 36px;
+	height: 36px;
+	margin: 2px;
 }
-
-.Progress-circle-inside{
-	position: absolute;
-	top: 5px;
-	right: 5px;
-	left: 5px;
-	bottom: 5px;
-	border-radius: 50%;
-	z-index: 4;
-	background: #ffffff;
-}
-
-.Progress-circle::before{
-	content: "";
-	display: block;
-	position: absolute;
-	top: 0;
-	left: 0%;
-	width: 50%;
-	height: 100%;
-	background: #DDD;
-	z-index: 2;
-	transform-origin: right 50%;
-	animation: rotate-circle-left 2s linear infinite;
-}
-
-.Progress-circle::after{
-	content: "";
-	display: block;
-	position: absolute;
-	top: 0;
-	right: 0%;
-	width: 50%;
-	height: 100%;
-	background: #DDD;
-	z-index: 3;
-	transform-origin: left 50%;
-	animation: rotate-circle-right 2s linear infinite;
-}
-
-@keyframes rotate-circle{
-	0%{transform: rotate(0deg);}
-	100%{transform: rotate(360deg);}
-}
-
-@keyframes rotate-circle-left{
-	0% {transform: rotate(0deg);}
-	25% {transform: rotate(0deg);}
-	50% {
-		transform: rotate(180deg);
-		animation-timing-function: cubic-bezier(0,0,0.3,1);
-	}
-	75% {
-		transform: rotate(180deg);
-	}
-	100% {
-		transform: rotate(360deg);
-		animation-timing-function: cubic-bezier(0,0,0.3,1);
-	}
-}
-
-@keyframes rotate-circle-right{
-	0%{
-		transform: rotate(0deg);
-		background: #DDD;
-		animation-timing-function: cubic-bezier(0.7,0,1,1);
-	}
-	25%{
-		transform: rotate(180deg);
-		background: #DDD;
-	}
-	25.01%{
-		transform: rotate(0deg);
-		background: #154bb6;
-	}
-	50%{
-		transform: rotate(0deg);
-		background: #154bb6;
-		animation-timing-function: cubic-bezier(0.7,0,1,1);
-	}
-	75%{
-		transform: rotate(180deg);
-		background: #154bb6;
-	}
-	75.01%{
-		transform: rotate(0deg);
-		background: #DDD;
-	}
-	100%{
-		transform: rotate(0deg);
-		background: #DDD;
-	}
-
-}
-
 
 .Map-relative{
 	position: relative;

@@ -12,7 +12,7 @@
 
 .App-title{
 	display: table-cell; 
-  	vertical-align: middle;
+  vertical-align: middle;
 	text-align: start;
 	height: 40px;
 	padding-left: 12px;
@@ -20,16 +20,67 @@
 }
 
 
+.search-box{
+	background-color: #154bb6;
+	position: absolute;
+	top: 0px;
+	right: 90px;
+	padding: 6px;
+	height: 40px;
+	vertical-align: middle;
+	transform: scaleX(0.1);
+	display: none;
+}
+
+@media screen and (min-width:500px){
+
+	.search-box{
+		width: 280px;
+	}
+
+}
+
+@media screen and (max-width:500px){
+
+	.search-box{
+		padding-left: 50px;
+		left: 0;
+	}
+
+}
+
+
+.search-box.enter{
+	transform: scaleX(0.1);
+	display: block;
+}
+
+.search-box.enter-active{
+	transition: transform 300ms ease-out;
+	transform: scaleX(1.0);
+	transform-origin: 100% 0;
+	display: block;
+}
+
+.search-box.enter-done{
+	transform: scaleX(1.0);
+	display: block;
+}
+
 .Action-button{
 	width: 30px;
 	height: 30px;
-
+	cursor: pointer;
 }
 
 .Action-button:hover {
 	filter: drop-shadow(2px 2px 2px grey);
 }
 
+
+.Action-button.search{
+	margin-right: 10px;
+}
 
 .Action-button.help{
 	margin-right: 10px;
