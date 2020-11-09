@@ -105,15 +105,23 @@ export class MapContainer extends React.Component {
 	onShowStationItem(item){
 		switch(item.type){
 			case "station": {
-				StationService.get_station(item.code, true).then( s => {
-					this.showStation(s);
-				})
+				if ( item.station ){
+					this.showStation(item.station);
+				} else {
+					StationService.get_station(item.code, true).then( s => {
+						this.showStation(s);
+					});
+				}
 				break;
 			}
 			case "line": {
-				StationService.get_line_detail(item.code).then( line => {
-					this.showLine(line);
-				})
+				if ( item.line ){
+					this.showLine(item.line);
+				} else {
+					StationService.get_line_detail(item.code).then( line => {
+						this.showLine(line);
+					})
+				}
 				break;
 			}
 			default:
@@ -425,8 +433,34 @@ export class MapContainer extends React.Component {
 	focusAt(pos){
 		if ( !StationService.initialized ) return;
 		if ( this.state.high_voronoi_show ) return;
-		StationService.update_location(pos,this.state.radar_k,0).then( s => {
-			this.showPosition(pos,s);
+		StationService.update_location(pos,this.state.radar_k,0).then( station => {
+
+			if (this.map) {
+				this.map.panTo(pos);
+				if (this.map.getZoom() < 14) this.map.setZoom(14);
+			}
+			this.setState(Object.assign({}, this.state, {
+				clicked_marker: {
+					visible: true,
+					position: pos
+				}, 
+				station_marker: [{
+					position: station.position
+				}],
+				info_dialog: {
+					visible: true,
+					type: "station",
+					station: station,
+					radar_list: this.makeRadarList(pos),
+					prefecture: StationService.get_prefecture(station.prefecture),
+					location: {
+						pos: pos,
+						dist: StationService.measure(station.position, pos)
+					}
+				},
+				polyline_show: false,
+				high_voronoi_show: false,
+			}));		
 		});
 		
 	}
@@ -451,58 +485,32 @@ export class MapContainer extends React.Component {
 		});
 	}
 
-	showPosition(pos,station){
-		if (this.map) {
-			this.map.panTo(pos);
-			if (this.map.getZoom() < 14) this.map.setZoom(14);
-		}
-		this.setState(Object.assign({}, this.state, {
-			clicked_marker: {
-				visible: true,
-				position: pos
-			}, 
-			station_marker: [{
-				position: station.position
-			}],
-			info_dialog: {
-				visible: true,
-				type: "station",
-				station: station,
-				radar_list: this.makeRadarList(pos),
-				prefecture: StationService.get_prefecture(station.prefecture),
-				location: {
-					pos: pos,
-					dist: StationService.measure(station.position, pos)
-				}
-			},
-			polyline_show: false,
-			high_voronoi_show: false,
-		}));
-	}
-
 	showStation(station){
-		this.setState(Object.assign({}, this.state, {
-			info_dialog: {
-				visible: true,
-				type: "station",
-				station: station,
-				radar_list: this.makeRadarList(station.position),
-				prefecture: StationService.get_prefecture(station.prefecture),
-				lines: station.lines.map( code => StationService.get_line(code)),
-			},
-			clicked_marker: {
-				visible: false
-			},
-			station_marker: [{
-				position: station.position,
-			}],
-			polyline_show: false,
-			high_voronoi_show: false,
-		}));
-		if ( this.map ){
-			this.map.panTo(station.position);
-			if ( this.map.getZoom() < 14 ) this.map.setZoom(14);
-		}
+		StationService.update_location(station.position, this.state.radar_k, 0).then( () => {
+
+			this.setState(Object.assign({}, this.state, {
+				info_dialog: {
+					visible: true,
+					type: "station",
+					station: station,
+					radar_list: this.makeRadarList(station.position),
+					prefecture: StationService.get_prefecture(station.prefecture),
+					lines: station.lines.map( code => StationService.get_line(code)),
+				},
+				clicked_marker: {
+					visible: false
+				},
+				station_marker: [{
+					position: station.position,
+				}],
+				polyline_show: false,
+				high_voronoi_show: false,
+			}));
+			if ( this.map ){
+				this.map.panTo(station.position);
+				if ( this.map.getZoom() < 14 ) this.map.setZoom(14);
+			}
+		});
 	}
 
 	showLine(line){
@@ -659,15 +667,13 @@ export class MapContainer extends React.Component {
 										lines={this.state.info_dialog.lines}
 										location={this.state.info_dialog.location}
 										onClosed={this.onInfoDialogClosed.bind(this)}
-										onShowVoronoi={this.showRadarVoronoi.bind(this)}
-										onShowLine={this.showLine.bind(this)} />
+										onShowVoronoi={this.showRadarVoronoi.bind(this)}/>
 								) : (this.state.info_dialog.type === "line" ? (
 									<LineDialog
 										line={this.state.info_dialog.line}
 										line_details={this.state.info_dialog.line_details}
 										onClosed={this.onInfoDialogClosed.bind(this)}
-										onShowPolyline={this.showPolyline.bind(this)}
-										onShowStation={this.showStation.bind(this)} />
+										onShowPolyline={this.showPolyline.bind(this)} />
 									) : null)}
 								<CSSTransition
 									in={this.state.worker_running}

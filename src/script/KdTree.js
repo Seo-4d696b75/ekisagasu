@@ -134,6 +134,7 @@ export class StationKdTree{
 		} else if ( !this.root ) {
 			return Promise.reject('tree root not initialized');
 		} else if ( !this.last_position && this.last_position === position ){
+			console.log("update skip");
 			return Promise.resolve(this.current_station);
 		} else {
 			const time = performance.now();
@@ -144,7 +145,7 @@ export class StationKdTree{
 			}).then(() => {
 				this.current_station = this.search_list[0].station;
 				this.last_position = position;
-				console.log(`update done. k=${k} r=${this.r} time=${performance.now()-time}ms size:${this.search_list.length}`);
+				console.log(`update done. k=${k} r=${r} time=${performance.now()-time}ms size:${this.search_list.length}`);
 				return this.current_station;
 			});
 		}

@@ -41,12 +41,12 @@
 
 
 .Container-fixed.station{
-	height: 300px;
+	height: 200px;
 }
 
 
 .Container-radar{
-	height: calc(100% - 300px);
+	height: calc(100% - 200px);
 }
 
 .Icon-action.radar{
@@ -296,6 +296,10 @@ table {
 	border-collapse: collapse;
 }
 
+.List-cell{
+	cursor: pointer;
+}
+
 .List-cell:hover{
 	background-color: rgba(0, 0, 0, 0.05);
 	border-radius: 2px 2px 2px 2px;
@@ -368,6 +372,7 @@ table {
 
 
 .Icon-action{
+	cursor: pointer;
 	position: relative;
 	width: 30px;
 	height: 30px;

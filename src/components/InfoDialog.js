@@ -8,7 +8,23 @@ import img_above from "../img/ic_above.png";
 import img_line from "../img/ic_line.png";
 import img_location from "../img/ic_location.png";
 import { CSSTransition } from "react-transition-group";
+import * as Actions from "../script/Actions";
 
+function onLineSelected(line) {
+	console.log("line selected", line);
+	Actions.requestShowStationItem({
+		type: "line",
+		line: line,
+	});
+}
+
+function onStationSelected(station) {
+	console.log("station selected", station);
+	Actions.requestShowStationItem({
+		type: "station",
+		station: station,
+	});
+}
 
 export class StationDialog extends React.Component {
 
@@ -34,11 +50,6 @@ export class StationDialog extends React.Component {
 		this.setState({
 			show_radar: false,
 		});
-	}
-
-	onLineSelected(line) {
-		console.log("line selected", line);
-		this.props.onShowLine(line);
 	}
 
 	onShowVoronoi(station) {
@@ -81,7 +92,7 @@ export class StationDialog extends React.Component {
 										{this.props.lines.map((line, index) => {
 											return (
 												<tr key={index}
-													onClick={this.onLineSelected.bind(this, line)}
+													onClick={onLineSelected.bind(this,line)}
 													className="List-cell line">
 													<td className="Line-item icon"><div className="Icon-line" style={{ backgroundColor: line.color }} /></td>
 													<td className="Line-item line">{line.name}&nbsp;&nbsp;<small>{line.station_size}駅</small></td>
@@ -140,7 +151,8 @@ export class StationDialog extends React.Component {
 										{this.props.radar_list.map((e, index) => {
 											var dist = this.formatDistance(e.dist);
 											return (
-												<tr key={index}>
+												<tr key={index} className="List-cell station"
+													onClick={onStationSelected.bind(this, e.station)}>
 													<td className="Radar-item index">{index + 1}</td>
 													<td className="Radar-item dist">{dist}</td>
 													<td className="Radar-item station">{e.station.name}&nbsp;&nbsp;{e.lines}</td>
@@ -180,11 +192,6 @@ export class LineDialog extends React.Component {
 
 	onClosed() {
 		this.props.onClosed();
-	}
-
-	onStationSelected(station) {
-		console.log("station selected", station);
-		this.props.onShowStation(station);
 	}
 
 	toggleStationList(e) {
@@ -251,7 +258,7 @@ export class LineDialog extends React.Component {
 										{line.station_list.map((station, index) => {
 											return (
 												<tr key={index}
-													onClick={this.onStationSelected.bind(this, station)}
+													onClick={onStationSelected.bind(this, station)}
 													className="List-cell station">
 													<td className="Station-cell">
 														<span className="Station-item name">{station.name}</span>&nbsp;
