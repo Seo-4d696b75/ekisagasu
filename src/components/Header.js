@@ -24,6 +24,7 @@ export default class Header extends React.Component {
 			high_accuracy: data.high_accuracy,
 			show_search_box: false,
 		};
+		this.search_ref = React.createRef()
 	}
 
 	showSetting() {
@@ -71,6 +72,12 @@ export default class Header extends React.Component {
 		}
 	}
 
+	focusSearchBox(){
+		if (this.search_ref.current) {
+			this.search_ref.current.focus()
+		}
+	}
+
 	showStationItem(item) {
 		Actions.requestShowStationItem(item);
 		this.setState(Object.assign({}, this.state, {
@@ -87,9 +94,11 @@ export default class Header extends React.Component {
 					<CSSTransition
 						in={this.state.show_search_box}
 						className="search-box"
-						timeout={300}>
+						timeout={300}
+						onEntered={this.focusSearchBox.bind(this)}>
 						<div className="search-box">
 							<StationSearchBox
+								ref={this.search_ref}
 								onSuggestionSelected={this.showStationItem.bind(this)}></StationSearchBox>
 						</div>
 					</CSSTransition>
@@ -122,7 +131,7 @@ export default class Header extends React.Component {
 							<img
 								src={img_delete}
 								alt="close dialog"
-								className="Action-close"
+								className="Action-button close"
 								onClick={this.closeSetting.bind(this)} />
 
 							<div className="Setting-title radar">レーダ検知数</div>

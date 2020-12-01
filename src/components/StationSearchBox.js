@@ -17,6 +17,7 @@ export default class StationSearchBox extends React.Component {
     };
     this.input_value ='';
     this.ignore_pattern = /[ｂ-ｚ]+$/i
+    this.input_ref = React.createRef()
   }
 
   onChange(event, { newValue }){
@@ -108,6 +109,13 @@ export default class StationSearchBox extends React.Component {
     }
   };
 
+  focus(){
+    console.log("focus", this.input_ref)
+    if ( this.input_ref ){
+      this.input_ref.focus()
+    }
+  }
+
   render(){
     var value = this.state.value;
     if ( value !== this.input_value && this.input_value.length === 0 ){
@@ -118,9 +126,15 @@ export default class StationSearchBox extends React.Component {
       value: value,
       onChange: this.onChange.bind(this),
     };
+    const store_ref = (suggestion)=>{
+      if ( suggestion ){
+        this.input_ref = suggestion.input
+      }
+    };
     return (
       <div className="suggestion-container">
         <Autosuggest
+          ref={store_ref.bind(this)}
           className="suggestion-input"
           suggestions={this.state.suggestions}
           onSuggestionsFetchRequested={this.onSuggestionsFetchRequested.bind(this)}

@@ -25,6 +25,11 @@
   border-radius: 4px;
 }
 
+::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+  color: #aaa;
+  opacity: 1; /* Firefox */
+}
+
 .react-autosuggest__input--focused {
   outline: none;
 }

@@ -1,11 +1,11 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "4dd44276b4b625773fca7e3ccc3d20fd",
+    "revision": "3103f077cf89e8c9b749024fe9ffd129",
     "url": "/ekisagasu/index.html"
   },
   {
-    "revision": "03fe72d3bb80422941ff",
-    "url": "/ekisagasu/static/css/main.2822e454.chunk.css"
+    "revision": "fe2675f01b30dee69933",
+    "url": "/ekisagasu/static/css/main.a48e0fd9.chunk.css"
   },
   {
     "revision": "fff6d44af09416c02f35",
@@ -16,8 +16,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/ekisagasu/static/js/2.3aaf01c2.chunk.js.LICENSE.txt"
   },
   {
-    "revision": "03fe72d3bb80422941ff",
-    "url": "/ekisagasu/static/js/main.957a64b5.chunk.js"
+    "revision": "fe2675f01b30dee69933",
+    "url": "/ekisagasu/static/js/main.87665ffe.chunk.js"
   },
   {
     "revision": "8651176fb5f78bdbc6bc",
