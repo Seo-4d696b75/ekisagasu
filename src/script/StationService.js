@@ -190,12 +190,15 @@ export class StationService {
 					this.stations.set(c, s);
 					return s;
 				});
-				if (data.polyline_list) {
-					line.polyline_list = data["polyline_list"].map(d => Utils.parse_polyline(d));
-					line.north = data['north'];
-					line.south = data['south'];
-					line.east = data['east'];
-					line.west = data['west'];
+				const polyline = data.polyline_list
+				if (polyline) {
+					if ( polyline['type'] !== 'FeatureCollection' ) console.error("invalide line polyline", polyline)
+					line.polyline_list = polyline["features"].map(d => Utils.parse_polyline(d));
+					const prop = polyline['properties']
+					line.north = prop['north']
+					line.south = prop['south'];
+					line.east = prop['east'];
+					line.west = prop['west'];
 				}
 				line.has_details = true;
 				return line;

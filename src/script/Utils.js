@@ -56,26 +56,20 @@ export function get_bounds(list) {
 }
 
 export function parse_polyline(data){
-  var start = data['start'];
-  var end = data['end'];
-  const scale = 100000.0;
-  var lng = Math.round(data['lng'] * scale);
-  var lat = Math.round(data['lat'] * scale);
-  var deltaX = data['delta_lng'];
-  var deltaY = data['delta_lat'];
-  var points = deltaX.map((dx, i) => {
-    var dy = deltaY[i];
-    lng += dx;
-    lat += dy;
+  const geo = data['geometry']
+  const props = data['properties']
+  var start = props['start']
+  var end = props['end']
+  var points = geo['coordinates'].map( e => {
     return {
-      lat: lat / scale,
-      lng: lng / scale,
-    };
-  });
+      lat: e[1],
+      lng: e[0]
+    }
+  })
   return {
     start: start,
     end: end,
     points: points,
-  };
+  }
 }
 

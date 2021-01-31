@@ -14,22 +14,12 @@ export class Station{
 		this.next = data['next'];
 
 		const voronoi = data['voronoi'];
-		var lat = voronoi['lat'];
-		var lng = voronoi['lng'];
-		var deltaX = voronoi['delta_lng'];
-		var deltaY = voronoi['delta_lat'];
-		const scale = 1.0 / 1000000;
-		this.voronoi_points = deltaX.map((e,i)=>{
-			lng += (e * scale);
-			lat += (deltaY[i] * scale);
-			return {
-				lat: lat,
-				lng: lng
-			};
-		});
-		if (typeof voronoi['enclosed'] === 'undefined' || !!voronoi['enclosed'] ){
-			this.voronoi_points.push(this.voronoi_points[0]);
-		}
+		if ( voronoi['type'] !== 'Feature' ) console.error("invalide voronoi data", voronoi)
+		const geo = voronoi['geometry']
+		if ( geo['type'] !== 'Polygon' ) console.error("invalide voronoi geometry", geo)
+		this.voronoi_points = geo["coordinates"][0].map( e => {
+			return { lat: e[1], lng: e[0]}
+		})
 	}
 
 
