@@ -1,18 +1,21 @@
 
 
-export function stringHash(str){
+export function stringHash(str: string): number {
 	// https://stackoverflow.com/questions/194846/is-there-any-kind-of-hash-code-function-in-javascript
 	// https://github.com/darkskyapp/string-hash/blob/master/index.js
 	var hash = 5381;
-	if ( typeof str === "string" ){
+	if (typeof str === "string") {
 		var i = str.length - 1;
-		while ( i >= 0 ){
+		while (i >= 0) {
 			hash = (hash * 33) ^ str.charCodeAt(i);
 			i--;
 		}
 	}
 	return hash & hash;
 }
+
+type Comparator<E> = (obj1: E, obj2: E) => boolean
+type HashGetter<E> = (e: E) => number
 
 /**
  * primitiveではないObjectを要素にもつ重複なしの集合を表す
@@ -23,7 +26,7 @@ export function stringHash(str){
  * 検索の高速化のためには、
  * hash(obj1) === hash(obj2) かつ comparator(obj1,obj2) === false となるハッシュの衝突はできるだけ避けるのが望ましい
  */
-export class ObjectSet {
+export class ObjectSet<E> {
 
 	/**
 	 * 
@@ -31,23 +34,27 @@ export class ObjectSet {
 	 * @param {(obj) => hashCode} hash 要素のハッシュ値を計算する
 	 * @param {iterable} collection 初期化する要素（省略可）
 	 */
-	constructor(comparator, hash, collection){
+	constructor(comparator: Comparator<E>, hash: HashGetter<E>, collection?: Array<E>) {
 		this.compare = comparator;
 		this.hash = hash;
 		this.map = new Map();
-		if ( collection ){
+		if (collection) {
 			collection.forEach(element => {
 				this.add(element);
 			});
 		}
 	}
 
-	clone(){
-		var tmp = new ObjectSet(this.compare, this.hash);
-		for ( let pair of this.map.entries() ){
-			var key = pair[0];
+	compare: Comparator<E>
+	hash: HashGetter<E>
+	map: Map<number, Array<E>>
+
+	clone() {
+		var tmp = new ObjectSet<E>(this.compare, this.hash);
+		for (let pair of this.map.entries()) {
+			var key: number = pair[0];
 			var list = pair[1];
-			tmp.map.set(key, list.splice(0, list.length));
+			tmp.map.set(key, Array.from(list));
 		}
 		return tmp;
 	}
@@ -57,11 +64,11 @@ export class ObjectSet {
 	 * @param {*} e 追加したい要素
 	 * @return {boolean} 既存の集合に等価な要素が存在せず追加に成功したらtrue, false otherwise
 	 */
-	add(e){
+	add(e: E): boolean {
 		var hash = this.hash(e);
 		var list = this.map.get(hash);
-		if ( list ){
-			if ( list.every( element => !this.compare(element, e)) ){
+		if (list) {
+			if (list.every(element => !this.compare(element, e))) {
 				list.push(e);
 				return true;
 			}
@@ -77,9 +84,9 @@ export class ObjectSet {
 	 * 指定した要素が集合に含まれるか判定する
 	 * @param {*} e 検査対象の要素
 	 */
-	has(e){
+	has(e: E): boolean {
 		var list = this.map.get(this.hash(e));
-		return !!list && list.some( element => this.compare(element, e));
+		return !!list && list.some(element => this.compare(element, e));
 	}
 
 	/**
@@ -87,16 +94,16 @@ export class ObjectSet {
 	 * @param {*} e 削除したい要素
 	 * @return {boolean} 集合に削除対象の要素が存在し削除に成功したらtrue, false otherwise
 	 */
-	remove(e){
+	remove(e: E): boolean {
 		var hash = this.hash(e);
 		var list = this.map.get(hash);
-		if ( list ){
-			if ( list.length === 1 && this.compare(list[0], e) ){
+		if (list) {
+			if (list.length === 1 && this.compare(list[0], e)) {
 				this.map.delete(hash);
 				return true;
 			}
-			var removed = list.filter( element => !this.compare(element,e));
-			if ( list.length === removed.length ){
+			var removed = list.filter(element => !this.compare(element, e));
+			if (list.length === removed.length) {
 				return false;
 			} else {
 				this.map.set(hash, removed);
@@ -106,15 +113,15 @@ export class ObjectSet {
 		return false;
 	}
 
-	size(){
+	size(): number {
 		var size = 0;
-		for ( let list of this.map.values() ){
+		for (let list of this.map.values()) {
 			size += list.length;
 		}
 		return size;
 	}
 
-	clear(){
+	clear(): void {
 		this.map.clear();
 	}
 
@@ -122,16 +129,16 @@ export class ObjectSet {
 	 * 
 	 * @param {(obj) => void} consumer 
 	 */
-	forEach(consumer){
-		for ( let value of this ){
+	forEach(consumer: (e: E) => void): void {
+		for (let value of this) {
 			consumer(value);
 		}
 	}
 
-	*[Symbol.iterator](){
+	*[Symbol.iterator]() {
 		var size = 0;
-		for ( let list of this.map.values() ){
-			for ( let value of list ){
+		for (let list of this.map.values()) {
+			for (let value of list) {
 				size += 1;
 				yield value;
 			}
@@ -143,10 +150,10 @@ export class ObjectSet {
 	 * 
 	 * @param {(obj) => boolean} predicate 
 	 */
-	filter(predicate){
+	filter(predicate: (e: E) => boolean): ObjectSet<E> {
 		var tmp = new ObjectSet(this.compare, this.hash);
-		for ( let element of this ){
-			if ( predicate(element) ) tmp.add(element);
+		for (let element of this) {
+			if (predicate(element)) tmp.add(element);
 		}
 		return tmp;
 	}
@@ -155,7 +162,7 @@ export class ObjectSet {
 	 * 
 	 * @param {(obj) => boolean} predicate 
 	 */
-	removeIf(predicate){
+	removeIf(predicate: (e: E) => boolean): ObjectSet<E> {
 		var tmp = new ObjectSet(this.compare, this.hash);
 		for (let element of this) {
 			if (!predicate(element)) tmp.add(element);
@@ -164,48 +171,69 @@ export class ObjectSet {
 	}
 }
 
-export class ObjectMap {
+type MapEntry<K, V> = {
+	key: K,
+	value: V | null
+}
 
-	constructor(comparator, hash) {
+export class ObjectMap<K, V> {
+
+	constructor(comparator: Comparator<K>, hash: HashGetter<K>) {
 		this.compare = comparator;
 		this.hash = hash;
 		this.map = new Map();
 	}
 
-	put(key, value) {
+	compare: Comparator<K>
+	hash: HashGetter<K>
+	map: Map<number, Array<MapEntry<K, V>>>
+
+	put(key: K, value: V | null): void {
 		var hash = this.hash(key);
 		var list = this.map.get(hash);
 		if (list) {
-			var index = list.findIndex( pair => this.compare(pair.key, key) );
-			if ( index < 0 ){
-				var pair = {
+			var index = list.findIndex(pair => this.compare(pair.key, key));
+			if (index < 0) {
+				var pair: MapEntry<K, V> = {
 					key: key,
-					value: value,
-				};
+					value: value
+				}
 				list.push(pair);
 			} else {
 				list[index].value = value;
 			}
 		} else {
-			list = [{key:key, value:value}];
+			list = [
+				{
+					key: key,
+					value: value
+				}
+			];
 			this.map.set(hash, list);
 		}
 	}
 
-	has(key){
+	has(key: K): boolean {
 		var list = this.map.get(this.hash(key));
-		return !!list && list.some( pair => this.compare(pair.key, key));
+		return !!list && list.some(pair => this.compare(pair.key, key));
 	}
 
-	get(key){
+	get(key: K, defaultValue?: V | null): V | null {
 		var list = this.map.get(this.hash(key));
-		if ( !list ) return null;
-		var index = list.findIndex( pair => this.compare(pair.key, key));
-		if ( index < 0 ){
-			return null;
+		if (!list) return null;
+		var index = list.findIndex(pair => this.compare(pair.key, key));
+		if (index < 0) {
+			if ( defaultValue ) return defaultValue
+			return null
 		} else {
 			return list[index].value;
 		}
+	}
+
+	getValue(key: K): V {
+		var value = this.get(key)
+		if ( value ) return value
+		throw new Error(`no such element. key:${key}`)
 	}
 
 	/**
@@ -213,16 +241,16 @@ export class ObjectMap {
 	 * @param {*} key 
 	 * @return {obj} 削除されたvalue, 削除に失敗した場合はnull
 	 */
-	remove(key){
+	remove(key: K): V | null {
 		var hash = this.hash(key);
 		var list = this.map.get(hash);
-		if ( list ){
-			if ( list.length === 1 && this.compare(list[0].key, key) ){
+		if (list) {
+			if (list.length === 1 && this.compare(list[0].key, key)) {
 				this.map.delete(hash);
 				return list[0].value;
 			}
 			var index = list.findIndex(pair => this.compare(pair.key, key));
-			if ( index < 0 ){
+			if (index < 0) {
 				return null;
 			} else {
 				var value = list[index].value;
@@ -234,15 +262,15 @@ export class ObjectMap {
 		return null;
 	}
 
-	size(){
+	size(): number {
 		var size = 0;
-		for ( let list of this.map.values() ){
+		for (let list of this.map.values()) {
 			size += list.length;
 		}
 		return size;
 	}
 
-	clear(){
+	clear(): void {
 		this.map.clear();
 	}
 
@@ -250,15 +278,15 @@ export class ObjectMap {
 	 * 
 	 * @param {(key) => void} consumer 
 	 */
-	forEachKey(consumer){
-		for ( let key of this.keys() ){
+	forEachKey(consumer: (key: K) => void) {
+		for (let key of this.keys()) {
 			consumer(key);
 		}
 	}
 
-	* keys(){
-		for ( let list of this.map.values() ){
-			for ( let entry of list ){
+	* keys() {
+		for (let list of this.map.values()) {
+			for (let entry of list) {
 				yield entry.key;
 			}
 		}
@@ -268,13 +296,13 @@ export class ObjectMap {
 	 * 
 	 * @param {(value) => void} consumer 
 	 */
-	forEachValue(consumer){
-		for ( let value of this.values() ){
+	forEachValue(consumer: (value: V | null) => void) {
+		for (let value of this.values()) {
 			consumer(value);
 		}
 	}
 
-	* values(){
+	* values() {
 		for (let list of this.map.values()) {
 			for (let entry of list) {
 				yield entry.value;
@@ -286,13 +314,13 @@ export class ObjectMap {
 	 * 
 	 * @param {(entry: {key:any, value:any}) => void} consumer 
 	 */
-	forEachEntries(consumer){
-		for ( let entry of this.entries() ){
+	forEachEntries(consumer: (e: MapEntry<K, V>) => void) {
+		for (let entry of this.entries()) {
 			consumer(entry);
 		}
 	}
 
-	* entries(){
+	* entries() {
 		for (let list of this.map.values()) {
 			for (let entry of list) {
 				var tmp = {

@@ -12,14 +12,29 @@ export class Station{
 		this.prefecture = data['prefecture'];
 		this.lines = data['lines'];
 		this.next = data['next'];
+		this.voronoi_points = []
 
 		const voronoi = data['voronoi'];
-		if ( voronoi['type'] !== 'Feature' ) console.error("invalide voronoi data", voronoi)
+		if ( voronoi['type'] !== 'Feature' ){
+			console.error("invalid voronoi data", voronoi)
+			return
+		} 
 		const geo = voronoi['geometry']
-		if ( geo['type'] !== 'Polygon' ) console.error("invalide voronoi geometry", geo)
-		this.voronoi_points = geo["coordinates"][0].map( e => {
-			return { lat: e[1], lng: e[0]}
-		})
+		switch(geo['type']){
+			case 'Polygon':
+				this.voronoi_points = geo["coordinates"][0].map( e => {
+					return { lat: e[1], lng: e[0]}
+				})
+				break
+			case 'LineString':
+				this.voronoi_points = geo["coordinates"].map( e => {
+					return { lat: e[1], lng: e[0]}
+				})
+				break
+			default:
+				console.error("invalid voronoi geometry", geo)
+		}
+		
 	}
 
 

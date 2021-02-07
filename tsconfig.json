@@ -4,7 +4,8 @@
     "lib": [
       "dom",
       "dom.iterable",
-      "esnext"
+      "esnext",
+      "webworker"
     ],
     "allowJs": true,
     "skipLibCheck": true,
@@ -20,7 +21,10 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "downlevelIteration": true,
-    "types": ["googlemaps"]
+    "types": ["googlemaps"],
+    "outDir": "./build/",
+    "noImplicitAny": false,
+    "sourceMap": true
   },
   "include": [
     "src"

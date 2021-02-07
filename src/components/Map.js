@@ -10,6 +10,8 @@ import Data from "../script/DataStore";
 import pin_station from "../img/map_pin_station.svg";
 import pin_location from "../img/map_pin.svg";
 import * as Utils from "../script/Utils";
+import VoronoiWorker from "worker-loader!./../script/VoronoiWorker";  // eslint-disable-line import/no-webpack-loader-syntax
+
 
 const VORONOI_COLOR = [
 	"#0000FF",
@@ -167,13 +169,8 @@ export class MapContainer extends React.Component {
 			}));
 			return;
 		}
-		const worker = new Worker(`${process.env.PUBLIC_URL}/VoronoiWorker.js`);
+		const worker = new VoronoiWorker();
 		const service = StationService;
-		// error callback
-		worker.addEventListener('error', err => {
-			console.error('error', err);
-			worker.terminate();
-		});
 		// register callback so that this process can listen message from worker
 		worker.addEventListener('message', messaage => {
 			var data = JSON.parse(messaage.data);
@@ -217,6 +214,15 @@ export class MapContainer extends React.Component {
 					this.map.panTo(center);
 					this.map.setZoom(zoom);
 				}
+			} else if ( data.type === "error" ){
+				console.error('fail to calc voronoi', data.err);
+				worker.terminate();
+				this.setState(Object.assign({}, this.state, {
+					worker_running: false,
+					voronoi_show: true,
+					high_voronoi_show: false,
+				}));
+				this.worker = null;
 			}
 		});
 
