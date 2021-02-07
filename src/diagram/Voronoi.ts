@@ -1,7 +1,6 @@
 import { Point, Line, Edge, Triangle, DiagramError } from "./types"
 import * as point from "./Point";
 import * as line from "./Line";
-import * as edge from "./Edge";
 import * as triangle from "./Triangle";
 import { ObjectSet } from "./utils";
 
@@ -11,6 +10,9 @@ class VoronoiError extends DiagramError {
 	}
 }
 
+/**
+ * 二等分線の交点の前後における次数の変化量
+ */
 type StepDirection = "up" | "zero" | "down"
 
 function invert(step: StepDirection): StepDirection {
@@ -27,7 +29,8 @@ function invert(step: StepDirection): StepDirection {
 const ERROR = Math.pow(2, -30);
 
 /**
- * Point + 付加情報 のラッパー
+ * Point + 付加情報 のラッパー  
+ * 二つの二等分線の交点においてBisectorオブジェクトどうしの接続をモデル化
  */
 class Node implements Point {
 
@@ -53,6 +56,8 @@ class Node implements Point {
 
 	x: number
 	y: number
+
+	// 各二等分線上の交点
 	_p1: Intersection | null
 	_p2: Intersection | null
 
@@ -72,7 +77,7 @@ class Node implements Point {
 
 	/**
 	 * 辿ってきた辺とは異なる線分上の隣接頂点でかつ辺のボロノイ次数が同じになる方を返す.
-	 * @param {*} previous from which you are traversing
+	 * @param previous from which you are traversing
 	 * @return Node
 	 */
 	next(previous: Point) {
@@ -87,7 +92,7 @@ class Node implements Point {
 		} else if (p2.previous && point.equals(p2.previous, previous)) {
 			return this.calcNext(p2, p1, true, p2.step);
 		} else {
-			throw new Error("next node not found.");
+			throw new VoronoiError("next node not found.");
 		}
 	}
 
@@ -108,7 +113,7 @@ class Node implements Point {
 				 * 下がるまたは変化しない方を返す.<br>
 				 * この頂点がFrame内部なら必ず次数が下がる隣接頂点を返すが、
 				 * Frame境界線のVertexに相当する場合は例外的に次数変化0の方向の頂点を返す
-	 * @param {*} previous 
+	 * @param previous 
 	 */
 	nextDown(previous: Point): Node {
 		var target: any = null;
@@ -117,7 +122,7 @@ class Node implements Point {
 		} else if (this.p2.isNeighbor(previous)) {
 			target = this.p1;
 		} else {
-			throw new Error("neighbor not found");
+			throw new VoronoiError("neighbor not found");
 		}
 		if (target.hasNeighbor("down")) {
 			return target.neighbor("down").node;
@@ -136,7 +141,7 @@ class Node implements Point {
 			t1 = this.p1;
 			t2 = this.p2;
 		} else {
-			throw new Error("neighbor not found");
+			throw new VoronoiError("neighbor not found");
 		}
 		if (t1.hasNeighbor("up")) {
 			return t1.neighbor("up").node;
@@ -172,6 +177,10 @@ class Node implements Point {
 
 }
 
+/**
+ * 各二等分線上において他の線分との交点をモデル化
+ * 交点によって分割され線分の次数変化を調べる
+ */
 class Intersection implements Point {
 
 	constructor(point: Point, b: Bisector, other?: Line, center?: Point) {
@@ -284,6 +293,9 @@ class Intersection implements Point {
 	}
 }
 
+/**
+ * ボロノイ分割を構成する二等分線を表現
+ */
 class Bisector {
 
 	constructor(line: Line, p?: Point) {
@@ -303,12 +315,12 @@ class Bisector {
 	isBoundary: boolean
 	delaunayPoint: Point | null
 
-	solvedPointIndexFrom: number = 0
-	solvedPointIndexTo: number = 0
+	solvedPointIndexFrom: number = Number.MAX_SAFE_INTEGER
+	solvedPointIndexTo: number = -1
 
 	/**
 	 * 
-	 * @param {* boundary :Edge
+	 * @param boundary
 	 */
 	inspectBoundary(boundary: Edge): void {
 		var p = line.getIntersection(this.line, boundary);
@@ -372,9 +384,21 @@ class Bisector {
 
 }
 
+/** 
+ * 母点集合において指定された点の隣接点を取得する
+ */
 export type PointProvider = (p: Point) => Promise<Array<Point>>
+
+/**
+ * 各次数における計算結果のコールバック関数
+ * @param index 次数（１始まりで数えた数字）
+ * @param polygon ポリゴンを成す座標点を順にもつリスト
+ */
 export type Callback = (index: number, polygon: Array<Point>) => void
 
+/**
+ * 高次ボロノイ分割を計算する
+ */
 export class Voronoi {
 
 	/**
@@ -392,11 +416,13 @@ export class Voronoi {
 	running: boolean = false
 
 	/**
+	 * 高次ボロノイ分割を計算する
 	 * 
-	 * @param {number} level 
-	 * @param {point} center 
-	 * @param {(index: number,polygon: array)=>void} callback
-	 * @return Promise
+	 * １次から指定された次数まで逐次的に計算する
+	 * @param {number} level 計算する次数
+	 * @param {point} center 中心点
+	 * @param {(index: number,polygon: array)=>void} callback 各次数でのボロノイ領域（ポリゴン）が計算されるたびにコールバックする
+	 * @return 1..indexまでの次数の順に計算されたポリゴンを格納したリストのPromise
 	 */
 	async execute(level: number, center: Point, callback: Callback | null): Promise<Array<Array<Point>>> {
 		if (this.running) return Promise.reject("already running");
@@ -495,7 +521,7 @@ export class Voronoi {
 		}
 
 		if (!next || !previous || next.hasSolved()) {
-			throw new Error("fail to traverse polygon");
+			throw new VoronoiError("fail to traverse polygon");
 		}
 
 		var start = next;
