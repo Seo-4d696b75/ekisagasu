@@ -1,22 +1,35 @@
-
+import {LatLng, RectBounds} from "./Utils"
+import {Station} from "./Station"
+import { StationService } from "./StationService"
 
 class StationNode{
 
-	constructor(depth,data,tree,data_map,region){
+	depth: number
+	code: number
+	region: RectBounds
+
+	constructor(depth: number, data: any, tree: StationKdTree, data_map: Map<number,any>, region: RectBounds){
 		this.depth = depth;
 		this.code = data.code;
 		this.region = region;
 		this.build(data,tree,data_map);
 	}
 
-	build(data,tree,data_map){
+	segment_name: string | null = null
+	tree: StationKdTree | null = null
+
+	station: Station | null = null
+	left: StationNode | null = null
+	right: StationNode | null = null
+
+	build(data: any, tree: StationKdTree, data_map: Map<number,any>){
 		if (data.segment) {
 			this.segment_name = data.segment;
 			this.tree = tree;
 			this.station = null;
-			this.tree.unknown_region.push(this);
+			//tree.unknown_region.push(this);
 		} else {
-			this.station = tree.service.get_station(this.code);
+			this.station = tree.service.get_station_immediate(this.code);
 			if (!this.station){
 				console.error("station not found", this.code);
 				return;
@@ -60,9 +73,12 @@ class StationNode{
 		this.right = null;
 	}
 
-	get(){
+	async get(): Promise<Station>{
 		if (!this.station) {
-			return this.tree.service.get_tree_segment(this.segment_name).then(data => {
+			if (!this.tree) throw Error("no tree assigned for initializing")
+			if (!this.segment_name) throw Error("no segment-name not found")
+			const tree = this.tree
+			return tree.service.get_tree_segment(this.segment_name).then(data => {
 				if (data.root !== this.code) {
 					return Promise.reject(`root mismatch. name:${this.segment_name}`);
 				} else {
@@ -70,7 +86,7 @@ class StationNode{
 					data.node_list.forEach(element => {
 						map.set(element.code, element);
 					});
-					this.build(map.get(this.code), this.tree, map);
+					this.build(map.get(this.code), tree, map);
 					if ( this.station ){
 						return this.station;
 					}else{
@@ -86,16 +102,25 @@ class StationNode{
 
 }
 
+export interface NearStation {
+	station: Station
+	dist: number
+}
+
 export class StationKdTree{
 
-	constructor(service){
+	service: StationService
+	//unknown_region: Array<StationNode> = []
+	root: StationNode | null = null
+
+	constructor(service: any){
 		this.service = service;
 	}
 
-	initialize(root_name){
-		this.unknown_region = [];
+	async initialize(root_name: string): Promise<StationKdTree>{
+		//this.unknown_region = [];
 		return this.service.get_tree_segment(root_name).then(data => {
-			var map = new Map();
+			var map = new Map<number,any>();
 			data.node_list.forEach(element => {
 				map.set(element.code, element);
 			});
@@ -116,8 +141,11 @@ export class StationKdTree{
 			this.root.release();
 			this.root = null;
 		}
-		this.service = null;
 	}
+
+	last_position: LatLng | null = null
+	current_station: Station | null = null
+	search_list: Array<NearStation> = []
 
 	/**
 	 * 指定した座標の近傍探索. k, r による探索範囲はorで解釈
@@ -126,7 +154,7 @@ export class StationKdTree{
 	 * @param {*} r 中心からの距離r以内の近傍まで探索
 	 * @returns {Promise} resolve -> 近い順にソートされた近傍の配列
 	 */
-	updateLocation(position, k, r){
+	async updateLocation(position: LatLng, k: number, r: number = 0): Promise<Station|null>{
 		if (k < 1) {
 			return Promise.reject(`invalid k:${k}`);
 		} else if (!this.service) {
@@ -139,9 +167,8 @@ export class StationKdTree{
 		} else {
 			const time = performance.now();
 			return Promise.resolve().then(() => {
-				this.position = position;
 				this.search_list = [];
-				return this.search(this.root, k, r);
+				return this.search(this.root as StationNode, position, k, r);
 			}).then(() => {
 				this.current_station = this.search_list[0].station;
 				this.last_position = position;
@@ -151,14 +178,14 @@ export class StationKdTree{
 		}
 	}
 
-	updateRectRegion(rect, max){
+	async updateRectRegion(rect: RectBounds, max: number): Promise<Array<Station>>{
 		if (!this.service) {
 			return Promise.reject('sevrvice not initialized');
 		} else if ( !this.root ) {
 			return Promise.reject('tree root not initialized');
 		} else {
 			const time = performance.now();
-			const dst = [];
+			const dst: Array<Station> = [];
 			return this.search_rect(this.root, rect, dst, max).then( () => {
 				console.log(`update region done. time=${performance.now() - time}ms size:${dst.length}`);
 				return dst;
@@ -166,31 +193,31 @@ export class StationKdTree{
 		}
 	}
 
-	getAllNearStations(){
+	getAllNearStations(): Array<Station>{
 		return this.search_list.map(e => e.station);
 	}
 
-	getNearStations(size){
+	getNearStations(size: number): Array<Station>{
 		if ( !this.search_list ) return [];
 		if ( size < 0 ) size = 0;
 		if ( size > this.search_list.length ) size = this.search_list.length;
 		return this.search_list.slice(0,size).map(e=>e.station);
 	}
 
-	measure(p1,p2){
+	measure(p1: LatLng, p2: LatLng): number{
 		var lat = p1.lat - p2.lat;
 		var lng = p1.lng - p2.lng;
 		return Math.sqrt(lat*lat + lng*lng);
 	}
 
-	search(node, k, r){
-		const div = {
-			value: null,
-			threshold: null
-		};
+	search(node: StationNode, position: LatLng, k: number, r: number){
+		const div: {value: number, threshold: number} = {
+			value: 0,
+			threshold: 0
+		}
 
 		return node.get().then(s => {
-			const d = this.measure(this.position, s.position);
+			const d = this.measure(position, s.position);
 			var index = -1;
 			var size = this.search_list.length;
 			if (size > 0 && d < this.search_list[size - 1].dist) {
@@ -213,12 +240,12 @@ export class StationKdTree{
 				}
 			}
 			var x = (node.depth % 2 === 0);
-			div.value = ( x ? this.position.lng : this.position.lat);
+			div.value = ( x ? position.lng : position.lat);
 		  	div.threshold = (x ? s.position.lng : s.position.lat);
 
 			var next = (div.value < div.threshold) ? node.left : node.right;
 			if (next) {
-				return this.search(next, k, r);
+				return this.search(next, position, k, r);
 			}
 		}).then(() => {
 			var value = div.value;
@@ -226,13 +253,13 @@ export class StationKdTree{
 			var next = (value < th) ? node.right : node.left;
 			var list = this.search_list;
 			if (next && Math.abs(value - th) < Math.max(list[list.length - 1].dist, r)) {
-				return this.search(next, k, r);
+				return this.search(next, position, k, r);
 			}
 			
 		});
 	}
 
-	search_rect(node, rect, dst, max){
+	async search_rect(node: StationNode, rect: RectBounds, dst: Array<Station>, max: number): Promise<any>{
 		return node.get().then( station => {
 			
 			if ( max && dst.length >= max ){
@@ -241,7 +268,7 @@ export class StationKdTree{
 			if ( this.service.inside_rect(station.position, rect) ){
 				dst.push(station);
 			}
-			var tasks = [];
+			var tasks: Array<Promise<any>> = [];
 			// check left
 			if ( node.left && (
 				(node.depth % 2 === 0 && rect.west < station.position.lng)

@@ -1,5 +1,34 @@
+import {Station} from "./Station"
 
-export function get_zoom_property(bounds, width, height, min_zoom = 0, anchor = undefined, margin = 50) {
+export interface LatLng {
+  lat: number
+  lng: number
+}
+
+export function isLatLng(value: any): value is LatLng {
+  return value.lat !== undefined && typeof value.lat === 'number' &&
+    value.lng !== undefined && typeof value.lng === 'number'
+}
+
+export interface ZoomProps {
+  center: LatLng
+  zoom: number
+}
+
+export interface RectBounds {
+  north: number
+  south: number
+  east: number
+  west: number
+}
+
+export interface PolylineProps {
+  points: LatLng[]
+  start: string
+  end: string
+}
+
+export function get_zoom_property(bounds: RectBounds, width: number, height: number, min_zoom: number = 0, anchor: LatLng | null = null, margin: number = 50): ZoomProps {
   var center = {
     lat: (bounds.south + bounds.north) / 2,
     lng: (bounds.east + bounds.west) / 2
@@ -21,16 +50,12 @@ export function get_zoom_property(bounds, width, height, min_zoom = 0, anchor = 
       }
     }
   }
-  return [center, zoom];
+  return {center: center, zoom: zoom};
 }
 
-/**
- * 
- * @param {[{lat:Number, lng:Number}]} list 
- */
-export function get_bounds(list) {
+export function get_bounds(list: Array<LatLng|Station>): RectBounds {
   var points = list.map(s => {
-    if (s.lat && s.lng) {
+    if (isLatLng(s)) {
       return s;
     } else {
       return s.position;
@@ -47,7 +72,6 @@ export function get_bounds(list) {
     west = Math.min(west, p.lng);
   }
   return {
-    points: points,
     north: north,
     south: south,
     east: east,
@@ -55,7 +79,7 @@ export function get_bounds(list) {
   };
 }
 
-export function parse_polyline(data){
+export function parse_polyline(data: any): PolylineProps{
   const geo = data['geometry']
   const props = data['properties']
   var start = props['start']

@@ -5,7 +5,7 @@ import {StationDialog, LineDialog} from "./InfoDialog";
 import ProgressBar from "./ProgressBar";
 import StationService from "../script/StationService";
 import {CSSTransition} from "react-transition-group";
-import * as Rect from "../script/Rectangle";
+import * as Rect from "../diagram/Rect";
 import Data from "../script/DataStore";
 import pin_station from "../img/map_pin_station.svg";
 import pin_location from "../img/map_pin.svg";
@@ -210,9 +210,9 @@ export class MapContainer extends React.Component {
 				if ( this.map ){
 					var rect = this.map_ref.current.getBoundingClientRect();
 					var bounds = Utils.get_bounds(this.state.high_voronoi[this.state.radar_k-1]);
-					var [center, zoom] = Utils.get_zoom_property(bounds, rect.width, rect.height, ZOOM_TH, station.position, 100);
-					this.map.panTo(center);
-					this.map.setZoom(zoom);
+					var props = Utils.get_zoom_property(bounds, rect.width, rect.height, ZOOM_TH, station.position, 100);
+					this.map.panTo(props.center);
+					this.map.setZoom(props.zoom);
 				}
 			} else if ( data.type === "error" ){
 				console.error('fail to calc voronoi', data.err);
@@ -275,11 +275,11 @@ export class MapContainer extends React.Component {
 			})
 		}));
 		var rect = this.map_ref.current.getBoundingClientRect();
-		var [center, zoom] = Utils.get_zoom_property(bounds, rect.width, rect.height);
+		var props = Utils.get_zoom_property(bounds, rect.width, rect.height);
 	
-		this.map.panTo(center);
-		this.map.setZoom(zoom);
-		console.log('zoom to', zoom, center, line);
+		this.map.panTo(props.center);
+		this.map.setZoom(props.zoom);
+		console.log('zoom to', props, line);
 	}
 
 	getUIEvent(clickEvent){

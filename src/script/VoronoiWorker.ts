@@ -18,8 +18,7 @@ ctx.addEventListener('message', messaage => {
 	var data = JSON.parse(messaage.data);
 	console.log("worker", data);
 	if ( data.type === 'start' ){
-		var points = data.container;
-		var container = Triangle.init(points[0],points[1],points[2]);
+		var container = data.container;
 		var provider = function(point){
 			return new Promise<Point[]>((resolve,reject) =>{
 				state.promise.set(point.code, resolve);

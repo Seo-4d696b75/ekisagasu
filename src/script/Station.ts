@@ -1,7 +1,17 @@
+import {LatLng} from "./Utils"
 
 export class Station{
 
-	constructor(data){
+	code: number
+	name: string
+	position: LatLng
+	name_kana: string
+	prefecture: string
+	lines: number[]
+	next: number[]
+	voronoi_points: Array<LatLng[]>
+
+	constructor(data: any){
 		this.code = data['code'];
 		this.name = data['name'];
 		this.position = {
