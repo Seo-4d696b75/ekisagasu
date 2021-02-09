@@ -7,7 +7,7 @@ class DataStore extends EventEmitter {
 		super();
 		// initial value
 		this.data = {
-			radar_k: 18,
+			radar_k: 22,
 			watch_position: false,
 			current_position: null,
 			high_accuracy: false,
@@ -22,8 +22,10 @@ class DataStore extends EventEmitter {
 		//console.log("DataStore recived an action", action);
 		switch(action.type){
 			case "radar-k": {
-				if ( action.value < 1 ) action.value = 1;
-				if ( action.value > 20 ) action.value = 20;
+				const min = process.env.REACT_APP_RADAR_MIN
+				const max = process.env.REACT_APP_RADAR_MAX
+				if ( action.value < min ) action.value = min;
+				if ( action.value > max ) action.value = max;
 				if ( action.value !== this.data.radar_k ){
 					this.data.radar_k = action.value;
 					this.emit("onRadarKChanged", this.data.radar_k);

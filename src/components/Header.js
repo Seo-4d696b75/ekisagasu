@@ -86,6 +86,8 @@ export default class Header extends React.Component {
 	}
 
 	render() {
+		const radar_min = process.env.REACT_APP_RADAR_MIN
+		const radar_max = process.env.REACT_APP_RADAR_MAX
 		return (
 			<div className='Map-header'>
 				<div className="Header-frame">
@@ -134,29 +136,25 @@ export default class Header extends React.Component {
 								className="Action-button close"
 								onClick={this.closeSetting.bind(this)} />
 
-							<div className="Setting-title radar">レーダ検知数</div>
+							<div className="Setting-title radar">レーダ検知数 &nbsp;<strong>{this.state.radar_k}</strong></div>
 							<div className="Setting-slider radar">
-								<span>12</span>
+								<span>{radar_min}</span>
 								<input
 									type="range"
-									min="12"
-									max="20"
+									min={radar_min}
+									max={radar_max}
 									value={this.state.radar_k}
 									step="1"
 									name="radar"
 									onChange={this.onRadarKChanged.bind(this)}
 									list="radar-list">
-								</input><span>20</span>
+								</input><span>{radar_max}</span>
 								<datalist id="radar-list">
-									<option value="12" label="12"></option>
-									<option value="13"></option>
-									<option value="14"></option>
-									<option value="15"></option>
-									<option value="16"></option>
-									<option value="17"></option>
-									<option value="18"></option>
-									<option value="19"></option>
-									<option value="20" label="20"></option>
+									<option value={radar_min} label={radar_min}></option>
+									{[...Array(radar_max ).keys()].slice(radar_min + 1).map( v => (
+										<option value={v}></option>
+									))}
+									<option value={radar_max} label={radar_max}></option>
 								</datalist>
 							</div>
 							<div className="switch-container">
