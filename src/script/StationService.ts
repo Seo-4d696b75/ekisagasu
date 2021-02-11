@@ -2,9 +2,10 @@ import axios from "axios";
 import { StationKdTree } from "./KdTree";
 import { Station } from "./Station";
 import { Line } from "./Line";
-import Data from "./DataStore";
+import Store from "./Store";
 import * as Utils from "./Utils";
 import * as Actions from "./Actions";
+import { Unsubscribe } from "redux";
 
 const TAG_STATIONS = "all-stations";
 const TAG_SEGMENT_PREFIX = "station-segment:";
@@ -33,20 +34,11 @@ export class StationService {
 		}
 
 
-		var data = Data.getData();
+		var data = Store.getState();
 		this.position_options.enableHighAccuracy = data.high_accuracy;
 		if (data.watch_position) {
 			this.watch_current_position(true);
 		}
-		Data.on("onWatchPositionChanged", this.watch_current_position.bind(this));
-		Data.on("onPositionAccuracyChanged", value => {
-			console.log("position accuracy changed", value);
-			this.position_options.enableHighAccuracy = value;
-			if (this.navigator_id) {
-				this.watch_current_position(false);
-				this.watch_current_position(true);
-			}
-		});
 
 
 		this.stations.clear()
@@ -83,9 +75,17 @@ export class StationService {
 		this.stations.clear();
 		this.tasks.clear();
 		this.watch_current_position(false);
-		Data.removeAllListeners("onWatchPositionChanged");
-		Data.removeAllListeners("onPositionAccuracyChanged");
+		
 		console.log('service released');
+	}
+
+	set_position_accuracy(value: boolean){
+		console.log("position accuracy changed", value);
+			this.position_options.enableHighAccuracy = value;
+			if (this.navigator_id) {
+				this.watch_current_position(false);
+				this.watch_current_position(true);
+			}
 	}
 
 	watch_current_position(enable: boolean) {

@@ -1,4 +1,4 @@
-import {GoogleApiWrapper, Map, Marker, Polygon, Polyline, Circle} from "google-maps-react";
+import {GoogleApiWrapper, Map, Marker, Polygon, Polyline, Circle, GoogleAPI, IMapProps} from "google-maps-react";
 import React from "react";
 import "./Map.css";
 import {StationDialog, LineDialog} from "./InfoDialog";
@@ -6,12 +6,16 @@ import ProgressBar from "./ProgressBar";
 import StationService from "../script/StationService";
 import {CSSTransition} from "react-transition-group";
 import * as Rect from "../diagram/Rect";
-import Data from "../script/DataStore";
 import pin_station from "../img/map_pin_station.svg";
 import pin_location from "../img/map_pin.svg";
 import * as Utils from "../script/Utils";
 import VoronoiWorker from "worker-loader!./../script/VoronoiWorker";  // eslint-disable-line import/no-webpack-loader-syntax
 
+import store from "../script/Store"
+import { GlobalState } from "../script/Reducer";
+import { connect } from "react-redux";
+import { Station } from "../script/Station";
+import {Line} from "../script/Line"
 
 const VORONOI_COLOR = [
 	"#0000FF",
@@ -23,36 +27,77 @@ const VORONOI_COLOR = [
 const ZOOM_TH = 10;
 const VORONOI_SIZE_TH = 500;
 
-export class MapContainer extends React.Component {
+interface StationDialogProps {
+	type: "station"
+	visible: boolean
+	station: Station
+	radar_list: Array<any>
+	prefecture: string
+	lines: Array<Line>
+}
 
-	constructor(){
-		super();
-		this.state = {
-			show_current_position: Data.getData().watch_position,
-			current_position: null,
-			current_accuracy: 0,
-			clicked_marker:{
-				position: null,
-				visible: false,
-			},
-			station_marker:[],
-			info_dialog:{
-				visible: false,
-				type: null,
-			},
-			map_bounds: null,
-			voronoi: [],
-			voronoi_show: true,
-			high_voronoi_show: false,
-			high_voronoi: [],
-			worker_running: false,
-			polyline_show: false,
-			polyline_list: [],
-			radar_k: Data.getData().radar_k,
-			screen_wide: false,
-		};
-		this.map_ref = React.createRef();
+interface MapProps {
+	show_current_position: boolean
+	current_position: Utils.LatLng | null
+	current_accuracy: number
+	radar_k: number
+}
+
+interface WrappedMapProps extends MapProps {
+	google: GoogleAPI
+}
+
+interface MapState {
+	clicked_marker: {
+		position: Utils.LatLng | null
+		visible: boolean
 	}
+	station_maker: Array<Utils.LatLng>
+	voronoi: Array<Utils.LatLng[]>
+	high_voronoi_show: boolean
+	high_voronoi: Array<Utils.LatLng[]>
+	worker_running: boolean
+	polyline_show: boolean
+	polyline_list: Array<Utils.LatLng[]>
+	screen_wide: boolean
+}
+
+function mapStateToProps(state: GlobalState): MapProps {
+	var pos = (state.current_position ? {
+		lat: state.current_position.coords.latitude,
+		lng: state.current_position.coords.longitude
+	} : null)
+	return {
+		show_current_position: state.watch_position,
+		current_position: pos,
+		current_accuracy: (state.current_position ? state.current_position.coords.accuracy : 0),
+		radar_k: state.radar_k,
+
+	}
+}
+
+export class MapContainer extends React.Component<WrappedMapProps, MapState> {
+
+	state = {
+		clicked_marker: {
+			position: null,
+			visible: false,
+		},
+		station_maker: [],
+		voronoi: [],
+		high_voronoi_show: false,
+		high_voronoi: [],
+		worker_running: false,
+		polyline_show: false,
+		polyline_list: [],
+		screen_wide: false
+
+	}
+
+	map_ref = React.createRef();
+	map: google.maps.Map | null = null
+
+	screenResizedCallback: ((this: Window, e: UIEvent) => void) | undefined = undefined
 
 	componentDidMount(){
 		
@@ -61,11 +106,6 @@ export class MapContainer extends React.Component {
 				this.onBoundsChanged(null, this.map, true);
 			}
 		});
-		// set callback invoked when radar 'k' is changed
-		Data.on("onRadarKChanged", this.onRadarKChanged.bind(this));
-		Data.on("onCurrentPositionChanged", this.onCurrentPositionChanged.bind(this));
-		Data.on("onWatchPositionChanged", this.showCurrentPosition.bind(this));
-		Data.on("onShowStationItemRequested", this.onShowStationItem.bind(this));
 		// set callback invoked when screen resized
 		this.screenResizedCallback = this.onScreenResized.bind(this);
 		window.addEventListener("resize", this.screenResizedCallback);
@@ -75,11 +115,9 @@ export class MapContainer extends React.Component {
 	componentWillUnmount(){
 		StationService.release();
 		this.map = null;
-		Data.removeAllListeners("onRadarKChanged");
-		Data.removeAllListeners("onCurrentPositionChanged");
-		Data.removeAllListeners("onWatchPositionChanged");
-		Data.removeAllListeners("onShowStationItemRequested");
-		window.removeEventListener("resize", this.screenResizedCallback);
+		if ( this.screenResizedCallback ){
+			window.removeEventListener("resize", this.screenResizedCallback);
+		}
 	}
 
 	onRadarKChanged(k){
@@ -297,30 +335,33 @@ export class MapContainer extends React.Component {
 		//console.log('mousedown', this.mouse_event, event);
 	}
 
-	onMapReady(props,map){
+	onMapReady(props?: IMapProps, map?: google.maps.Map, event?: any) {
 		console.log("map ready", props);
-		map.addListener("mousedown", this.onMouseDown.bind(this));
-		this.map = map;
-		this.map.setOptions({
-			// this option can not be set via props in google-maps-react
-			mapTypeControlOptions: {
-				position: this.props.google.maps.ControlPosition.TOP_RIGHT,
-				style: this.props.google.maps.MapTypeControlStyle.DROPDOWN_MENU
-			}
-		});
-		StationService.get_current_position().then(pos => {
-			var latlng = {
-				lat: pos.coords.latitude,
-				lng: pos.coords.longitude
-			};
-			this.map.setCenter(latlng);
-			this.setState(Object.assign({}, this.state, {
-				current_position: latlng,
-			}));
-		}).catch(err => {
-			console.log(err);
-		});
+		if ( map ){
 
+			map.addListener("mousedown", this.onMouseDown.bind(this));
+			this.map = map;
+			map.setOptions({
+				// this option can not be set via props in google-maps-react
+				mapTypeControlOptions: {
+					position: this.props.google.maps.ControlPosition.TOP_RIGHT,
+					style: this.props.google.maps.MapTypeControlStyle.DROPDOWN_MENU
+				}
+			});
+			StationService.get_current_position().then(pos => {
+				var latlng = {
+					lat: pos.coords.latitude,
+					lng: pos.coords.longitude
+				};
+				this.map.setCenter(latlng);
+				this.setState(Object.assign({}, this.state, {
+					current_position: latlng,
+				}));
+			}).catch(err => {
+				console.log(err);
+			});
+	
+		}
 	}
 
 	onMapRightClicked(props,map,event){
@@ -551,7 +592,7 @@ export class MapContainer extends React.Component {
 			<div className='Map-container'>
 				<div className='Map-relative' ref={this.map_ref}>
 
-						<Map className='Map' 
+						<Map
 							google={this.props.google}
 							zoom={14}
 							initialCenter={{ lat: 35.681236, lng: 139.767125 }}
@@ -706,12 +747,14 @@ export class MapContainer extends React.Component {
 	}
 }
 
-const LoadingContainer = (props) => (
+const LoadingContainer = (props: any) => (
 	<div className='Map-container'>Map is loading...</div>
 );
 
-export default GoogleApiWrapper({
+var wrappedMap = GoogleApiWrapper({
 	apiKey: process.env.REACT_APP_API_KEY,
 	language: "ja",
 	LoadingContainer: LoadingContainer,
 })(MapContainer);
+
+export default connect(mapStateToProps)(wrappedMap)

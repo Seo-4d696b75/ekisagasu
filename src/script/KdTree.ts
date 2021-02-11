@@ -161,7 +161,7 @@ export class StationKdTree{
 			return Promise.reject('sevrvice not initialized');
 		} else if ( !this.root ) {
 			return Promise.reject('tree root not initialized');
-		} else if ( !this.last_position && this.last_position === position ){
+		} else if ( this.last_position && this.last_position.lat === position.lat && this.last_position.lng === position.lng ){
 			console.log("update skip");
 			return Promise.resolve(this.current_station);
 		} else {

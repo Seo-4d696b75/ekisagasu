@@ -5,29 +5,58 @@ import "./StationSearchBox.css";
 import Service from "../script/StationService";
 import ProgressBar from "./ProgressBar";
 
-export default class StationSearchBox extends React.Component {
+interface SearchProps {
+  onSuggestionSelected: (item: StationSuggestion) => any
+}
 
-  constructor(){
-    super();
+interface SearchState {
+  value: string
+  suggestions: Array<SuggestSection>
+  loading: boolean
+}
+
+export interface StationSuggestion {
+  type: "station" | "line"
+  code: number
+  id: string
+  name: string
+  name_kana: string
+  prefecture?: number
+}
+
+interface SuggestSection {
+  title: string
+  list: Array<StationSuggestion>
+}
+
+export default class StationSearchBox extends React.Component<SearchProps, SearchState> {
+
+  constructor(props: SearchProps){
+    super(props);
     this.state = {
       value: '',
       suggestions: [],
-      last_request_id: null,
       loading: false,
     };
-    this.input_value ='';
-    this.ignore_pattern = /[ｂ-ｚ]+$/i
-    this.input_ref = React.createRef()
   }
 
-  onChange(event, { newValue }){
-    this.setState(Object.assign({}, this.state, {
-      value: newValue,
-    }));
-    this.input_value = newValue;
-  };
+  
+  input_value ='';
+  ignore_pattern = /[ｂ-ｚ]+$/i
+  input_ref = React.createRef<Autosuggest>()
+  last_request_id: NodeJS.Timeout | null = null
 
-  onSuggestionsFetchRequested({ value }){
+
+  onChange(event: React.FormEvent<any>, params: Autosuggest.ChangeEvent){
+    this.setState({
+      ...this.state,
+      value: params.newValue
+    })
+  }
+
+
+  onSuggestionsFetchRequested(request: Autosuggest.SuggestionsFetchRequestedParams){
+    var value = request.value
     if ( value.length < 2 ){
       return;
     }
@@ -38,60 +67,65 @@ export default class StationSearchBox extends React.Component {
     
     this.last_request_id = setTimeout(()=>{
       console.log('fetch suggestions', value);
-      this.setState(Object.assign({}, this.state, {
-        loading: true,
-      }));
+      this.setState({
+        ...this.state,
+        loading: true
+      })
       Promise.all([
         axios.get(`https://station-service.herokuapp.com/api/station/search?name=${value}`),
         axios.get(`https://station-service.herokuapp.com/api/line/search?name=${value}`)
       ]).then(res => {
-        this.setState(Object.assign({}, this.state, {
+        var stations = res[0].data as Array<any>
+        var lines = res[1].data as Array<any>
+        this.setState({
+          ...this.state,
           suggestions: [
             {
               title: '駅・停留所',
-              list: res[0].data.map( d => {
+              list: stations.map( d => {
                 d['type'] = 'station';
-                return d;
+                return d as StationSuggestion;
               })
             },
             {
               title: '路線',
-              list: res[1].data.map(d => {
+              list: lines.map(d  => {
                 d['type'] = 'line';
-                return d;
+                return d as StationSuggestion;
               })
             }
           ],
           loading: false,
-        }));
+        });
       }).catch(err => {
         console.log(err);
       });
-    }, 500);
-  };
+    }, 500)
+  }
 
   onSuggestionsClearRequested(){
     //console.log('onSuggestionsClearRequested');
-    this.setState(Object.assign({}, this.state, {
-      suggestions: [],
-    }));
+    this.setState({
+      ...this.state,
+      suggestions: []
+    });
   };
 
-  getSuggestionValue(suggestion){
+  getSuggestionValue(suggestion: StationSuggestion): string{
     return suggestion.name;
   }
 
-  getSectionSuggestions(section) {
+  getSectionSuggestions(section: SuggestSection): Array<StationSuggestion>{
     return section.list;
   }
 
-  renderSectionTitle(section) {
+  renderSectionTitle(section: any) {
     return (
       <strong>{section.title}</strong>
     );
   }
 
-  renderSuggestion(suggestion){
+  renderSuggestion(suggestion: StationSuggestion, param: Autosuggest.RenderSuggestionParams){
     return (
       <div>
         {suggestion.prefecture ? (
@@ -102,7 +136,8 @@ export default class StationSearchBox extends React.Component {
     );
   } 
 
-  onSuggestionSelected(event, { suggestion, suggestionValue, suggestionIndex, sectionIndex, method }) {
+  onSuggestionSelected(event: React.FormEvent<any>, data: Autosuggest.SuggestionSelectedEventData<StationSuggestion>) {
+    var suggestion = data.suggestion
     console.log("selected", suggestion);
     if ( this.props.onSuggestionSelected ){
       this.props.onSuggestionSelected(suggestion);
@@ -110,9 +145,9 @@ export default class StationSearchBox extends React.Component {
   };
 
   focus(){
-    console.log("focus", this.input_ref)
-    if ( this.input_ref ){
-      this.input_ref.focus()
+    console.log("focus")
+    if ( this.input_ref.current && this.input_ref.current.input ){
+      this.input_ref.current.input.focus()
     }
   }
 
@@ -121,21 +156,16 @@ export default class StationSearchBox extends React.Component {
     if ( value !== this.input_value && this.input_value.length === 0 ){
       value = '';
     }
-    const inputProps = {
+    const inputProps: Autosuggest.InputProps<StationSuggestion> = {
       placeholder: '駅・路線を検索',
       value: value,
       onChange: this.onChange.bind(this),
     };
-    const store_ref = (suggestion)=>{
-      if ( suggestion ){
-        this.input_ref = suggestion.input
-      }
-    };
     return (
       <div className="suggestion-container">
-        <Autosuggest
-          ref={store_ref.bind(this)}
-          className="suggestion-input"
+        <Autosuggest<StationSuggestion,SuggestSection>
+          ref={this.input_ref}
+          //className="suggestion-input"
           suggestions={this.state.suggestions}
           onSuggestionsFetchRequested={this.onSuggestionsFetchRequested.bind(this)}
           onSuggestionsClearRequested={this.onSuggestionsClearRequested.bind(this)}
