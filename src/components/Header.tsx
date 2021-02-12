@@ -9,36 +9,56 @@ import { CSSTransition } from "react-transition-group";
 import { Link } from "react-router-dom";
 import StationSearchBox from "./StationSearchBox";
 import * as Actions from "../script/Actions";
-import { GlobalState } from "../script/Reducer";
-import {connect} from "react-redux"
+import { Unregister } from "../script/LiveData";
+import store from "../script/Store";
 
-interface HeaderProps {
+interface HeaderState {
+	show_setting: boolean
+	show_search_box: boolean
 	radar_k: number
 	show_position: boolean
 	high_accuracy: boolean
 }
 
-interface HeaderState {
-	show_setting: boolean
-	show_search_box: boolean
-}
-
-function mapState2Props(state: GlobalState): HeaderProps {
-	return {
-		radar_k: state.radar_k,
-		show_position: state.watch_position,
-		high_accuracy: state.high_accuracy
-	}
-}
-
-export class Header extends React.Component<HeaderProps, HeaderState> {
+export class Header extends React.Component<{}, HeaderState> {
 
 	state = {
 		show_setting: false,
 		show_search_box: false,
+		radar_k: 0,
+		show_position: false,
+		high_accuracy: false
 	}
 
 	search_ref = React.createRef<StationSearchBox>()
+	unregisters: Unregister[] = []
+
+	componentDidMount(){
+		this.unregisters = [
+			store.radar_k.observe( k => {
+				this.setState({
+					...this.state,
+					radar_k: k
+				})
+			}),
+			store.watch_position.observe( v => {
+				this.setState({
+					...this.state,
+					show_position: v
+				})
+			}),
+			store.high_accuracy.observe( high => {
+				this.setState({
+					...this.state,
+					high_accuracy: high
+				})
+			})
+		]
+	}
+
+	componentWillUnmount(){
+		this.unregisters.forEach( c => c())
+	}
 
 	showSetting() {
 		this.setState({
@@ -149,7 +169,7 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 									type="range"
 									min="12"
 									max="20"
-									value={this.props.radar_k}
+									value={this.state.radar_k}
 									step="1"
 									name="radar"
 									onChange={this.onRadarKChanged.bind(this)}
@@ -171,7 +191,7 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 								<div className="Setting-title position" > 現在位置の表示 </div>
 								< div className="toggle-switch position" >
 									<input id="toggle-position" className="toggle-input" type='checkbox'
-										checked={this.props.show_position} onChange={this.onShowPositionChanged.bind(this)} />
+										checked={this.state.show_position} onChange={this.onShowPositionChanged.bind(this)} />
 									<label htmlFor="toggle-position" className="toggle-label" />
 								</div>
 							</div>
@@ -179,7 +199,7 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 								<div className="Setting-title accuracy" > 高精度な位置情報 </div>
 								< div className="toggle-switch accuracy" >
 									<input id="toggle-accuracy" className="toggle-input" type='checkbox'
-										checked={this.props.high_accuracy} onChange={this.onPositionAccuracyChanged.bind(this)} />
+										checked={this.state.high_accuracy} onChange={this.onPositionAccuracyChanged.bind(this)} />
 									<label htmlFor="toggle-accuracy" className="toggle-label" />
 								</div>
 							</div>
@@ -192,4 +212,4 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 	}
 }
 
-export default connect(mapState2Props)(Header)
+export default Header

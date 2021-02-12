@@ -6,7 +6,7 @@ export class Station{
 	name: string
 	position: LatLng
 	name_kana: string
-	prefecture: string
+	prefecture: number
 	lines: number[]
 	next: number[]
 	voronoi_points: Array<LatLng[]>

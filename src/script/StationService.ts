@@ -2,10 +2,10 @@ import axios from "axios";
 import { StationKdTree } from "./KdTree";
 import { Station } from "./Station";
 import { Line } from "./Line";
-import Store from "./Store";
 import * as Utils from "./Utils";
 import * as Actions from "./Actions";
-import { Unsubscribe } from "redux";
+import store from "./Store";
+import {Unregister} from "./LiveData"
 
 const TAG_STATIONS = "all-stations";
 const TAG_SEGMENT_PREFIX = "station-segment:";
@@ -28,17 +28,21 @@ export class StationService {
 
 	tasks: Map<string, Promise<any>|null> = new Map()
 
+	unregister_callback: Unregister[] = []
+
 	async initialize(): Promise<StationService> {
 		if (this.initialized) {
 			return Promise.resolve(this);
 		}
 
-
-		var data = Store.getState();
-		this.position_options.enableHighAccuracy = data.high_accuracy;
-		if (data.watch_position) {
-			this.watch_current_position(true);
-		}
+		this.unregister_callback = [
+			store.high_accuracy.observe( high => {
+				this.position_options.enableHighAccuracy = high
+			}),
+			store.watch_position.listen( enable => {
+				this.watch_current_position(enable)
+			})
+		]
 
 
 		this.stations.clear()
@@ -75,6 +79,8 @@ export class StationService {
 		this.stations.clear();
 		this.tasks.clear();
 		this.watch_current_position(false);
+
+		this.unregister_callback.forEach( c => c())
 		
 		console.log('service released');
 	}
@@ -145,7 +151,7 @@ export class StationService {
 		}
 	}
 
-	update_rect(rect: Utils.RectBounds, max: number): Promise<Station[]> {
+	update_rect(rect: Utils.RectBounds, max: number = Number.MAX_SAFE_INTEGER): Promise<Station[]> {
 		if (max < 1) max = 1;
 		if (this.tree) {
 			return this.tree.updateRectRegion(rect, max);
