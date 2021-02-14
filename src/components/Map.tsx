@@ -2,7 +2,6 @@ import { GoogleApiWrapper, Map, Marker, Polygon, Polyline, Circle, GoogleAPI, IM
 import React from "react"
 import "./Map.css"
 import { StationDialog, LineDialog } from "./InfoDialog"
-import ProgressBar from "./ProgressBar"
 import StationService from "../script/StationService"
 import { CSSTransition } from "react-transition-group"
 import * as Rect from "../diagram/Rect"
@@ -10,6 +9,8 @@ import pin_station from "../img/map_pin_station.svg"
 import pin_location from "../img/map_pin.svg"
 import * as Utils from "../script/Utils"
 import VoronoiWorker from "worker-loader!./../script/VoronoiWorker";  // eslint-disable-line import/no-webpack-loader-syntax
+import {CircularProgress} from "@material-ui/core"
+
 
 import store from "../script/Store"
 import { Station } from "../script/Station"
@@ -26,13 +27,13 @@ const VORONOI_COLOR = [
 const ZOOM_TH = 10
 const VORONOI_SIZE_TH = 500
 
-interface RadarStation {
+export interface RadarStation {
 	station: Station
 	dist: number
 	lines: string
 }
 
-enum DialogType {
+export enum DialogType {
 	Station,
 	Line,
 	Position,
@@ -43,19 +44,19 @@ interface DialogProps<T, E> {
 	props: E
 }
 
-type StationDialogProps = DialogProps<DialogType.Station, {
+export type StationDialogProps = DialogProps<DialogType.Station, {
 	station: Station
 	radar_list: Array<RadarStation>
 	prefecture: string
 	lines: Array<Line>
 }>
 
-type LineDialogProps = DialogProps<DialogType.Line, {
+export type LineDialogProps = DialogProps<DialogType.Line, {
 	line: Line
 	line_details: boolean
 }>
 
-type PosDialogProps = DialogProps<DialogType.Position, {
+export type PosDialogProps = DialogProps<DialogType.Position, {
 	station: Station
 	radar_list: Array<RadarStation>
 	prefecture: string
@@ -761,7 +762,12 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 									timeout={0}>
 									<div className="Dialog-message">
 										<div className="Progress-container">
-											<ProgressBar visible={this.state.worker_running}></ProgressBar>
+											<CircularProgress
+											 value={this.state.high_voronoi.length * 100 / this.state.radar_k}
+											 size={36}
+											 color="primary"
+											 thickness={5.0}
+											 variant="indeterminate"/>
 										</div>
 										<div className="Wait-message">計算中…{(this.state.high_voronoi.length).toString().padStart(2)}/{this.state.radar_k}</div>
 									</div>
@@ -787,8 +793,7 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 				case DialogType.Line: {
 					dom = (
 						<LineDialog
-							line={info.props.line}
-							line_details={info.props.line_details}
+							info={info}
 							onClosed={this.onInfoDialogClosed.bind(this)}
 							onShowPolyline={this.showPolyline.bind(this)} />
 					)
@@ -797,12 +802,7 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 				case DialogType.Station: {
 					dom = (
 						<StationDialog
-							station={info.props.station}
-							radar_k={this.state.radar_k}
-							radar_list={info.props.radar_list}
-							prefecture={info.props.prefecture}
-							lines={info.props.lines}
-							location={null}
+							info={info}
 							onClosed={this.onInfoDialogClosed.bind(this)}
 							onShowVoronoi={this.showRadarVoronoi.bind(this)} />
 					)
@@ -811,12 +811,7 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 				case DialogType.Position: {
 					dom = (
 						<StationDialog
-							station={info.props.station}
-							radar_k={this.state.radar_k}
-							radar_list={info.props.radar_list}
-							prefecture={info.props.prefecture}
-							lines={null}
-							location={info.props.location}
+							info={info}
 							onClosed={this.onInfoDialogClosed.bind(this)}
 							onShowVoronoi={this.showRadarVoronoi.bind(this)} />
 					)

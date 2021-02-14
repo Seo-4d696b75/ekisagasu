@@ -96,4 +96,9 @@
   right: 2px;
   width: 26px;
   height: 26px;
+  visibility: hidden;
+}
+
+.suggestion-loading.show {
+  visibility: visible;
 }

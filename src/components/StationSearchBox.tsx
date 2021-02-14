@@ -3,7 +3,7 @@ import Autosuggest from 'react-autosuggest';
 import axios from "axios";
 import "./StationSearchBox.css";
 import Service from "../script/StationService";
-import ProgressBar from "./ProgressBar";
+import {CircularProgress} from "@material-ui/core"
 
 interface SearchProps {
   onSuggestionSelected: (item: StationSuggestion) => any
@@ -52,12 +52,13 @@ export default class StationSearchBox extends React.Component<SearchProps, Searc
       ...this.state,
       value: params.newValue
     })
+    this.input_value = params.newValue
   }
 
 
   onSuggestionsFetchRequested(request: Autosuggest.SuggestionsFetchRequestedParams){
     var value = request.value
-    if ( value.length < 2 ){
+    if ( value.length < 1 ){
       return;
     }
     if ( this.ignore_pattern.test(value) ) return;
@@ -176,8 +177,8 @@ export default class StationSearchBox extends React.Component<SearchProps, Searc
           renderSuggestion={this.renderSuggestion}
           onSuggestionSelected={this.onSuggestionSelected.bind(this)}
           inputProps={inputProps}></Autosuggest>
-        <div className="suggestion-loading">
-          <ProgressBar visible={this.state.loading}></ProgressBar>
+        <div className={`suggestion-loading ${this.state.loading ? "show" : ""}`}>
+          <CircularProgress color="primary" size={26} thickness={5.0} variant="indeterminate"/>
         </div>
       </div>
     )

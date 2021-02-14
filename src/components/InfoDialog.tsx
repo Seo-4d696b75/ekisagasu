@@ -9,6 +9,9 @@ import img_line from "../img/ic_line.png";
 import img_location from "../img/ic_location.png";
 import { CSSTransition } from "react-transition-group";
 import * as Actions from "../script/Actions";
+import { Station } from "../script/Station";
+import {StationDialogProps, PosDialogProps, LineDialogProps, DialogType} from "./Map"
+import { Line } from "../script/Line";
 
 function onLineSelected(line) {
 	console.log("line selected", line);
@@ -20,13 +23,20 @@ function onStationSelected(station) {
 	Actions.requestShowStationItem(station)
 }
 
-export class StationDialog extends React.Component {
+interface StationInfoProps {
+	info: StationDialogProps | PosDialogProps
+	onClosed: (() => any)
+	onShowVoronoi: ((s: Station) => any)
+}
 
-	constructor() {
-		super();
-		this.state = {
-			show_radar: false,
-		};
+interface StationInfoState {
+	show_radar: boolean
+}
+
+export class StationDialog extends React.Component<StationInfoProps, StationInfoState> {
+
+	state = {
+		show_radar: false,
 	}
 
 	onClosed() {
@@ -46,11 +56,11 @@ export class StationDialog extends React.Component {
 		});
 	}
 
-	onShowVoronoi(station) {
+	onShowVoronoi(station: Station) {
 		this.props.onShowVoronoi(station);
 	}
 
-	formatDistance(dist) {
+	formatDistance(dist: number) {
 		if (dist < 1000.0) {
 			return `${dist.toFixed(0)}m`;
 		} else {
@@ -59,7 +69,8 @@ export class StationDialog extends React.Component {
 	}
 
 	render() {
-		const station = this.props.station;
+		const info = this.props.info
+		const station = info.props.station
 		return (
 			<div className="Info-dialog">
 
@@ -73,17 +84,17 @@ export class StationDialog extends React.Component {
 						<div className="Horizontal-container">
 							<img src={img_station} alt="icon-details" className="Icon-station" />
 							<div className="Station-details">
-								所在：{this.props.prefecture}<br />
+								所在：{info.props.prefecture}<br />
 				        場所：E{station.position.lng} N{station.position.lat}
 							</div>
 						</div>
-						{this.props.lines ? (
+						{info.type === DialogType.Station ? (
 							<div className="Scroll-container lines">
 
 								<table>
 									<tbody>
 
-										{this.props.lines.map((line, index) => {
+										{info.props.lines.map((line, index) => {
 											return (
 												<tr key={index}
 													onClick={onLineSelected.bind(this,line)}
@@ -97,15 +108,15 @@ export class StationDialog extends React.Component {
 								</table>
 							</div>
 
-						) : (this.props.location ? (
+						) : (
 							<div className="Horizontal-container">
 								<img src={img_location} alt="icon-details" className="Icon-station" />
 								<div className="Station-details">
-									距離：{this.formatDistance(this.props.location.dist)}<br />
-				        			選択：E{this.props.location.pos.lng.toFixed(6)} N{this.props.location.pos.lat.toFixed(6)}
+									距離：{this.formatDistance(info.props.location.dist)}<br />
+				        			選択：E{info.props.location.pos.lng.toFixed(6)} N{info.props.location.pos.lat.toFixed(6)}
 								</div>
 							</div>
-						) : null)}
+						)}
 
 					</div>
 					<div className="Button-container">
@@ -135,14 +146,14 @@ export class StationDialog extends React.Component {
 
 							<div className="Horizontal-container">
 								<img src={img_radar} alt="icon-radar" className="Icon-radar" />
-								<div className="Radar-k">x{this.props.radar_k}</div>
+								<div className="Radar-k">x{info.props.radar_list.length}</div>
 							</div>
 							<div className="Scroll-container radar">
 
 								<table>
 									<tbody>
 
-										{this.props.radar_list.map((e, index) => {
+										{info.props.radar_list.map((e, index) => {
 											var dist = this.formatDistance(e.dist);
 											return (
 												<tr key={index} className="List-cell station"
@@ -174,28 +185,36 @@ export class StationDialog extends React.Component {
 	}
 }
 
-export class LineDialog extends React.Component {
+
+interface LineInfoProps {
+	info: LineDialogProps
+	onClosed: (() => any)
+	onShowPolyline: ((line: Line) => any)
+}
+
+interface LineInfoState {
+	expand_stations: boolean
+}
+
+export class LineDialog extends React.Component<LineInfoProps,LineInfoState> {
 
 
-	constructor() {
-		super();
-		this.state = {
-			expand_stations: false,
-		};
+	state = {
+		expand_stations: false
 	}
 
 	onClosed() {
 		this.props.onClosed();
 	}
 
-	toggleStationList(e) {
+	toggleStationList(e: React.ChangeEvent<HTMLInputElement>) {
 		console.log("toggle station list", e.target.checked);
 		this.setState({
 			expand_stations: e.target.checked
 		});
 	}
 
-	showPolyline(line) {
+	showPolyline(line: Line) {
 		console.log("polyline", line);
 		if (line.has_details) {
 			this.props.onShowPolyline(line);
@@ -203,7 +222,8 @@ export class LineDialog extends React.Component {
 	}
 
 	render() {
-		const line = this.props.line;
+		const info = this.props.info.props
+		const line = info.line
 		return (
 			<div className="Info-dialog">
 				<div className="Container-fixed line">
@@ -244,7 +264,7 @@ export class LineDialog extends React.Component {
 					timeout={400}>
 					<div className="Container-stations">
 
-						{this.props.line_details ? (
+						{info.line_details ? (
 							<div className="Scroll-container stations">
 								<table>
 									<tbody>
