@@ -1,11 +1,7 @@
 import * as point from "./Point"
 import {Point, Circle, DiagramError} from "./types"
 
-export class CircleError extends DiagramError {
-	constructor(mes: string){
-		super(mes)
-	}
-}
+export class CircleError extends DiagramError {}
 
 export function init(center: Point, radius: number): Circle{
 	if ( Number.isFinite(radius) && radius > 0 ){

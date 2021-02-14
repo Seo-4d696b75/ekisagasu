@@ -2,11 +2,7 @@ import {Rect, DiagramError, Triangle} from "./types"
 import * as point from "./Point"
 import * as triangle from "./Triangle"
 
-class RectInitError extends DiagramError {
-  constructor(mes: string){
-    super(mes)
-  }
-}
+class RectInitError extends DiagramError {}
 
 export function  init(left: number, top: number, right: number, bottom: number): Rect {
   if ( Number.isFinite(left) && Number.isFinite(right) && left < right 

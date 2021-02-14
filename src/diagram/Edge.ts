@@ -14,11 +14,7 @@ export function isEdge(p: any): p is Edge {
 
 }
 
-class EdgeError extends DiagramError {
-	constructor(mes: string) {
-		super(mes)
-	}
-}
+class EdgeError extends DiagramError {}
 
 class EdgeInitError extends DiagramError {
 	constructor(p: Point) {

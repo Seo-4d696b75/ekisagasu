@@ -4,11 +4,7 @@ import * as edge from "./Edge";
 import * as circle from "./Circle";
 import {Point, Line, Edge, Triangle, Circle, DiagramError} from "./types"
 
-class TriangleInitError extends DiagramError {
-	constructor(mes: string){
-		super(mes)
-	}
-}
+class TriangleInitError extends DiagramError {}
 
 export function init(a: Edge | Point,b: Point,c?: Point): Triangle{
 	if ( edge.isEdge(a) ){

@@ -2,11 +2,7 @@ import * as point from "./Point"
 import * as edge from "./Edge"
 import {Point, Line, Edge, DiagramError} from "./types"
 
-class LineInitError extends DiagramError {
-	constructor(mes: string) {
-		super(mes)
-	}
-}
+class LineInitError extends DiagramError {}
 
 class LineError extends DiagramError {
 	constructor(mes: string, line?: Line) {

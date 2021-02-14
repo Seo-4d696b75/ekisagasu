@@ -38,8 +38,4 @@ export interface Rect {
 }
 
 
-export class DiagramError extends Error {
-	constructor(mes: string) {
-		super(mes)
-	}
-}
+export class DiagramError extends Error {}
