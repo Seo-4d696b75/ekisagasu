@@ -12,18 +12,12 @@ import * as Actions from "../script/Actions";
 
 function onLineSelected(line) {
 	console.log("line selected", line);
-	Actions.requestShowStationItem({
-		type: "line",
-		line: line,
-	});
+	Actions.requestShowStationItem(line)
 }
 
 function onStationSelected(station) {
 	console.log("station selected", station);
-	Actions.requestShowStationItem({
-		type: "station",
-		station: station,
-	});
+	Actions.requestShowStationItem(station)
 }
 
 export class StationDialog extends React.Component {

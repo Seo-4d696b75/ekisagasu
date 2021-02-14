@@ -114,47 +114,47 @@ export class Header extends React.Component<{}, HeaderState> {
 
 	render() {
 		return (
-			<div className='Map-header' >
-				<div className="Header-frame" >
+			<div className='Map-header'>
+				<div className="Header-frame">
 
-					<div className="App-title" > 駅サガース </div>
-					< CSSTransition
+					<div className="App-title"> 駅サガース </div>
+					<CSSTransition
 						in={this.state.show_search_box}
 						className="search-box"
 						timeout={300}
-						onEntered={this.focusSearchBox.bind(this)} >
-						<div className="search-box" >
+						onEntered={this.focusSearchBox.bind(this)}>
+						<div className="search-box">
 							<StationSearchBox
 								ref={this.search_ref}
-								onSuggestionSelected={this.showStationItem.bind(this)} > </StationSearchBox>
+								onSuggestionSelected={this.showStationItem.bind(this)}> </StationSearchBox>
 						</div>
 					</CSSTransition>
-					< div className="Action-container" >
+					<div className="Action-container">
 						<img className="Action-button search"
 							src={img_search}
 							alt="search"
 							style={{ display: this.state.show_search_box ? 'none' : 'inline-block' }
 							}
-							onClick={this.showSearchBox.bind(this)} > </img>
-						< Link to="/help" target="_blank" >
+							onClick={this.showSearchBox.bind(this)}></img>
+						<Link to="/help" target="_blank">
 							<img className="Action-button help"
 								src={img_help}
-								alt="help" > </img>
+								alt="help"></img>
 						</Link>
 
-						< img className="Action-button setting"
+						<img className="Action-button setting"
 							src={img_setting}
 							alt="setting"
-							onClick={this.showSetting.bind(this)} > </img>
+							onClick={this.showSetting.bind(this)}></img>
 					</div>
 				</div>
-				< CSSTransition
+				<CSSTransition
 					in={this.state.show_setting}
 					className="Setting-container"
-					timeout={400} >
+					timeout={400}>
 
-					<div className="Setting-container" >
-						<div className="Setting-frame" >
+					<div className="Setting-container">
+						<div className="Setting-frame">
 
 							<img
 								src={img_delete}
@@ -162,10 +162,10 @@ export class Header extends React.Component<{}, HeaderState> {
 								className="Action-button close"
 								onClick={this.closeSetting.bind(this)} />
 
-							<div className="Setting-title radar" > レーダ検知数 </div>
-							< div className="Setting-slider radar" >
+							<div className="Setting-title radar"> レーダ検知数 </div>
+							<div className="Setting-slider radar">
 								<span>12 </span>
-								< input
+								<input
 									type="range"
 									min="12"
 									max="20"
@@ -173,31 +173,31 @@ export class Header extends React.Component<{}, HeaderState> {
 									step="1"
 									name="radar"
 									onChange={this.onRadarKChanged.bind(this)}
-									list="radar-list" >
-								</input><span>20</span >
-								<datalist id="radar-list" >
-									<option value="12" label="12" > </option>
-									< option value="13" > </option>
-									< option value="14" > </option>
-									< option value="15" > </option>
-									< option value="16" > </option>
-									< option value="17" > </option>
-									< option value="18" > </option>
-									< option value="19" > </option>
-									< option value="20" label="20" > </option>
+									list="radar-list">
+								</input><span>20</span>
+								<datalist id="radar-list">
+									<option value="12" label="12"> </option>
+									<option value="13"> </option>
+									<option value="14"> </option>
+									<option value="15"> </option>
+									<option value="16"> </option>
+									<option value="17"> </option>
+									<option value="18"> </option>
+									<option value="19"> </option>
+									<option value="20" label="20"> </option>
 								</datalist>
 							</div>
-							< div className="switch-container" >
-								<div className="Setting-title position" > 現在位置の表示 </div>
-								< div className="toggle-switch position" >
+							<div className="switch-container">
+								<div className="Setting-title position"> 現在位置の表示 </div>
+								<div className="toggle-switch position">
 									<input id="toggle-position" className="toggle-input" type='checkbox'
 										checked={this.state.show_position} onChange={this.onShowPositionChanged.bind(this)} />
 									<label htmlFor="toggle-position" className="toggle-label" />
 								</div>
 							</div>
-							< div className="switch-container" >
-								<div className="Setting-title accuracy" > 高精度な位置情報 </div>
-								< div className="toggle-switch accuracy" >
+							<div className="switch-container">
+								<div className="Setting-title accuracy"> 高精度な位置情報 </div>
+								<div className="toggle-switch accuracy">
 									<input id="toggle-accuracy" className="toggle-input" type='checkbox'
 										checked={this.state.high_accuracy} onChange={this.onPositionAccuracyChanged.bind(this)} />
 									<label htmlFor="toggle-accuracy" className="toggle-label" />
