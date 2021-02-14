@@ -22,16 +22,19 @@ interface HeaderState {
 
 export class Header extends React.Component<{}, HeaderState> {
 
-	state = {
-		show_setting: false,
-		show_search_box: false,
-		radar_k: 0,
-		show_position: false,
-		high_accuracy: false
-	}
-
 	search_ref = React.createRef<StationSearchBox>()
 	unregisters: Unregister[] = []
+
+	constructor(props: {}){
+		super(props)
+		this.state = {
+			show_setting: false,
+			show_search_box: false,
+			radar_k: store.radar_k.get(),
+			show_position: store.watch_position.get(),
+			high_accuracy: store.high_accuracy.get(),
+		}
+	}
 
 	componentDidMount(){
 		this.unregisters = [
@@ -113,6 +116,8 @@ export class Header extends React.Component<{}, HeaderState> {
 	}
 
 	render() {
+		const radar_min = process.env.REACT_APP_RADAR_MIN
+		const radar_max = process.env.REACT_APP_RADAR_MAX
 		return (
 			<div className='Map-header'>
 				<div className="Header-frame">
@@ -133,8 +138,7 @@ export class Header extends React.Component<{}, HeaderState> {
 						<img className="Action-button search"
 							src={img_search}
 							alt="search"
-							style={{ display: this.state.show_search_box ? 'none' : 'inline-block' }
-							}
+							style={{ display: this.state.show_search_box ? 'none' : 'inline-block'}}
 							onClick={this.showSearchBox.bind(this)}></img>
 						<Link to="/help" target="_blank">
 							<img className="Action-button help"
@@ -162,29 +166,25 @@ export class Header extends React.Component<{}, HeaderState> {
 								className="Action-button close"
 								onClick={this.closeSetting.bind(this)} />
 
-							<div className="Setting-title radar"> レーダ検知数 </div>
+							<div className="Setting-title radar"> レーダ検知数 &nbsp;<strong>{this.state.radar_k}</strong></div>
 							<div className="Setting-slider radar">
-								<span>12 </span>
+								<span>{radar_min}</span>
 								<input
 									type="range"
-									min="12"
-									max="20"
+									min={radar_min}
+									max={radar_max}
 									value={this.state.radar_k}
 									step="1"
 									name="radar"
 									onChange={this.onRadarKChanged.bind(this)}
 									list="radar-list">
-								</input><span>20</span>
+								</input><span>{radar_max}</span>
 								<datalist id="radar-list">
-									<option value="12" label="12"> </option>
-									<option value="13"> </option>
-									<option value="14"> </option>
-									<option value="15"> </option>
-									<option value="16"> </option>
-									<option value="17"> </option>
-									<option value="18"> </option>
-									<option value="19"> </option>
-									<option value="20" label="20"> </option>
+									<option value={radar_min} label={radar_min.toString()}></option>
+									{[...Array(radar_max ).keys()].slice(radar_min + 1).map( v => (
+										<option value={v}></option>
+									))}
+									<option value={radar_max} label={radar_max.toString()}></option>
 								</datalist>
 							</div>
 							<div className="switch-container">

@@ -3,8 +3,10 @@
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
-      REACT_APP_API_KEY: string;
-      NODE_ENV: 'development' | 'production';
+      REACT_APP_API_KEY: string
+      REACT_APP_RADAR_MIN: number
+      REACT_APP_RADAR_MAX: number
+      NODE_ENV: 'development' | 'production'
     }
   }
 }

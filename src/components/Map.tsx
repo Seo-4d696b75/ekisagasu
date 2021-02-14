@@ -97,23 +97,27 @@ interface MapState {
 
 export class MapContainer extends React.Component<MapProps, MapState> {
 
-	state: MapState = {
-		clicked_marker: null,
-		station_marker: [],
-		voronoi_show: true,
-		voronoi: [],
-		high_voronoi_show: false,
-		high_voronoi: [],
-		worker_running: false,
-		polyline_show: false,
-		polyline_list: [],
-		screen_wide: false,
-		info_dialog: null,
-		radar_k: 12,
-		show_current_position: false,
-		current_position: null,
-		current_accuracy: 0,
-		current_heading: null
+	constructor(props: MapProps){
+		super(props)
+		this.state = {
+
+			clicked_marker: null,
+			station_marker: [],
+			voronoi_show: true,
+			voronoi: [],
+			high_voronoi_show: false,
+			high_voronoi: [],
+			worker_running: false,
+			polyline_show: false,
+			polyline_list: [],
+			screen_wide: false,
+			info_dialog: null,
+			radar_k: store.radar_k.get(),
+			show_current_position: store.watch_position.get(),
+			current_position: null,
+			current_accuracy: 0,
+			current_heading: null
+		}
 	}
 
 	worker: Worker | null = null

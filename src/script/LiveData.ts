@@ -46,7 +46,7 @@ export class LiveData<E> {
   _callbackes: Array<Callback<E>> = []
   _callback_id: number = 0
 
-  observe(observer: Observer<E>, skipCurrentValue: boolean = false): Unregister {
+  observe(observer: Observer<E>, skipCurrentValue: boolean = true): Unregister {
     if (!skipCurrentValue && this._value.state === ValueState.INITIALIZED) {
       observer(this._value.value)
     }
@@ -97,11 +97,13 @@ export class LiveData<E> {
     }
   }
 
-  get(defaultValue: E): E {
+  get(defaultValue?: E): E {
     if ( this._value.state === ValueState.INITIALIZED ){
       return this._value.value
-    } else {
+    } else if(defaultValue) {
       return defaultValue
+    } else {
+      throw Error('not initialized, nor any default value specified')
     }
   }
 
