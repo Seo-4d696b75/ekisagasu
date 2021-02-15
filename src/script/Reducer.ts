@@ -1,8 +1,6 @@
 import { Reducer } from "redux"
-import { DialogTransition, DialogType, InfoDialog, MapTransition } from "../components/Map"
-import { Line } from "./Line"
-import { Station } from "./Station"
-import { LatLng } from "./Utils"
+import { DialogType, InfoDialog, MapTransition } from "../components/Map"
+
 
 export enum ActionType {
   SET_RADER_K,
@@ -90,11 +88,23 @@ const reducer: Reducer<GlobalState, GlobalAction> = (
       }
       switch (action.payload.type) {
         case DialogType.Line:
-          return update({polyline: false})
+          return update({
+            show_polyline: false,
+            polyline_list: [],
+            stations_marker: [],
+          })
         case DialogType.Position:
-          return update({location: true, voronoi: false})
+          return update({
+            show_high_voronoi: false,
+            station: action.payload.props.station,
+            location: action.payload.props.location.pos
+          })
         case DialogType.Station:
-          return update({location: false, voronoi: false})
+          return update({
+            show_high_voronoi: false,
+            station: action.payload.props.station,
+            location: undefined,
+          })
       }
     }
     case ActionType.SET_TRANSITION: {
