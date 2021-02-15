@@ -13,19 +13,11 @@ import { Station } from "../script/Station";
 import {StationDialogProps, PosDialogProps, LineDialogProps, DialogType} from "./Map"
 import { Line } from "../script/Line";
 
-function onLineSelected(line) {
-	console.log("line selected", line);
-	Actions.requestShowStationItem(line)
-}
-
-function onStationSelected(station) {
-	console.log("station selected", station);
-	Actions.requestShowStationItem(station)
-}
-
 interface StationInfoProps {
 	info: StationDialogProps | PosDialogProps
 	onClosed: (() => any)
+	onLineSelected: ((line: Line) => any)
+	onStationSelected: ((s: Station) => any)
 	onShowVoronoi: ((s: Station) => any)
 }
 
@@ -97,7 +89,7 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 										{info.props.lines.map((line, index) => {
 											return (
 												<tr key={index}
-													onClick={onLineSelected.bind(this,line)}
+													onClick={() => this.props.onLineSelected(line)}
 													className="List-cell line">
 													<td className="Line-item icon"><div className="Icon-line" style={{ backgroundColor: line.color }} /></td>
 													<td className="Line-item line">{line.name}&nbsp;&nbsp;<small>{line.station_size}駅</small></td>
@@ -157,7 +149,7 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 											var dist = this.formatDistance(e.dist);
 											return (
 												<tr key={index} className="List-cell station"
-													onClick={onStationSelected.bind(this, e.station)}>
+													onClick={() => this.props.onStationSelected(e.station)}>
 													<td className="Radar-item index">{index + 1}</td>
 													<td className="Radar-item dist">{dist}</td>
 													<td className="Radar-item station">{e.station.name}&nbsp;&nbsp;{e.lines}</td>
@@ -189,6 +181,7 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 interface LineInfoProps {
 	info: LineDialogProps
 	onClosed: (() => any)
+	onStationSelected: ((s: Station) => any)
 	onShowPolyline: ((line: Line) => any)
 }
 
@@ -272,7 +265,7 @@ export class LineDialog extends React.Component<LineInfoProps,LineInfoState> {
 										{line.station_list.map((station, index) => {
 											return (
 												<tr key={index}
-													onClick={onStationSelected.bind(this, station)}
+													onClick={() => this.props.onStationSelected(station)}
 													className="List-cell station">
 													<td className="Station-cell">
 														<span className="Station-item name">{station.name}</span>&nbsp;

@@ -10,10 +10,8 @@ import pin_location from "../img/map_pin.svg"
 import * as Utils from "../script/Utils"
 import VoronoiWorker from "worker-loader!./../script/VoronoiWorker";  // eslint-disable-line import/no-webpack-loader-syntax
 import { CircularProgress } from "@material-ui/core"
-import { events } from "../script/Store"
 import { Station } from "../script/Station"
 import { Line } from "../script/Line"
-import { Unregister } from "../script/LiveData"
 import { GlobalState } from "../script/Reducer"
 import * as Actions from "../script/Actions"
 import { connect } from "react-redux"
@@ -67,11 +65,42 @@ export type PosDialogProps = DialogProps<DialogType.Position, {
 	}
 }>
 
-type InfoDialog =
+export type InfoDialog =
 	StationDialogProps |
 	LineDialogProps |
 	PosDialogProps
 
+export interface StationDialogTransition {
+	voronoi: boolean
+	location: boolean
+}
+
+function isStationDialogTransition(t: any): t is StationDialogTransition{
+	return t.voronoi !== undefined && typeof t.voronoi === 'boolean'
+	 && t.location !== undefined && typeof t.location === 'boolean'
+}
+
+export interface LineDialogTransition {
+	polyline: boolean
+}
+
+function isLineDialogTranstion(t: any): t is LineDialogTransition {
+	return t.polyline !== undefined && typeof t.polyline === 'boolean'
+}
+
+export type DialogTransition = 
+	StationDialogTransition |
+	LineDialogTransition
+
+function isDialogTransition(item: MapTransition): item is DialogTransition{
+	var t = item as any
+	return typeof t !== 'string'
+}
+
+export type MapTransition =
+	DialogTransition |
+	"idle" |
+	"loading"
 
 interface MapProps {
 	radar_k: number
@@ -79,7 +108,8 @@ interface MapProps {
 	current_position: Utils.LatLng | null
 	current_accuracy: number
 	current_heading: number | null
-
+	info_dialog: InfoDialog | null
+	transition: MapTransition
 }
 
 function mapGlobalState2Props(state: GlobalState): MapProps {
@@ -90,6 +120,8 @@ function mapGlobalState2Props(state: GlobalState): MapProps {
 		current_position: coords ? { lat: coords.latitude, lng: coords.longitude } : null,
 		current_accuracy: coords ? coords.accuracy : 0,
 		current_heading: coords ? coords.heading : 0,
+		info_dialog: state.info_dialog,
+		transition: state.transition,
 	}
 }
 
@@ -98,17 +130,13 @@ interface WrappedMapProps extends MapProps {
 }
 
 interface MapState {
-	clicked_marker: Utils.LatLng | null
-	station_marker: Array<Utils.LatLng>
-	voronoi_show: boolean
 	voronoi: Array<Station>
-	high_voronoi_show: boolean
+	hide_voronoi: boolean
 	high_voronoi: Array<Utils.LatLng[]>
 	worker_running: boolean
-	polyline_show: boolean
 	polyline_list: Array<Utils.PolylineProps>
+	stations_marker: Array<Utils.LatLng>
 	screen_wide: boolean
-	info_dialog: InfoDialog | null
 }
 
 
@@ -116,25 +144,19 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 	state: MapState = {
 
-		clicked_marker: null,
-		station_marker: [],
-		voronoi_show: true,
 		voronoi: [],
-		high_voronoi_show: false,
+		hide_voronoi: false,
 		high_voronoi: [],
 		worker_running: false,
-		polyline_show: false,
 		polyline_list: [],
+		stations_marker: [],
 		screen_wide: false,
-		info_dialog: null,
 	}
 
 	worker: Worker | null = null
 
 	map_ref = React.createRef<HTMLDivElement>()
 	map: google.maps.Map | null = null
-
-	unregisters: Unregister | null = null
 
 	mouse_event: UIEvent | null = null
 	solved_bounds: Utils.RectBounds | null = null
@@ -153,7 +175,6 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 		window.addEventListener("resize", this.screenResizedCallback)
 		this.onScreenResized()
 
-		this.unregisters = events.show_request.listen(this.onShowStationItem.bind(this))
 	}
 
 	componentWillUnmount() {
@@ -161,50 +182,6 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 		this.map = null
 		if (this.screenResizedCallback) {
 			window.removeEventListener("resize", this.screenResizedCallback)
-		}
-		this.unregisters?.()
-	}
-
-	updateRadarList(pos: Utils.LatLng, k: number, info: StationDialogProps | PosDialogProps) {
-		StationService.update_location(pos, k, 0).then(() => {
-			info.props.radar_list = this.makeRadarList(pos, k)
-			this.setState({
-				...this.state,
-				info_dialog: info,
-			})
-		})
-	}
-
-	onRadarKChanged(k: number) {
-		// TODO
-		if (this.state.info_dialog) {
-			switch (this.state.info_dialog.type) {
-				case DialogType.Position: {
-					this.updateRadarList(
-						this.state.info_dialog.props.location.pos,
-						k,
-						this.state.info_dialog
-					)
-					break
-				}
-				case DialogType.Station: {
-					this.updateRadarList(
-						this.state.info_dialog.props.station.position,
-						k,
-						this.state.info_dialog
-					)
-					break
-				}
-				default:
-			}
-		}
-	}
-
-	onShowStationItem(item: Station | Line) {
-		if (item instanceof Station) {
-			this.showStation(item)
-		} else {
-			this.showLine(item)
 		}
 	}
 
@@ -223,12 +200,11 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 			console.log("worker is running")
 			return
 		}
-		if (this.state.high_voronoi_show) {
-			this.setState({
-				...this.state,
-				high_voronoi_show: false,
-				voronoi_show: true,
-			})
+		const transition = this.props.transition
+		if ( !isStationDialogTransition(transition) ) return 
+		
+		if (transition.voronoi ) {
+			Actions.setMapTransition("idle")
 			return
 		}
 		const worker = new VoronoiWorker()
@@ -285,9 +261,8 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 				this.setState({
 					...this.state,
 					worker_running: false,
-					voronoi_show: true,
-					high_voronoi_show: false,
-				})
+				})				
+				Actions.setMapTransition("idle")
 			}
 		})
 
@@ -302,12 +277,11 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 		}
 		this.setState({
 			...this.state,
-			high_voronoi_show: true,
 			high_voronoi: [],
-			voronoi_show: false,
-			polyline_show: false,
 			worker_running: true,
 		})
+		transition.voronoi = true
+		Actions.setMapTransition(transition)
 		worker.postMessage(JSON.stringify({
 			type: 'start',
 			container: container,
@@ -320,6 +294,8 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 	showPolyline(line: Line) {
 		if (!line.has_details || !this.map) return
+		const t = this.props.transition
+		if ( !isLineDialogTranstion(t) || t.polyline ) return
 		var polyline: Array<Utils.PolylineProps> = []
 		var bounds: Utils.RectBounds = line
 		if (line.polyline_list) {
@@ -336,12 +312,11 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 		}
 		this.setState({
 			...this.state,
-			polyline_show: true,
 			polyline_list: polyline,
-			high_voronoi_show: false,
-			voronoi_show: true,
-			station_marker: line.station_list.map(s => s.position)
+			stations_marker: line.station_list.map(s => s.position)
 		})
+		t.polyline = true
+		Actions.setMapTransition(t)
 		if (this.map_ref.current) {
 			var rect = this.map_ref.current.getBoundingClientRect()
 			var props = Utils.get_zoom_property(bounds, rect.width, rect.height)
@@ -476,7 +451,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 				this.setState({
 					...this.state,
 					voronoi: list,
-					voronoi_show: !this.state.high_voronoi_show && (zoom >= ZOOM_TH || list.length < VORONOI_SIZE_TH),
+					hide_voronoi:  (zoom < ZOOM_TH && list.length >= VORONOI_SIZE_TH),
 				})
 			})
 			this.solved_bounds = bounds
@@ -484,8 +459,9 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 	}
 
 	onMapDragStart(props?: IMapProps, map?: google.maps.Map) {
-		if (this.state.high_voronoi_show) return
-		if (this.state.polyline_show) return
+		var t = this.props.transition
+		if (isStationDialogTransition(t) && t.voronoi) return
+		if (isLineDialogTranstion(t) && t.polyline) return
 		if (!this.state.screen_wide) {
 			this.onInfoDialogClosed()
 		}
@@ -501,126 +477,77 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 		var show = (this.state.voronoi.length < VORONOI_SIZE_TH) || (this.map !== null && this.map.getZoom() >= ZOOM_TH)
 		this.setState({
 			...this.state,
-			clicked_marker: null,
 			worker_running: false,
-			station_marker: [],
-			info_dialog: null,
-			high_voronoi_show: false,
-			polyline_show: false,
-			voronoi_show: show,
+			stations_marker: [],
 		})
+		Actions.setMapTransition('idle')
 	}
 
 	focusAt(pos: Utils.LatLng) {
 		if (!StationService.initialized) return
-		if (this.state.high_voronoi_show) return
-		StationService.update_location(pos, this.props.radar_k, 0).then(station => {
+		var t = this.props.transition
+		if (isStationDialogTransition(t) && t.voronoi) return
 
-			if (this.map) {
-				this.map.panTo(pos)
-				if (this.map.getZoom() < 14) this.map.setZoom(14)
-			}
-			this.setState({
-				...this.state,
-				clicked_marker: pos,
-				station_marker: [station.position],
-				info_dialog: {
-					type: DialogType.Position,
-					props: {
-						station: station,
-						radar_list: this.makeRadarList(pos, this.props.radar_k),
-						prefecture: StationService.get_prefecture(station.prefecture),
-						location: {
-							pos: pos,
-							dist: StationService.measure(station.position, pos)
-						}
-					},
-				},
-				polyline_show: false,
-				high_voronoi_show: false,
-			})
+		if (this.map) {
+			this.map.panTo(pos)
+			if (this.map.getZoom() < 14) this.map.setZoom(14)
+		}
+		this.setState({
+			...this.state,
+			high_voronoi: [],
 		})
+		Actions.requestShowPosition(pos)
 
 	}
 
 	focusAtNearestStation(pos: Utils.LatLng) {
 		if (!StationService.initialized) return
-		if (this.state.high_voronoi_show) return
+		var t = this.props.transition
+		if (isStationDialogTransition(t) && t.voronoi) return
 		StationService.update_location(pos, this.props.radar_k, 0).then(s => {
 			console.log("update location", s)
 			this.showStation(s)
 		})
 	}
 
-	makeRadarList(pos: Utils.LatLng, k: number) {
-		if (!StationService.tree) throw Error("Kd-tree not initialized yet")
-		return StationService.tree.getNearStations(k).map(s => {
-			return {
-				station: s,
-				dist: StationService.measure(s.position, pos),
-				lines: s.lines.map(code => StationService.get_line(code).name).join(' '),
-			}
-		})
-	}
 
 	showStation(station: Station) {
-		StationService.update_location(station.position, this.props.radar_k, 0).then(() => {
-
-			this.setState({
-				...this.state,
-				info_dialog: {
-					type: DialogType.Station,
-					props: {
-						station: station,
-						radar_list: this.makeRadarList(station.position, this.props.radar_k),
-						prefecture: StationService.get_prefecture(station.prefecture),
-						lines: station.lines.map(code => StationService.get_line(code)),
-					}
-				},
-				clicked_marker: null,
-				station_marker: [station.position],
-				polyline_show: false,
-				high_voronoi_show: false,
-			})
-			if (this.map) {
-				this.map.panTo(station.position)
-				if (this.map.getZoom() < 14) this.map.setZoom(14)
-			}
+		this.setState({
+			...this.state,
+			high_voronoi: [],
 		})
+		if (this.map) {
+			this.map.panTo(station.position)
+			if (this.map.getZoom() < 14) this.map.setZoom(14)
+		}
+		Actions.requestShowStation(station)
 	}
 
 	showLine(line: Line) {
+		Actions.requestShowLine(line)
 		this.setState({
 			...this.state,
-			info_dialog: {
-				type: DialogType.Line,
-				props: {
-					line: line,
-					line_details: line.has_details,
-				}
-			},
-			clicked_marker: null,
-			station_marker: [],
-			polyline_show: false,
-			high_voronoi_show: false,
+			stations_marker: [],
+			polyline_list: [],
 		})
-		if (!line.has_details) {
-			StationService.get_line_detail(line.code).then(l => {
-				this.setState({
-					...this.state,
-					info_dialog: {
-						type: DialogType.Line,
-						props: {
-							line: l,
-							line_details: true,
-						}
-					},
-				})
-			})
-		}
 	}
 
 	render() {
+		const t = this.props.transition
+		const clicked_marker = (
+			isDialogTransition(this.props.transition) &&
+			this.props.info_dialog &&
+			this.props.info_dialog.type === DialogType.Position
+		) ? this.props.info_dialog.props.location.pos : undefined
+		const station_maker = (
+			isStationDialogTransition(this.props.transition) &&
+			this.props.info_dialog &&
+			(this.props.info_dialog.type === DialogType.Position ||
+				this.props.info_dialog.type === DialogType.Station)
+		) ? this.props.info_dialog.props.station.position : undefined
+		const show_voronoi = !this.state.hide_voronoi && !(isStationDialogTransition(t) && t.voronoi)
+		const show_polyline = isLineDialogTranstion(t) && t.polyline
+		const show_high_voronoi = isStationDialogTransition(t) && t.voronoi
 		return (
 			<div className='Map-container'>
 				<div className='Map-relative' ref={this.map_ref}>
@@ -688,18 +615,23 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 								clickable={false}></Circle>
 						) : null}
 						<Marker
-							visible={this.state.clicked_marker !== null}
-							position={this.state.clicked_marker || undefined}
+							visible={clicked_marker !== undefined}
+							position={clicked_marker}
 							icon={pin_location} >
 						</Marker>
-						{this.state.station_marker.map((pos, i) => (
+						<Marker
+							visible={station_maker !== undefined}
+							position={station_maker}
+							icon={pin_station} >
+						</Marker>
+						{show_polyline ? this.state.stations_marker.map((pos, i) => (
 							<Marker
 								key={i}
 								position={pos}
 								icon={pin_station}>
 							</Marker>
-						))}
-						{this.state.voronoi_show ? this.state.voronoi.map((s, i) => (
+						)) : null }
+						{show_voronoi ? this.state.voronoi.map((s, i) => (
 							<Polygon
 								key={i}
 								paths={s.voronoi_points}
@@ -709,7 +641,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 								fillOpacity={0.0}
 								clickable={false} />
 						)) : null}
-						{this.state.high_voronoi_show ? this.state.high_voronoi.map((points, i) => (
+						{show_high_voronoi ? this.state.high_voronoi.map((points, i) => (
 							<Polygon
 								key={i}
 								paths={points}
@@ -719,7 +651,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 								fillOpacity={0.0}
 								clickable={false} />
 						)) : null}
-						{this.state.polyline_show ? this.state.polyline_list.map((p, i) => (
+						{show_polyline ? this.state.polyline_list.map((p, i) => (
 							<Polyline
 								key={i}
 								path={p.points}
@@ -732,7 +664,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 					</Map>
 
 					<CSSTransition
-						in={this.state.info_dialog !== null}
+						in={isDialogTransition(t)}
 						className="Dialog-container"
 						timeout={400}>
 						<div className="Dialog-container">
@@ -770,35 +702,29 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 	renderInfoDialog(): any {
 		var dom: any = null
-		var info = this.state.info_dialog
+		var info = this.props.info_dialog
 		if (info) {
 			switch (info.type) {
 				case DialogType.Line: {
 					dom = (
 						<LineDialog
 							info={info}
+							onStationSelected={this.showStation.bind(this)}
 							onClosed={this.onInfoDialogClosed.bind(this)}
 							onShowPolyline={this.showPolyline.bind(this)} />
 					)
 					break
 				}
+				case DialogType.Position:
 				case DialogType.Station: {
 					dom = (
 						<StationDialog
 							info={info}
+							onStationSelected={this.showStation.bind(this)}
+							onLineSelected={this.showLine.bind(this)}
 							onClosed={this.onInfoDialogClosed.bind(this)}
 							onShowVoronoi={this.showRadarVoronoi.bind(this)} />
 					)
-					break
-				}
-				case DialogType.Position: {
-					dom = (
-						<StationDialog
-							info={info}
-							onClosed={this.onInfoDialogClosed.bind(this)}
-							onShowVoronoi={this.showRadarVoronoi.bind(this)} />
-					)
-
 					break
 				}
 			}
