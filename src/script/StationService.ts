@@ -4,8 +4,6 @@ import { Station } from "./Station";
 import { Line } from "./Line";
 import * as Utils from "./Utils";
 import * as Actions from "./Actions";
-import store from "./Store";
-import {Unregister} from "./LiveData"
 
 const TAG_STATIONS = "all-stations";
 const TAG_SEGMENT_PREFIX = "station-segment:";
@@ -28,22 +26,10 @@ export class StationService {
 
 	tasks: Map<string, Promise<any>|null> = new Map()
 
-	unregister_callback: Unregister[] = []
-
 	async initialize(): Promise<StationService> {
 		if (this.initialized) {
 			return Promise.resolve(this);
 		}
-
-		this.unregister_callback = [
-			store.high_accuracy.observe( high => {
-				this.position_options.enableHighAccuracy = high
-			}),
-			store.watch_position.listen( enable => {
-				this.watch_current_position(enable)
-			})
-		]
-
 
 		this.stations.clear()
 		this.lines.clear()
@@ -79,8 +65,6 @@ export class StationService {
 		this.stations.clear();
 		this.tasks.clear();
 		this.watch_current_position(false);
-
-		this.unregister_callback.forEach( c => c())
 		
 		console.log('service released');
 	}

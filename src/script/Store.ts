@@ -1,13 +1,14 @@
-import liveData from "./LiveData"
+import {createStore, Store, Unsubscribe, Action, applyMiddleware} from "redux"
+import reducer, { GlobalAction, GlobalState } from "./Reducer"
+import thunk, {ThunkMiddleware } from "redux-thunk"
+import liveData from  "./LiveData"
 import { Station } from "./Station"
 import { Line } from "./Line"
 
-const store = {
-  radar_k: liveData(22),
-  watch_position: liveData(false),
-  current_position: liveData<GeolocationPosition>(),
-  high_accuracy: liveData(false),
-  show_request: liveData<Station|Line>(),
-}
+//const store = createStore(reducer, applyMiddleware(thunk as ThunkMiddleware<GlobalState,GlobalAction,undefined>))
+export const store = createStore(reducer)
 
-export default store
+
+export const events = {
+  show_request: liveData<Station|Line>()
+}

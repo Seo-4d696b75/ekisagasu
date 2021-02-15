@@ -9,13 +9,14 @@ import pin_station from "../img/map_pin_station.svg"
 import pin_location from "../img/map_pin.svg"
 import * as Utils from "../script/Utils"
 import VoronoiWorker from "worker-loader!./../script/VoronoiWorker";  // eslint-disable-line import/no-webpack-loader-syntax
-import {CircularProgress} from "@material-ui/core"
-
-
-import store from "../script/Store"
+import { CircularProgress } from "@material-ui/core"
+import { events } from "../script/Store"
 import { Station } from "../script/Station"
 import { Line } from "../script/Line"
 import { Unregister } from "../script/LiveData"
+import { GlobalState } from "../script/Reducer"
+import * as Actions from "../script/Actions"
+import { connect } from "react-redux"
 
 const VORONOI_COLOR = [
 	"#0000FF",
@@ -71,7 +72,28 @@ type InfoDialog =
 	LineDialogProps |
 	PosDialogProps
 
+
 interface MapProps {
+	radar_k: number
+	show_current_position: boolean
+	current_position: Utils.LatLng | null
+	current_accuracy: number
+	current_heading: number | null
+
+}
+
+function mapGlobalState2Props(state: GlobalState): MapProps {
+	const coords = state.current_position?.coords
+	return {
+		radar_k: state.radar_k,
+		show_current_position: state.watch_position,
+		current_position: coords ? { lat: coords.latitude, lng: coords.longitude } : null,
+		current_accuracy: coords ? coords.accuracy : 0,
+		current_heading: coords ? coords.heading : 0,
+	}
+}
+
+interface WrappedMapProps extends MapProps {
 	google: GoogleAPI
 }
 
@@ -87,37 +109,24 @@ interface MapState {
 	polyline_list: Array<Utils.PolylineProps>
 	screen_wide: boolean
 	info_dialog: InfoDialog | null
-	radar_k: number
-	show_current_position: boolean
-	current_position: Utils.LatLng | null
-	current_accuracy: number
-	current_heading: number | null
 }
 
 
-export class MapContainer extends React.Component<MapProps, MapState> {
+export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
-	constructor(props: MapProps){
-		super(props)
-		this.state = {
+	state: MapState = {
 
-			clicked_marker: null,
-			station_marker: [],
-			voronoi_show: true,
-			voronoi: [],
-			high_voronoi_show: false,
-			high_voronoi: [],
-			worker_running: false,
-			polyline_show: false,
-			polyline_list: [],
-			screen_wide: false,
-			info_dialog: null,
-			radar_k: store.radar_k.get(),
-			show_current_position: store.watch_position.get(),
-			current_position: null,
-			current_accuracy: 0,
-			current_heading: null
-		}
+		clicked_marker: null,
+		station_marker: [],
+		voronoi_show: true,
+		voronoi: [],
+		high_voronoi_show: false,
+		high_voronoi: [],
+		worker_running: false,
+		polyline_show: false,
+		polyline_list: [],
+		screen_wide: false,
+		info_dialog: null,
 	}
 
 	worker: Worker | null = null
@@ -125,7 +134,7 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 	map_ref = React.createRef<HTMLDivElement>()
 	map: google.maps.Map | null = null
 
-	unregisters: Unregister[] = []
+	unregisters: Unregister | null = null
 
 	mouse_event: UIEvent | null = null
 	solved_bounds: Utils.RectBounds | null = null
@@ -144,12 +153,7 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 		window.addEventListener("resize", this.screenResizedCallback)
 		this.onScreenResized()
 
-		this.unregisters = [
-			store.radar_k.observe(this.onRadarKChanged.bind(this)),
-			store.show_request.listen(this.onShowStationItem.bind(this)),
-			store.current_position.observe(this.onCurrentPositionChanged.bind(this)),
-			store.watch_position.observe(this.showCurrentPosition.bind(this))
-		]
+		this.unregisters = events.show_request.listen(this.onShowStationItem.bind(this))
 	}
 
 	componentWillUnmount() {
@@ -158,7 +162,7 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 		if (this.screenResizedCallback) {
 			window.removeEventListener("resize", this.screenResizedCallback)
 		}
-		this.unregisters.forEach(c => c())
+		this.unregisters?.()
 	}
 
 	updateRadarList(pos: Utils.LatLng, k: number, info: StationDialogProps | PosDialogProps) {
@@ -172,6 +176,7 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 	}
 
 	onRadarKChanged(k: number) {
+		// TODO
 		if (this.state.info_dialog) {
 			switch (this.state.info_dialog.type) {
 				case DialogType.Position: {
@@ -193,10 +198,6 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 				default:
 			}
 		}
-		this.setState({
-			...this.state,
-			radar_k: k,
-		})
 	}
 
 	onShowStationItem(item: Station | Line) {
@@ -205,25 +206,6 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 		} else {
 			this.showLine(item)
 		}
-	}
-
-	onCurrentPositionChanged(pos: GeolocationPosition) {
-		this.setState({
-			...this.state,
-			current_position: {
-				lat: pos.coords.latitude,
-				lng: pos.coords.longitude
-			},
-			current_accuracy: pos.coords.accuracy,
-			current_heading: pos.coords.heading,
-		})
-	}
-
-	showCurrentPosition(enable: boolean) {
-		this.setState({
-			...this.state,
-			show_current_position: enable,
-		})
 	}
 
 	onScreenResized() {
@@ -291,7 +273,7 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 				})
 				if (this.map && this.map_ref.current) {
 					var rect = this.map_ref.current.getBoundingClientRect()
-					var bounds = Utils.get_bounds(this.state.high_voronoi[this.state.radar_k - 1])
+					var bounds = Utils.get_bounds(this.state.high_voronoi[this.props.radar_k - 1])
 					var props = Utils.get_zoom_property(bounds, rect.width, rect.height, ZOOM_TH, station.position, 100)
 					this.map.panTo(props.center)
 					this.map.setZoom(props.zoom)
@@ -329,7 +311,7 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 		worker.postMessage(JSON.stringify({
 			type: 'start',
 			container: container,
-			k: this.state.radar_k,
+			k: this.props.radar_k,
 			center: center,
 		}))
 
@@ -404,10 +386,7 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 					lng: pos.coords.longitude
 				}
 				map.setCenter(latlng)
-				this.setState({
-					...this.state,
-					current_position: latlng,
-				})
+				Actions.setCurrentPosition(pos)
 			}).catch(err => {
 				console.log(err)
 			})
@@ -535,7 +514,7 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 	focusAt(pos: Utils.LatLng) {
 		if (!StationService.initialized) return
 		if (this.state.high_voronoi_show) return
-		StationService.update_location(pos, this.state.radar_k, 0).then(station => {
+		StationService.update_location(pos, this.props.radar_k, 0).then(station => {
 
 			if (this.map) {
 				this.map.panTo(pos)
@@ -549,7 +528,7 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 					type: DialogType.Position,
 					props: {
 						station: station,
-						radar_list: this.makeRadarList(pos, this.state.radar_k),
+						radar_list: this.makeRadarList(pos, this.props.radar_k),
 						prefecture: StationService.get_prefecture(station.prefecture),
 						location: {
 							pos: pos,
@@ -567,7 +546,7 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 	focusAtNearestStation(pos: Utils.LatLng) {
 		if (!StationService.initialized) return
 		if (this.state.high_voronoi_show) return
-		StationService.update_location(pos, this.state.radar_k, 0).then(s => {
+		StationService.update_location(pos, this.props.radar_k, 0).then(s => {
 			console.log("update location", s)
 			this.showStation(s)
 		})
@@ -585,7 +564,7 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 	}
 
 	showStation(station: Station) {
-		StationService.update_location(station.position, this.state.radar_k, 0).then(() => {
+		StationService.update_location(station.position, this.props.radar_k, 0).then(() => {
 
 			this.setState({
 				...this.state,
@@ -593,7 +572,7 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 					type: DialogType.Station,
 					props: {
 						station: station,
-						radar_list: this.makeRadarList(station.position, this.state.radar_k),
+						radar_list: this.makeRadarList(station.position, this.props.radar_k),
 						prefecture: StationService.get_prefecture(station.prefecture),
 						lines: station.lines.map(code => StationService.get_line(code)),
 					}
@@ -664,9 +643,9 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 						mapTypeControl={true}
 
 					>
-						{this.state.show_current_position && this.state.current_position ? (
+						{this.props.show_current_position && this.props.current_position ? (
 							<Marker
-								position={this.state.current_position}
+								position={this.props.current_position}
 								clickable={false}
 								icon={{
 									path: this.props.google.maps.SymbolPath.CIRCLE,
@@ -677,12 +656,12 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 									scale: 8,
 								}}></Marker>
 						) : null}
-						{this.state.show_current_position
-							&& this.state.current_position
-							&& this.state.current_heading
-							&& !isNaN(this.state.current_heading) ? (
+						{this.props.show_current_position
+							&& this.props.current_position
+							&& this.props.current_heading
+							&& !isNaN(this.props.current_heading) ? (
 								<Marker
-									position={this.state.current_position}
+									position={this.props.current_position}
 									clickable={false}
 									icon={{
 										//url: require("../img/direction_pin.svg"),
@@ -693,14 +672,14 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 										strokeColor: "white",
 										strokeWeight: 1.2,
 										scale: 0.3,
-										rotation: this.state.current_heading,
+										rotation: this.props.current_heading,
 									}}></Marker>
 							) : null}
-						{this.state.show_current_position && this.state.current_position ? (
+						{this.props.show_current_position && this.props.current_position ? (
 							<Circle
-								visible={this.state.current_accuracy > 10}
-								center={this.state.current_position}
-								radius={this.state.current_accuracy}
+								visible={this.props.current_accuracy > 10}
+								center={this.props.current_position}
+								radius={this.props.current_accuracy}
 								strokeColor="#0088ff"
 								strokeOpacity={0.8}
 								strokeWeight={1}
@@ -734,7 +713,7 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 							<Polygon
 								key={i}
 								paths={points}
-								strokeColor={(i === this.state.radar_k - 1) ? "#000000" : VORONOI_COLOR[i % VORONOI_COLOR.length]}
+								strokeColor={(i === this.props.radar_k - 1) ? "#000000" : VORONOI_COLOR[i % VORONOI_COLOR.length]}
 								strokeWeight={1}
 								strokeOpacity={0.8}
 								fillOpacity={0.0}
@@ -767,13 +746,13 @@ export class MapContainer extends React.Component<MapProps, MapState> {
 									<div className="Dialog-message">
 										<div className="Progress-container">
 											<CircularProgress
-											 value={this.state.high_voronoi.length * 100 / this.state.radar_k}
-											 size={36}
-											 color="primary"
-											 thickness={5.0}
-											 variant="indeterminate"/>
+												value={this.state.high_voronoi.length * 100 / this.props.radar_k}
+												size={36}
+												color="primary"
+												thickness={5.0}
+												variant="indeterminate" />
 										</div>
-										<div className="Wait-message">計算中…{(this.state.high_voronoi.length).toString().padStart(2)}/{this.state.radar_k}</div>
+										<div className="Wait-message">計算中…{(this.state.high_voronoi.length).toString().padStart(2)}/{this.props.radar_k}</div>
 									</div>
 								</CSSTransition>
 
@@ -832,9 +811,11 @@ const LoadingContainer = (props: any) => (
 	<div className='Map-container'>Map is loading...</div>
 )
 
-export default GoogleApiWrapper({
-	apiKey: process.env.REACT_APP_API_KEY,
-	language: "ja",
-	LoadingContainer: LoadingContainer,
-})(MapContainer)
+export default connect(mapGlobalState2Props)(
+	GoogleApiWrapper({
+		apiKey: process.env.REACT_APP_API_KEY,
+		language: "ja",
+		LoadingContainer: LoadingContainer,
+	})(MapContainer)
+)
 

@@ -9,58 +9,38 @@ import { CSSTransition } from "react-transition-group";
 import { Link } from "react-router-dom";
 import StationSearchBox from "./StationSearchBox";
 import * as Actions from "../script/Actions";
-import { Unregister } from "../script/LiveData";
-import store from "../script/Store";
+import { GlobalState } from "../script/Reducer";
+import {connect} from "react-redux"
+
+interface HeaderProps {
+	radar_k: number
+	show_position: boolean
+	high_accuracy: boolean
+
+}
+
+function mapGlobalState2Props(state: GlobalState): HeaderProps {
+	return {
+		radar_k: state.radar_k,
+		show_position: state.watch_position,
+		high_accuracy: state.high_accuracy,
+
+	}
+}
 
 interface HeaderState {
 	show_setting: boolean
 	show_search_box: boolean
-	radar_k: number
-	show_position: boolean
-	high_accuracy: boolean
 }
 
-export class Header extends React.Component<{}, HeaderState> {
+export class Header extends React.Component<HeaderProps, HeaderState> {
 
 	search_ref = React.createRef<StationSearchBox>()
-	unregisters: Unregister[] = []
 
-	constructor(props: {}){
-		super(props)
-		this.state = {
-			show_setting: false,
-			show_search_box: false,
-			radar_k: store.radar_k.get(),
-			show_position: store.watch_position.get(),
-			high_accuracy: store.high_accuracy.get(),
-		}
-	}
+	state = {
+		show_setting: false,
+		show_search_box: false,
 
-	componentDidMount(){
-		this.unregisters = [
-			store.radar_k.observe( k => {
-				this.setState({
-					...this.state,
-					radar_k: k
-				})
-			}),
-			store.watch_position.observe( v => {
-				this.setState({
-					...this.state,
-					show_position: v
-				})
-			}),
-			store.high_accuracy.observe( high => {
-				this.setState({
-					...this.state,
-					high_accuracy: high
-				})
-			})
-		]
-	}
-
-	componentWillUnmount(){
-		this.unregisters.forEach( c => c())
 	}
 
 	showSetting() {
@@ -166,14 +146,14 @@ export class Header extends React.Component<{}, HeaderState> {
 								className="Action-button close"
 								onClick={this.closeSetting.bind(this)} />
 
-							<div className="Setting-title radar"> レーダ検知数 &nbsp;<strong>{this.state.radar_k}</strong></div>
+							<div className="Setting-title radar"> レーダ検知数 &nbsp;<strong>{this.props.radar_k}</strong></div>
 							<div className="Setting-slider radar">
 								<span>{radar_min}</span>
 								<input
 									type="range"
 									min={radar_min}
 									max={radar_max}
-									value={this.state.radar_k}
+									value={this.props.radar_k}
 									step="1"
 									name="radar"
 									onChange={this.onRadarKChanged.bind(this)}
@@ -191,7 +171,7 @@ export class Header extends React.Component<{}, HeaderState> {
 								<div className="Setting-title position"> 現在位置の表示 </div>
 								<div className="toggle-switch position">
 									<input id="toggle-position" className="toggle-input" type='checkbox'
-										checked={this.state.show_position} onChange={this.onShowPositionChanged.bind(this)} />
+										checked={this.props.show_position} onChange={this.onShowPositionChanged.bind(this)} />
 									<label htmlFor="toggle-position" className="toggle-label" />
 								</div>
 							</div>
@@ -199,7 +179,7 @@ export class Header extends React.Component<{}, HeaderState> {
 								<div className="Setting-title accuracy"> 高精度な位置情報 </div>
 								<div className="toggle-switch accuracy">
 									<input id="toggle-accuracy" className="toggle-input" type='checkbox'
-										checked={this.state.high_accuracy} onChange={this.onPositionAccuracyChanged.bind(this)} />
+										checked={this.props.high_accuracy} onChange={this.onPositionAccuracyChanged.bind(this)} />
 									<label htmlFor="toggle-accuracy" className="toggle-label" />
 								</div>
 							</div>
@@ -212,4 +192,4 @@ export class Header extends React.Component<{}, HeaderState> {
 	}
 }
 
-export default Header
+export default connect(mapGlobalState2Props)(Header)
