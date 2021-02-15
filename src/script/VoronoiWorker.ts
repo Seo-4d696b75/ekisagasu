@@ -1,6 +1,5 @@
 import {Voronoi} from "../diagram/Voronoi"
 import {Point} from "../diagram/types"
-import * as Triangle from "../diagram/Triangle"
 
 const ctx: Worker = self as any;
 
