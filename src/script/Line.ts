@@ -1,5 +1,5 @@
-import {Station} from "./Station"
-import {PolylineProps} from "./Utils"
+import { Station } from "./Station"
+import { PolylineProps } from "./Utils"
 
 export class Line {
 

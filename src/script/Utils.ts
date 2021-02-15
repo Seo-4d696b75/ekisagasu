@@ -1,4 +1,4 @@
-import {Station} from "./Station"
+import { Station } from "./Station"
 
 export interface LatLng {
   lat: number
@@ -50,10 +50,10 @@ export function get_zoom_property(bounds: RectBounds, width: number, height: num
       }
     }
   }
-  return {center: center, zoom: zoom};
+  return { center: center, zoom: zoom };
 }
 
-export function get_bounds(list: Array<LatLng|Station>): RectBounds {
+export function get_bounds(list: Array<LatLng | Station>): RectBounds {
   var points = list.map(s => {
     if (isLatLng(s)) {
       return s;
@@ -79,12 +79,12 @@ export function get_bounds(list: Array<LatLng|Station>): RectBounds {
   };
 }
 
-export function parse_polyline(data: any): PolylineProps{
+export function parse_polyline(data: any): PolylineProps {
   const geo = data['geometry']
   const props = data['properties']
   var start = props['start']
   var end = props['end']
-  var points = geo['coordinates'].map( e => {
+  var points = geo['coordinates'].map(e => {
     return {
       lat: e[1],
       lng: e[0]

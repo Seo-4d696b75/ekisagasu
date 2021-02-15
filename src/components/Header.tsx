@@ -10,7 +10,7 @@ import { Link } from "react-router-dom";
 import StationSearchBox from "./StationSearchBox";
 import * as Actions from "../script/Actions";
 import { GlobalState } from "../script/Reducer";
-import {connect} from "react-redux"
+import { connect } from "react-redux"
 
 interface HeaderProps {
 	radar_k: number
@@ -59,7 +59,7 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 
 	onRadarKChanged(e: React.ChangeEvent<HTMLInputElement>) {
 		console.log("radar-k chnaged", e.target.value);
-		var k = parseInt( e.target.value)
+		var k = parseInt(e.target.value)
 		Action.setRadarK(k);
 	}
 
@@ -118,7 +118,7 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 						<img className="Action-button search"
 							src={img_search}
 							alt="search"
-							style={{ display: this.state.show_search_box ? 'none' : 'inline-block'}}
+							style={{ display: this.state.show_search_box ? 'none' : 'inline-block' }}
 							onClick={this.showSearchBox.bind(this)}></img>
 						<Link to="/help" target="_blank">
 							<img className="Action-button help"
@@ -161,7 +161,7 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 								</input><span>{radar_max}</span>
 								<datalist id="radar-list">
 									<option value={radar_min} label={radar_min.toString()}></option>
-									{[...Array(radar_max ).keys()].slice(radar_min + 1).map( v => (
+									{[...Array(radar_max).keys()].slice(radar_min + 1).map(v => (
 										<option value={v}></option>
 									))}
 									<option value={radar_max} label={radar_max.toString()}></option>

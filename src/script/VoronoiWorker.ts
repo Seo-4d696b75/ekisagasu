@@ -1,11 +1,11 @@
-import {Voronoi} from "../diagram/Voronoi"
-import {Point} from "../diagram/types"
+import { Voronoi } from "../diagram/Voronoi"
+import { Point } from "../diagram/types"
 
 const ctx: Worker = self as any;
 
 interface WorkerState {
-  voronoi: Voronoi | null
-  promise: Map<number, ((p: Point[]) => void)>
+	voronoi: Voronoi | null
+	promise: Map<number, ((p: Point[]) => void)>
 }
 
 const state: WorkerState = {
@@ -16,43 +16,43 @@ const state: WorkerState = {
 ctx.addEventListener('message', messaage => {
 	var data = JSON.parse(messaage.data);
 	console.log("worker", data);
-	if ( data.type === 'start' ){
+	if (data.type === 'start') {
 		var container = data.container;
-		var provider = function(point){
-			return new Promise<Point[]>((resolve,reject) =>{
+		var provider = function (point) {
+			return new Promise<Point[]>((resolve, reject) => {
 				state.promise.set(point.code, resolve);
 				ctx.postMessage(JSON.stringify({
 					type: 'points',
 					code: point.code,
 				}));
 			});
-    };
-    var progress = (index: number, polygon: Point[])=>{
+		};
+		var progress = (index: number, polygon: Point[]) => {
 			ctx.postMessage(JSON.stringify({
 				type: 'progress',
 				index: index,
-				polygon: polygon.map( point => {
-					return {lat: point.y, lng: point.x};
+				polygon: polygon.map(point => {
+					return { lat: point.y, lng: point.x };
 				})
-      }));
-    }
+			}));
+		}
 		state.voronoi = new Voronoi(container, provider);
 		state.voronoi.execute(data.k, data.center, progress).then(() => {
-      ctx.postMessage(JSON.stringify({
+			ctx.postMessage(JSON.stringify({
 				type: 'complete',
 			}));
-    }).catch( e => {
+		}).catch(e => {
 			console.log(e)
 			ctx.postMessage(JSON.stringify({
 				type: 'error',
 				err: e.message
 			}));
 		})
-		
-			
-	} else if ( data.type === 'points' ){
+
+
+	} else if (data.type === 'points') {
 		var resolve = state.promise.get(data.code);
-		if ( resolve ){
+		if (resolve) {
 			state.promise.delete(data.code);
 			resolve(data.points);
 		} else {

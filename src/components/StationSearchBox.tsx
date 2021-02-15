@@ -3,7 +3,7 @@ import Autosuggest from 'react-autosuggest';
 import axios from "axios";
 import "./StationSearchBox.css";
 import Service from "../script/StationService";
-import {CircularProgress} from "@material-ui/core"
+import { CircularProgress } from "@material-ui/core"
 
 interface SearchProps {
   onSuggestionSelected: (item: StationSuggestion) => any
@@ -31,7 +31,7 @@ interface SuggestSection {
 
 export default class StationSearchBox extends React.Component<SearchProps, SearchState> {
 
-  constructor(props: SearchProps){
+  constructor(props: SearchProps) {
     super(props);
     this.state = {
       value: '',
@@ -40,14 +40,14 @@ export default class StationSearchBox extends React.Component<SearchProps, Searc
     };
   }
 
-  
-  input_value ='';
+
+  input_value = '';
   ignore_pattern = /[ｂ-ｚ]+$/i
   input_ref = React.createRef<Autosuggest>()
   last_request_id: NodeJS.Timeout | null = null
 
 
-  onChange(event: React.FormEvent<any>, params: Autosuggest.ChangeEvent){
+  onChange(event: React.FormEvent<any>, params: Autosuggest.ChangeEvent) {
     this.setState({
       ...this.state,
       value: params.newValue
@@ -56,17 +56,17 @@ export default class StationSearchBox extends React.Component<SearchProps, Searc
   }
 
 
-  onSuggestionsFetchRequested(request: Autosuggest.SuggestionsFetchRequestedParams){
+  onSuggestionsFetchRequested(request: Autosuggest.SuggestionsFetchRequestedParams) {
     var value = request.value
-    if ( value.length < 1 ){
+    if (value.length < 1) {
       return;
     }
-    if ( this.ignore_pattern.test(value) ) return;
-    if ( this.last_request_id ){
+    if (this.ignore_pattern.test(value)) return;
+    if (this.last_request_id) {
       clearTimeout(this.last_request_id);
     }
-    
-    this.last_request_id = setTimeout(()=>{
+
+    this.last_request_id = setTimeout(() => {
       console.log('fetch suggestions', value);
       this.setState({
         ...this.state,
@@ -83,14 +83,14 @@ export default class StationSearchBox extends React.Component<SearchProps, Searc
           suggestions: [
             {
               title: '駅・停留所',
-              list: stations.map( d => {
+              list: stations.map(d => {
                 d['type'] = 'station';
                 return d as StationSuggestion;
               })
             },
             {
               title: '路線',
-              list: lines.map(d  => {
+              list: lines.map(d => {
                 d['type'] = 'line';
                 return d as StationSuggestion;
               })
@@ -104,7 +104,7 @@ export default class StationSearchBox extends React.Component<SearchProps, Searc
     }, 500)
   }
 
-  onSuggestionsClearRequested(){
+  onSuggestionsClearRequested() {
     //console.log('onSuggestionsClearRequested');
     this.setState({
       ...this.state,
@@ -112,11 +112,11 @@ export default class StationSearchBox extends React.Component<SearchProps, Searc
     });
   };
 
-  getSuggestionValue(suggestion: StationSuggestion): string{
+  getSuggestionValue(suggestion: StationSuggestion): string {
     return suggestion.name;
   }
 
-  getSectionSuggestions(section: SuggestSection): Array<StationSuggestion>{
+  getSectionSuggestions(section: SuggestSection): Array<StationSuggestion> {
     return section.list;
   }
 
@@ -126,7 +126,7 @@ export default class StationSearchBox extends React.Component<SearchProps, Searc
     );
   }
 
-  renderSuggestion(suggestion: StationSuggestion, param: Autosuggest.RenderSuggestionParams){
+  renderSuggestion(suggestion: StationSuggestion, param: Autosuggest.RenderSuggestionParams) {
     return (
       <div>
         {suggestion.prefecture ? (
@@ -135,26 +135,26 @@ export default class StationSearchBox extends React.Component<SearchProps, Searc
         {suggestion.name}
       </div>
     );
-  } 
+  }
 
   onSuggestionSelected(event: React.FormEvent<any>, data: Autosuggest.SuggestionSelectedEventData<StationSuggestion>) {
     var suggestion = data.suggestion
     console.log("selected", suggestion);
-    if ( this.props.onSuggestionSelected ){
+    if (this.props.onSuggestionSelected) {
       this.props.onSuggestionSelected(suggestion);
     }
   };
 
-  focus(){
+  focus() {
     console.log("focus")
-    if ( this.input_ref.current && this.input_ref.current.input ){
+    if (this.input_ref.current && this.input_ref.current.input) {
       this.input_ref.current.input.focus()
     }
   }
 
-  render(){
+  render() {
     var value = this.state.value;
-    if ( value !== this.input_value && this.input_value.length === 0 ){
+    if (value !== this.input_value && this.input_value.length === 0) {
       value = '';
     }
     const inputProps: Autosuggest.InputProps<StationSuggestion> = {
@@ -164,7 +164,7 @@ export default class StationSearchBox extends React.Component<SearchProps, Searc
     };
     return (
       <div className="suggestion-container">
-        <Autosuggest<StationSuggestion,SuggestSection>
+        <Autosuggest<StationSuggestion, SuggestSection>
           ref={this.input_ref}
           //className="suggestion-input"
           suggestions={this.state.suggestions}
@@ -178,7 +178,7 @@ export default class StationSearchBox extends React.Component<SearchProps, Searc
           onSuggestionSelected={this.onSuggestionSelected.bind(this)}
           inputProps={inputProps}></Autosuggest>
         <div className={`suggestion-loading ${this.state.loading ? "show" : ""}`}>
-          <CircularProgress color="primary" size={26} thickness={5.0} variant="indeterminate"/>
+          <CircularProgress color="primary" size={26} thickness={5.0} variant="indeterminate" />
         </div>
       </div>
     )

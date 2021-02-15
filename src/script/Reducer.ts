@@ -106,6 +106,7 @@ const reducer: Reducer<GlobalState, GlobalAction> = (
             location: undefined,
           })
       }
+      break
     }
     case ActionType.SET_TRANSITION: {
       return {

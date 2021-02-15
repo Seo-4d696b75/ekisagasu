@@ -38,7 +38,7 @@ export default class Help extends React.Component {
                     <div className="Text-container">
 
 
-                        <h1>「駅メモ！」<br/>支援ツールサイト</h1>
+                        <h1>「駅メモ！」<br />支援ツールサイト</h1>
 
                         <h2>駅メモとは？</h2>
                         <img className="Image screen" alt="ekimemo" src="https://user-images.githubusercontent.com/25225028/76631346-e7f67a80-6584-11ea-9f6b-5e8885887363.png" />

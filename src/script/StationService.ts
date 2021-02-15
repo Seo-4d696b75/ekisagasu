@@ -24,7 +24,7 @@ export class StationService {
 
 	tree: StationKdTree | null = null
 
-	tasks: Map<string, Promise<any>|null> = new Map()
+	tasks: Map<string, Promise<any> | null> = new Map()
 
 	async initialize(): Promise<StationService> {
 		if (this.initialized) {
@@ -65,17 +65,17 @@ export class StationService {
 		this.stations.clear();
 		this.tasks.clear();
 		this.watch_current_position(false);
-		
+
 		console.log('service released');
 	}
 
-	set_position_accuracy(value: boolean){
+	set_position_accuracy(value: boolean) {
 		console.log("position accuracy changed", value);
-			this.position_options.enableHighAccuracy = value;
-			if (this.navigator_id) {
-				this.watch_current_position(false);
-				this.watch_current_position(true);
-			}
+		this.position_options.enableHighAccuracy = value;
+		if (this.navigator_id) {
+			this.watch_current_position(false);
+			this.watch_current_position(true);
+		}
 	}
 
 	watch_current_position(enable: boolean) {
@@ -179,7 +179,7 @@ export class StationService {
 
 	get_line_detail(code: number): Promise<Line> {
 		const line = this.lines.get(code);
-		if ( !line ){
+		if (!line) {
 			return Promise.reject(`line not found id:${code}`)
 		} else if (line.has_details) {
 			return Promise.resolve(line);

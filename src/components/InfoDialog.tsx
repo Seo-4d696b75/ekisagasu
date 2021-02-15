@@ -8,9 +8,8 @@ import img_above from "../img/ic_above.png";
 import img_line from "../img/ic_line.png";
 import img_location from "../img/ic_location.png";
 import { CSSTransition } from "react-transition-group";
-import * as Actions from "../script/Actions";
 import { Station } from "../script/Station";
-import {StationDialogProps, PosDialogProps, LineDialogProps, DialogType} from "./Map"
+import { StationDialogProps, PosDialogProps, LineDialogProps, DialogType } from "./Map"
 import { Line } from "../script/Line";
 
 interface StationInfoProps {
@@ -101,14 +100,14 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 							</div>
 
 						) : (
-							<div className="Horizontal-container">
-								<img src={img_location} alt="icon-details" className="Icon-station" />
-								<div className="Station-details">
-									距離：{this.formatDistance(info.props.location.dist)}<br />
+								<div className="Horizontal-container">
+									<img src={img_location} alt="icon-details" className="Icon-station" />
+									<div className="Station-details">
+										距離：{this.formatDistance(info.props.location.dist)}<br />
 				        			選択：E{info.props.location.pos.lng.toFixed(6)} N{info.props.location.pos.lat.toFixed(6)}
+									</div>
 								</div>
-							</div>
-						)}
+							)}
 
 					</div>
 					<div className="Button-container">
@@ -116,7 +115,7 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 							src={img_delete}
 							alt="close dialog"
 							className="Icon-action close"
-							onClick={this.onClosed.bind(this)} /><br/>
+							onClick={this.onClosed.bind(this)} /><br />
 						<img
 							onClick={this.onShowVoronoi.bind(this, station)}
 							src={img_voronoi}
@@ -167,8 +166,8 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 								className="Icon-action"
 								onClick={this.onRadarClose.bind(this)} />
 						</div>
-						
-						
+
+
 					</div>
 				</CSSTransition>
 			</div>
@@ -189,7 +188,7 @@ interface LineInfoState {
 	expand_stations: boolean
 }
 
-export class LineDialog extends React.Component<LineInfoProps,LineInfoState> {
+export class LineDialog extends React.Component<LineInfoProps, LineInfoState> {
 
 
 	state = {
