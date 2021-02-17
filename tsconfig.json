@@ -19,12 +19,13 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "noImplicitAny": false,
     "jsx": "react-jsx",
     "downlevelIteration": true,
-    "types": ["googlemaps"],
-    "outDir": "./build/",
-    "noImplicitAny": false,
-    "sourceMap": true
+    "sourceMap": false,
+    "types": [
+      "googlemaps"
+    ]
   },
   "include": [
     "src"

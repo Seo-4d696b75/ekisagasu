@@ -1,7 +1,7 @@
 import { Voronoi } from "../diagram/Voronoi"
 import { Point } from "../diagram/types"
 
-const ctx: Worker = self as any;
+const ctx: Worker = window.self as any;
 
 interface WorkerState {
 	voronoi: Voronoi | null
