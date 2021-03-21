@@ -1,6 +1,7 @@
 import { Reducer } from "redux"
 import { DialogType, InfoDialog, MapTransition } from "../components/Map"
-
+import { createEvent, createIdleEvent, PropsEvent } from "./Event"
+import { LatLng } from "./Utils"
 
 export enum ActionType {
   SET_RADER_K,
@@ -38,6 +39,7 @@ export interface GlobalState {
   high_accuracy: boolean,
   info_dialog: InfoDialog | null
   transition: MapTransition
+  map_focus: PropsEvent<LatLng>
 }
 
 const initState: GlobalState = {
@@ -47,6 +49,7 @@ const initState: GlobalState = {
   high_accuracy: false,
   info_dialog: null,
   transition: "loading",
+  map_focus: createIdleEvent(),
 }
 
 const reducer: Reducer<GlobalState, GlobalAction> = (
@@ -79,11 +82,12 @@ const reducer: Reducer<GlobalState, GlobalAction> = (
       }
     }
     case ActionType.SHOW_STATION_ITEM: {
-      var update = (t: MapTransition) => {
+      var update = (t: MapTransition, focus?: LatLng) => {
         return {
           ...state,
           info_dialog: action.payload,
           transition: t,
+          map_focus: (focus ? createEvent(focus) : state.map_focus)
         }
       }
       switch (action.payload.type) {
@@ -98,13 +102,13 @@ const reducer: Reducer<GlobalState, GlobalAction> = (
             show_high_voronoi: false,
             station: action.payload.props.station,
             location: action.payload.props.location.pos
-          })
+          }, action.payload.props.location.pos)
         case DialogType.Station:
           return update({
             show_high_voronoi: false,
             station: action.payload.props.station,
             location: undefined,
-          })
+          }, action.payload.props.station.position)
       }
       break
     }

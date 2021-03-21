@@ -15,6 +15,7 @@ import { Line } from "../script/Line"
 import { GlobalState } from "../script/Reducer"
 import * as Actions from "../script/Actions"
 import { connect } from "react-redux"
+import { PropsEvent } from "../script/Event"
 
 const VORONOI_COLOR = [
 	"#0000FF",
@@ -113,6 +114,7 @@ interface MapProps {
 	current_heading: number | null
 	info_dialog: InfoDialog | null
 	transition: MapTransition
+	focus: PropsEvent<Utils.LatLng>
 }
 
 function mapGlobalState2Props(state: GlobalState): MapProps {
@@ -125,6 +127,7 @@ function mapGlobalState2Props(state: GlobalState): MapProps {
 		current_heading: coords ? coords.heading : 0,
 		info_dialog: state.info_dialog,
 		transition: state.transition,
+		focus: state.map_focus,
 	}
 }
 
@@ -192,6 +195,15 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 				screen_wide: wide,
 			}))
 		}
+	}
+
+	componentDidUpdate() {
+		this.props.focus.observe("map", pos => {
+			if (this.map) {
+				this.map.panTo(pos)
+				if (this.map.getZoom() < 14) this.map.setZoom(14)
+			}
+		})
 	}
 
 	showRadarVoronoi(station: Station) {
@@ -487,10 +499,6 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 		var t = this.props.transition
 		if (isStationDialogTransition(t) && t.show_high_voronoi) return
 
-		if (this.map) {
-			this.map.panTo(pos)
-			if (this.map.getZoom() < 14) this.map.setZoom(14)
-		}
 		Actions.requestShowPosition(pos)
 
 	}
@@ -507,10 +515,6 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 
 	showStation(station: Station) {
-		if (this.map) {
-			this.map.panTo(station.position)
-			if (this.map.getZoom() < 14) this.map.setZoom(14)
-		}
 		Actions.requestShowStation(station)
 	}
 
