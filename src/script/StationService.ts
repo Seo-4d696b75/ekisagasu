@@ -5,7 +5,6 @@ import { Line } from "./Line";
 import * as Utils from "./Utils";
 import * as Actions from "./Actions";
 
-const TAG_STATIONS = "all-stations";
 const TAG_SEGMENT_PREFIX = "station-segment:";
 
 export class StationService {
@@ -152,30 +151,18 @@ export class StationService {
 	get_station(code: number): Promise<Station> {
 		var s = this.stations.get(code);
 		if (s) return Promise.resolve(s);
-		var task = this.tasks.get(TAG_STATIONS);
-		if (task) {
-			return task.then(() => {
-				return this.get_station(code);
-			});
-		} else {
-			/*
-			task = axios.get(`https://station-service.herokuapp.com/api/station?code=${code}`).then(res => {
-				var s = new Station(res.data)
-				this.stations.set(code, s)	
-				this.tasks.set(TAG_STATIONS, null);
-				return this.get_station_immediate(code);
-			});*/
-			task = axios.get('https://raw.githubusercontent.com/Seo-4d696b75/station_database/master/out/station.json').then(res => {
-				res.data.forEach(item => {
-					var code = item['code'];
-					if (!this.stations.has(code)) {
-						this.stations.set(code, new Station(item));
-					}
-				})
-			})
-			this.tasks.set(TAG_STATIONS, task);
-			return task;
-		}
+		// step 1: get lat/lng of the target station
+		// step 2: update neighbor stations
+		return axios.get(`https://station-service.herokuapp.com/api/station?code=${code}`).then(res => {
+			var pos = {
+				lat: res.data.lat,
+				lng: res.data.lng,
+			}
+			// this 'update' operation loads station data as a segment
+			return this.update_location(pos, 1)
+		}).then(() => {
+			return this.get_station_immediate(code)
+		})
 	}
 
 	get_line(code: number): Line {
@@ -222,6 +209,7 @@ export class StationService {
 	get_tree_segment(name: string): Promise<any> {
 		const tag = `${TAG_SEGMENT_PREFIX}${name}`;
 		var task = this.tasks.get(tag);
+		// be sure to avoid loading the same segment
 		if (task) {
 			return task;
 		}
