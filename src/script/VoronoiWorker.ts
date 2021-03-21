@@ -1,7 +1,7 @@
 import { Voronoi } from "../diagram/Voronoi"
 import { Point } from "../diagram/types"
 
-const ctx: Worker = window.self as any;
+const ctx: Worker = self as any;  /* eslint-disable-line no-restricted-globals */
 
 interface WorkerState {
 	voronoi: Voronoi | null
