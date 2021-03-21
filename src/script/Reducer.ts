@@ -1,6 +1,7 @@
 import { Reducer } from "redux"
 import { DialogType, InfoDialog, MapTransition } from "../components/Map"
 import { createEvent, createIdleEvent, PropsEvent } from "./Event"
+import { Station } from "./Station"
 import { LatLng } from "./Utils"
 
 export enum ActionType {
@@ -10,6 +11,7 @@ export enum ActionType {
   SET_GPS_ACCURACY,
   SHOW_STATION_ITEM,
   SET_TRANSITION,
+  LOAD_STATIONS,
 }
 
 interface Action<TAction, TPayload = null> {
@@ -23,6 +25,7 @@ type PositionAction = Action<ActionType.SET_CURRENT_POSITION, { pos: Geolocation
 type GPSAccuracyAction = Action<ActionType.SET_GPS_ACCURACY, { high: boolean }>
 type ShowAction = Action<ActionType.SHOW_STATION_ITEM, InfoDialog>
 type TransitionAction = Action<ActionType.SET_TRANSITION, { current: MapTransition }>
+type LoadStationsAction = Action<ActionType.LOAD_STATIONS, { stations: Array<Station> }>
 
 export type GlobalAction =
   RadarAction |
@@ -30,7 +33,8 @@ export type GlobalAction =
   PositionAction |
   GPSAccuracyAction |
   ShowAction |
-  TransitionAction
+  TransitionAction |
+  LoadStationsAction
 
 export interface GlobalState {
   radar_k: number
@@ -40,6 +44,7 @@ export interface GlobalState {
   info_dialog: InfoDialog | null
   transition: MapTransition
   map_focus: PropsEvent<LatLng>
+  stations: Array<Station>
 }
 
 const initState: GlobalState = {
@@ -50,6 +55,7 @@ const initState: GlobalState = {
   info_dialog: null,
   transition: "loading",
   map_focus: createIdleEvent(),
+  stations: [],
 }
 
 const reducer: Reducer<GlobalState, GlobalAction> = (
@@ -116,6 +122,14 @@ const reducer: Reducer<GlobalState, GlobalAction> = (
       return {
         ...state,
         transition: action.payload.current
+      }
+    }
+    case ActionType.LOAD_STATIONS: {
+      var list = [...state.stations]
+      action.payload.stations.forEach(s => list.push(s))
+      return {
+        ...state,
+        stations: list,
       }
     }
   }

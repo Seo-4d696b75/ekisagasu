@@ -181,3 +181,12 @@ function makeRadarList(pos: LatLng, k: number): Array<RadarStation> {
 		}
 	})
 }
+
+export function onStationLoaded(list: Array<Station>) {
+	store.dispatch({
+		type: ActionType.LOAD_STATIONS,
+		payload: {
+			stations: list,
+		}
+	})
+}

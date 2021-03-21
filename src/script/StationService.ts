@@ -158,16 +158,21 @@ export class StationService {
 				return this.get_station(code);
 			});
 		} else {
+			/*
+			task = axios.get(`https://station-service.herokuapp.com/api/station?code=${code}`).then(res => {
+				var s = new Station(res.data)
+				this.stations.set(code, s)	
+				this.tasks.set(TAG_STATIONS, null);
+				return this.get_station_immediate(code);
+			});*/
 			task = axios.get('https://raw.githubusercontent.com/Seo-4d696b75/station_database/master/out/station.json').then(res => {
 				res.data.forEach(item => {
 					var code = item['code'];
 					if (!this.stations.has(code)) {
 						this.stations.set(code, new Station(item));
 					}
-				});
-				this.tasks.set(TAG_STATIONS, null);
-				return this.get_station_immediate(code);
-			});
+				})
+			})
 			this.tasks.set(TAG_STATIONS, task);
 			return task;
 		}
@@ -223,12 +228,11 @@ export class StationService {
 		task = axios.get(`https://raw.githubusercontent.com/Seo-4d696b75/station_database/master/out/tree/${name}.json`).then(res => {
 			console.log("tree-segment", name, res.data);
 			const data = res.data;
-			data.node_list.filter(e => {
+			var list = data.node_list.filter(e => {
 				return !e.segment;
-			}).forEach(e => {
-				var s = new Station(e);
-				this.stations.set(s.code, s);
-			});
+			}).map(e => new Station(e))
+			list.forEach(s => this.stations.set(s.code, s))
+			Actions.onStationLoaded(list)
 			this.tasks.set(tag, null);
 			return data;
 		});

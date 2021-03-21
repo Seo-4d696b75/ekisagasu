@@ -115,6 +115,7 @@ interface MapProps {
 	info_dialog: InfoDialog | null
 	transition: MapTransition
 	focus: PropsEvent<Utils.LatLng>
+	voronoi: Array<Station>
 }
 
 function mapGlobalState2Props(state: GlobalState): MapProps {
@@ -128,6 +129,7 @@ function mapGlobalState2Props(state: GlobalState): MapProps {
 		info_dialog: state.info_dialog,
 		transition: state.transition,
 		focus: state.map_focus,
+		voronoi: state.stations,
 	}
 }
 
@@ -169,7 +171,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 		StationService.initialize().then(service => {
 			if (this.map) {
-				this.onBoundsChanged(true)
+				this.updateBounds(this.map)
 			}
 		})
 		// set callback invoked when screen resized
@@ -412,62 +414,34 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 		}
 	}
 
-
-	onBoundsChanged(idle: boolean = false) {
-		if (!this.map) return
-		var bounds = this.map.getBounds()
-		if (!bounds) return
-		var ne = bounds.getNorthEast()
-		var sw = bounds.getSouthWest()
-		//console.log(ne.lat(), ne.lng(), sw.lat(), sw.lng())
-		var rect = {
-			south: sw.lat(),
-			north: ne.lat(),
-			west: sw.lng(),
-			east: ne.lng()
-		}
-		if (this.solved_bounds && !idle) {
-			var inside = StationService.inside_rect(rect, this.solved_bounds)
-			var width1 = rect.east - rect.west
-			var height1 = rect.north - rect.south
-			var width2 = this.solved_bounds.east - this.solved_bounds.west
-			var height2 = this.solved_bounds.north - this.solved_bounds.south
-			if (!inside || width1 < width2 / 6 || height1 < height2 / 6) {
-				this.updateBounds(rect)
-			}
-		} else {
-			this.updateBounds(rect)
-		}
-	}
-
 	onMapIdle(props?: IMapProps, map?: google.maps.Map, event?: any) {
-		//console.log("idle")
-		if (props && map) {
-			this.onBoundsChanged(true)
+	
+		if (StationService.initialize && this.map) {
+			this.updateBounds(this.map)
 		}
 	}
 
-	updateBounds(rect: Utils.RectBounds) {
-		//console.log("updateBounds", rect)
-		if (StationService.initialized && this.map) {
-			const margin_width = Math.min(rect.east - rect.west, 0.5)
-			const margin_height = Math.min(rect.north - rect.south, 0.5)
-			const bounds = {
-				north: rect.north + margin_height,
-				south: rect.south - margin_height,
-				east: rect.east + margin_width,
-				west: rect.west - margin_width
+	updateBounds(map: google.maps.Map) {
+
+		const bounds = map.getBounds()
+		if (!bounds) return
+		const zoom = map.getZoom()
+		var hide = (zoom < ZOOM_TH)
+		this.setState({
+			...this.state,
+			hide_voronoi: hide,
+		})
+		if (!hide) {
+			var ne = bounds.getNorthEast()
+			var sw = bounds.getSouthWest()
+			var margin = Math.max(ne.lat() - sw.lat(), ne.lng() - sw.lng()) * 0.5
+			var rect = {
+				south: sw.lat() - margin,
+				north: ne.lat() + margin,
+				west: sw.lng() - margin,
+				east: ne.lng() + margin,
 			}
-			const zoom = this.map.getZoom()
-			const limit = zoom < ZOOM_TH ? VORONOI_SIZE_TH : undefined
-			StationService.update_rect(bounds, limit).then(list => {
-				this.setState({
-					...this.state,
-					voronoi: list,
-					hide_voronoi: (zoom < ZOOM_TH && list.length >= VORONOI_SIZE_TH),
-				})
-			})
-			this.solved_bounds = bounds
+			StationService.update_rect(rect, VORONOI_SIZE_TH)
 		}
 	}
 
@@ -541,7 +515,6 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 						initialCenter={{ lat: 35.681236, lng: 139.767125 }}
 						onReady={this.onMapReady.bind(this)}
 						onClick={this.onMapClicked.bind(this)}
-						onBoundsChanged={() => this.onBoundsChanged()}
 						onZoomChanged={this.onMapZoomChanged.bind(this)}
 						onDragstart={this.onMapDragStart.bind(this)}
 						onRightclick={this.onMapRightClicked.bind(this)}
@@ -614,7 +587,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 								icon={pin_station}>
 							</Marker>
 						)) : null}
-						{show_voronoi ? this.state.voronoi.map((s, i) => (
+						{show_voronoi ? this.props.voronoi.map((s, i) => (
 							<Polygon
 								key={i}
 								paths={s.voronoi_points}
