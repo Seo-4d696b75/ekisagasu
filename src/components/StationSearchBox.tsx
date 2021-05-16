@@ -105,12 +105,11 @@ export default class StationSearchBox extends React.Component<SearchProps, Searc
   }
 
   onSuggestionsClearRequested() {
-    //console.log('onSuggestionsClearRequested');
     this.setState({
       ...this.state,
       suggestions: []
     });
-  };
+  }
 
   getSuggestionValue(suggestion: StationSuggestion): string {
     return suggestion.name;

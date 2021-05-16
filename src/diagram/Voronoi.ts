@@ -183,10 +183,10 @@ class Node implements Point {
  */
 class Intersection implements Point {
 
-	constructor(point: Point, b: Bisector, other?: Line, center?: Point) {
+	constructor(intersection: Point, b: Bisector, other?: Line, center?: Point) {
 		this.line = b;
-		this.x = point.x;
-		this.y = point.y;
+		this.x = intersection.x;
+		this.y = intersection.y;
 
 		if (other && center) {
 
@@ -197,8 +197,8 @@ class Intersection implements Point {
 				dy *= -1;
 			}
 			var p = {
-				x: point.x + dx,
-				y: point.y + dy
+				x: intersection.x + dx,
+				y: intersection.y + dy
 			};
 			this.step = line.onSameSide(other, p, center) ? "down" : "up";
 		} else {
@@ -218,7 +218,7 @@ class Intersection implements Point {
 	_node: Node | null = null
 
 	get hasPrevious(): boolean {
-		if ( this._previous === undefined ) {
+		if (this._previous === undefined) {
 			throw new VoronoiError("previous not init yet")
 		}
 		return this._previous !== null
@@ -226,14 +226,14 @@ class Intersection implements Point {
 
 	get previous(): Intersection {
 		if (this._previous) return this._previous
-		if ( this._previous === undefined ) {
+		if (this._previous === undefined) {
 			throw new VoronoiError("previous not init yet")
 		}
 		throw new VoronoiError("no previous")
 	}
 
 	get hasNext(): boolean {
-		if ( this._next === undefined ){
+		if (this._next === undefined) {
 			throw new VoronoiError("next not init yet")
 		}
 		return this._next !== null
@@ -241,7 +241,7 @@ class Intersection implements Point {
 
 	get next(): Intersection {
 		if (this._next) return this._next
-		if ( this._next === undefined ){
+		if (this._next === undefined) {
 			throw new VoronoiError("next not init yet")
 		}
 		throw new VoronoiError("no next")
@@ -318,8 +318,8 @@ class Intersection implements Point {
  */
 class Bisector {
 
-	constructor(line: Line, p?: Point) {
-		this.line = line;
+	constructor(bisector: Line, p?: Point) {
+		this.line = bisector;
 		this.intersections = [];
 		if (p) {
 			this.delaunayPoint = p;
@@ -466,9 +466,9 @@ export class Voronoi {
 			this.requestedPoint.add(center);
 			this.addedPoint.add(center);
 			const neighbors = await this.provider(center);
-			for (let point of neighbors) {
-				if (this.addedPoint.add(point))
-					this.addBisector(point);
+			for (let p of neighbors) {
+				if (this.addedPoint.add(p))
+					this.addBisector(p);
 			}
 		} catch (e) {
 			return Promise.reject(e)
@@ -559,9 +559,9 @@ export class Voronoi {
 		return list;
 	}
 
-	private requestExtension(point: Point | null, tasks: Array<Promise<void>>): void {
-		if (point && this.requestedPoint.add(point)) {
-			var task = this.provider(point).then(neighbors => {
+	private requestExtension(target: Point | null, tasks: Array<Promise<void>>): void {
+		if (target && this.requestedPoint.add(target)) {
+			var task = this.provider(target).then(neighbors => {
 				for (let p of neighbors) {
 					if (this.addedPoint.add(p)) {
 						this.addBisector(p);
@@ -592,9 +592,11 @@ export class Voronoi {
 		this.bisectors.push(boundary);
 	}
 
-	private addBisector(point: Point) {
-		var b = line.getPerpendicularBisector(point, this.center);
-		var bisector = new Bisector(b, point);
+	private addBisector(intersection: Point) {
+		var bisector = new Bisector(
+			line.getPerpendicularBisector(intersection, this.center),
+			intersection
+		);
 		this.bisectors.forEach(preexist => {
 			var p = line.getIntersection(bisector.line, preexist.line);
 			if (p && triangle.containsPoint(this.container, p, ERROR)) {
