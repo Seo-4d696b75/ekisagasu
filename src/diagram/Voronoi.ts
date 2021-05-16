@@ -83,13 +83,13 @@ class Node implements Point {
 	next(previous: Point) {
 		const p1 = this.p1;
 		const p2 = this.p2;
-		if (p1.next && point.equals(p1.next, previous)) {
+		if (p1.hasNext && point.equals(p1.next, previous)) {
 			return this.calcNext(p1, p2, false, invert(p1.step));
-		} else if (p1.previous && point.equals(p1.previous, previous)) {
+		} else if (p1.hasPrevious && point.equals(p1.previous, previous)) {
 			return this.calcNext(p1, p2, true, p1.step);
-		} else if (p2.next && point.equals(p2.next, previous)) {
+		} else if (p2.hasNext && point.equals(p2.next, previous)) {
 			return this.calcNext(p2, p1, false, invert(p2.step));
-		} else if (p2.previous && point.equals(p2.previous, previous)) {
+		} else if (p2.hasPrevious && point.equals(p2.previous, previous)) {
 			return this.calcNext(p2, p1, true, p2.step);
 		} else {
 			throw new VoronoiError("next node not found.");
@@ -211,19 +211,39 @@ class Intersection implements Point {
 	line: Bisector
 	step: StepDirection
 
-	_previous: Intersection | null = null
-	_next: Intersection | null = null
+	_previous: Intersection | null | undefined = undefined
+	_next: Intersection | null | undefined = undefined
 	index: number = 0
 
 	_node: Node | null = null
 
+	get hasPrevious(): boolean {
+		if ( this._previous === undefined ) {
+			throw new VoronoiError("previous not init yet")
+		}
+		return this._previous !== null
+	}
+
 	get previous(): Intersection {
 		if (this._previous) return this._previous
-		throw new VoronoiError("no previout")
+		if ( this._previous === undefined ) {
+			throw new VoronoiError("previous not init yet")
+		}
+		throw new VoronoiError("no previous")
+	}
+
+	get hasNext(): boolean {
+		if ( this._next === undefined ){
+			throw new VoronoiError("next not init yet")
+		}
+		return this._next !== null
 	}
 
 	get next(): Intersection {
 		if (this._next) return this._next
+		if ( this._next === undefined ){
+			throw new VoronoiError("next not init yet")
+		}
 		throw new VoronoiError("no next")
 	}
 
@@ -256,8 +276,8 @@ class Intersection implements Point {
 	}
 
 	isNeighbor(p: Point): boolean {
-		return (this._next !== null && point.equals(this._next, p))
-			|| (this._previous !== null && point.equals(this._previous, p));
+		return (this.hasNext && point.equals(this.next, p))
+			|| (this.hasPrevious && point.equals(this.previous, p));
 	}
 
 	hasNeighbor(step: StepDirection): boolean {
