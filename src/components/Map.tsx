@@ -416,7 +416,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 	onMapIdle(props?: IMapProps, map?: google.maps.Map, event?: any) {
 	
-		if (StationService.initialize && this.map) {
+		if (StationService.initialized && this.map) {
 			this.updateBounds(this.map)
 		}
 	}
