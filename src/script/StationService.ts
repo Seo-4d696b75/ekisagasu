@@ -36,14 +36,14 @@ export class StationService {
 
 		return new StationKdTree(this).initialize("root").then(tree => {
 			this.tree = tree;
-			return axios.get(`https://raw.githubusercontent.com/Seo-4d696b75/station_database/master/out/line.json`);
+			return axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/line.json`);
 		}).then(res => {
 			res.data.forEach(d => {
 				var line = new Line(d);
 				this.lines.set(line.code, line);
 			});
 		}).then(() => {
-			return axios.get('https://raw.githubusercontent.com/Seo-4d696b75/station_database/master/src/prefecture.csv');
+			return axios.get(process.env.REACT_APP_PREFECTURE_URL);
 		}).then(res => {
 			this.prefecture = new Map();
 			res.data.split('\n').forEach((line: string) => {
@@ -153,7 +153,7 @@ export class StationService {
 		if (s) return Promise.resolve(s);
 		// step 1: get lat/lng of the target station
 		// step 2: update neighbor stations
-		return axios.get(`https://station-service.herokuapp.com/api/station?code=${code}`).then(res => {
+		return axios.get(`${process.env.REACT_APP_STATION_API_URL}/station?code=${code}`).then(res => {
 			var pos = {
 				lat: res.data.lat,
 				lng: res.data.lng,
@@ -176,7 +176,7 @@ export class StationService {
 		} else if (line.has_details) {
 			return Promise.resolve(line);
 		} else {
-			return axios.get(`https://raw.githubusercontent.com/Seo-4d696b75/station_database/master/out/line/${code}.json`).then(res => {
+			return axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/line/${code}.json`).then(res => {
 				const data = res.data;
 				line.station_list = data["station_list"].map(item => {
 					var c = item['code'];
@@ -213,7 +213,7 @@ export class StationService {
 		if (task) {
 			return task;
 		}
-		task = axios.get(`https://raw.githubusercontent.com/Seo-4d696b75/station_database/master/out/tree/${name}.json`).then(res => {
+		task = axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/tree/${name}.json`).then(res => {
 			console.log("tree-segment", name, res.data);
 			const data = res.data;
 			var list = data.node_list.filter(e => {
