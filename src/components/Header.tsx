@@ -8,13 +8,13 @@ import img_help from "../img/ic_help.png";
 import { CSSTransition } from "react-transition-group";
 import { Link } from "react-router-dom";
 import StationSearchBox from "./StationSearchBox";
-import * as Actions from "../script/Actions";
 import { GlobalState } from "../script/Reducer";
 import { connect } from "react-redux"
 
 interface HeaderProps {
 	radar_k: number
 	show_position: boolean
+	show_station_pin: boolean
 	high_accuracy: boolean
 
 }
@@ -23,6 +23,7 @@ function mapGlobalState2Props(state: GlobalState): HeaderProps {
 	return {
 		radar_k: state.radar_k,
 		show_position: state.watch_position,
+		show_station_pin: state.show_station_pin,
 		high_accuracy: state.high_accuracy,
 
 	}
@@ -71,6 +72,10 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 		Action.setPositionAccuracy(e.target.checked);
 	}
 
+	onShowStationPinChanged(e: React.ChangeEvent<HTMLInputElement>) {
+		Action.setShowStationPin(e.target.checked)
+	}
+
 	showSearchBox() {
 		if (!this.state.show_search_box) {
 			console.log("show search box");
@@ -88,7 +93,7 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 	}
 
 	showStationItem(item: any) {
-		Actions.requestShowStationItem(item);
+		Action.requestShowStationItem(item);
 		this.setState({
 			...this.state,
 			show_search_box: false,
@@ -181,6 +186,14 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 									<input id="toggle-accuracy" className="toggle-input" type='checkbox'
 										checked={this.props.high_accuracy} onChange={this.onPositionAccuracyChanged.bind(this)} />
 									<label htmlFor="toggle-accuracy" className="toggle-label" />
+								</div>
+							</div>
+							<div className="switch-container">
+								<div className="Setting-title pin"> 地図上で駅の座標にピンを表示 </div>
+								<div className="toggle-switch pin">
+									<input id="toggle-pin" className="toggle-input" type='checkbox'
+										checked={this.props.show_station_pin} onChange={this.onShowStationPinChanged.bind(this)} />
+									<label htmlFor="toggle-pin" className="toggle-label" />
 								</div>
 							</div>
 						</div>

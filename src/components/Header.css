@@ -101,7 +101,7 @@
 	top: 40px;
 	right: 0px;
 	width: 240px;
-	height: 220px;
+	height: 280px;
 	padding: 10px;
 	pointer-events: none;
 	z-index: 10;
@@ -216,18 +216,11 @@
   width: 75px;
   height: 42px;
   margin: auto;
+	transform: scale(0.6);
 }
 
 .switch-container{
 	display: flex;
 	margin-top: 10px;
 	width: 100%;
-}
-
-.toggle-switch.position{
-	transform: scale(0.6);
-}
-
-.toggle-switch.accuracy{
-	transform: scale(0.6);
 }
