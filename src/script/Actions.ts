@@ -190,3 +190,12 @@ export function onStationLoaded(list: Array<Station>) {
 		}
 	})
 }
+
+export function setShowStationPin(show: boolean) {
+	store.dispatch({
+		type: ActionType.SHOW_STATION_PIN,
+		payload: {
+			show: show
+		}
+	})
+}

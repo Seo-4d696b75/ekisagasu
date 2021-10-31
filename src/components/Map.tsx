@@ -24,7 +24,8 @@ const VORONOI_COLOR = [
 	"#CCCC00"
 ]
 
-const ZOOM_TH = 10
+const ZOOM_TH_VORONOI = 10
+const zomm_TH_PIN = 12
 const VORONOI_SIZE_TH = 500
 
 export interface RadarStation {
@@ -109,6 +110,7 @@ export type MapTransition =
 interface MapProps {
 	radar_k: number
 	show_current_position: boolean
+	show_station_pin: boolean
 	current_position: Utils.LatLng | null
 	current_accuracy: number
 	current_heading: number | null
@@ -123,6 +125,7 @@ function mapGlobalState2Props(state: GlobalState): MapProps {
 	return {
 		radar_k: state.radar_k,
 		show_current_position: state.watch_position,
+		show_station_pin: state.show_station_pin,
 		current_position: coords ? { lat: coords.latitude, lng: coords.longitude } : null,
 		current_accuracy: coords ? coords.accuracy : 0,
 		current_heading: coords ? coords.heading : 0,
@@ -140,6 +143,7 @@ interface WrappedMapProps extends MapProps {
 interface MapState {
 	voronoi: Array<Station>
 	hide_voronoi: boolean
+	hide_pin: boolean
 	high_voronoi: Array<Utils.LatLng[]>
 	worker_running: boolean
 	screen_wide: boolean
@@ -152,6 +156,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 		voronoi: [],
 		hide_voronoi: false,
+		hide_pin: false,
 		high_voronoi: [],
 		worker_running: false,
 		screen_wide: false,
@@ -263,7 +268,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 				if (this.map && this.map_ref.current) {
 					var rect = this.map_ref.current.getBoundingClientRect()
 					var bounds = Utils.get_bounds(this.state.high_voronoi[this.props.radar_k - 1])
-					var props = Utils.get_zoom_property(bounds, rect.width, rect.height, ZOOM_TH, station.position, 100)
+					var props = Utils.get_zoom_property(bounds, rect.width, rect.height, ZOOM_TH_VORONOI, station.position, 100)
 					this.map.panTo(props.center)
 					this.map.setZoom(props.zoom)
 				}
@@ -312,7 +317,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 		const t = this.props.transition
 		if (!isLineDialogTranstion(t) || t.show_polyline) return
 		var polyline: Array<Utils.PolylineProps> = []
-		var bounds: Utils.RectBounds = line
+		var bounds: Utils.RectBounds
 		if (line.polyline_list) {
 			polyline = line.polyline_list
 			bounds = line
@@ -415,7 +420,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 	}
 
 	onMapIdle(props?: IMapProps, map?: google.maps.Map, event?: any) {
-	
+
 		if (StationService.initialized && this.map) {
 			this.updateBounds(this.map)
 		}
@@ -426,10 +431,11 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 		const bounds = map.getBounds()
 		if (!bounds) return
 		const zoom = map.getZoom()
-		var hide = (zoom < ZOOM_TH)
+		var hide = (zoom < ZOOM_TH_VORONOI)
 		this.setState({
 			...this.state,
 			hide_voronoi: hide,
+			hide_pin: zoom < zomm_TH_PIN,
 		})
 		if (!hide) {
 			var ne = bounds.getNorthEast()
@@ -505,6 +511,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 		const show_voronoi = !this.state.hide_voronoi && !(isStationDialogTransition(t) && t.show_high_voronoi)
 		const polyline = isLineDialogTranstion(t) && t.show_polyline ? t : null
 		const high_voronoi = isStationDialogTransition(t) && t.show_high_voronoi ? this.state.high_voronoi : null
+		const show_station_pin = !this.state.hide_pin && this.props.show_station_pin && !polyline && show_voronoi
 		return (
 			<div className='Map-container'>
 				<div className='Map-relative' ref={this.map_ref}>
@@ -543,21 +550,21 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 							&& this.props.current_position
 							&& this.props.current_heading
 							&& !isNaN(this.props.current_heading) ? (
-								<Marker
-									position={this.props.current_position}
-									clickable={false}
-									icon={{
-										//url: require("../img/direction_pin.svg"),
-										anchor: new this.props.google.maps.Point(64, 64),
-										path: "M 44 36 A 40 40 0 0 1 84 36 L 64 6 Z",
-										fillColor: "#154bb6",
-										fillOpacity: 1.0,
-										strokeColor: "white",
-										strokeWeight: 1.2,
-										scale: 0.3,
-										rotation: this.props.current_heading,
-									}}></Marker>
-							) : null}
+							<Marker
+								position={this.props.current_position}
+								clickable={false}
+								icon={{
+									//url: require("../img/direction_pin.svg"),
+									anchor: new this.props.google.maps.Point(64, 64),
+									path: "M 44 36 A 40 40 0 0 1 84 36 L 64 6 Z",
+									fillColor: "#154bb6",
+									fillOpacity: 1.0,
+									strokeColor: "white",
+									strokeWeight: 1.2,
+									scale: 0.3,
+									rotation: this.props.current_heading,
+								}}></Marker>
+						) : null}
 						{this.props.show_current_position && this.props.current_position ? (
 							<Circle
 								visible={this.props.current_accuracy > 10}
@@ -596,6 +603,13 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 								strokeOpacity={0.8}
 								fillOpacity={0.0}
 								clickable={false} />
+						)) : null}
+						{show_station_pin ? this.props.voronoi.map((s, i) => (
+							<Marker
+								key={i}
+								position={s.position}
+								icon={pin_station}>
+							</Marker>
 						)) : null}
 						{high_voronoi ? high_voronoi.map((points, i) => (
 							<Polygon
