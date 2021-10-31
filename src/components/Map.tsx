@@ -7,6 +7,7 @@ import { CSSTransition } from "react-transition-group"
 import * as Rect from "../diagram/Rect"
 import pin_station from "../img/map_pin_station.svg"
 import pin_location from "../img/map_pin.svg"
+import ic_mylocation from "../img/ic_mylocation.png"
 import * as Utils from "../script/Utils"
 import VoronoiWorker from "worker-loader!./../script/VoronoiWorker";  // eslint-disable-line import/no-webpack-loader-syntax
 import { CircularProgress } from "@material-ui/core"
@@ -502,6 +503,13 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 		Actions.requestShowLine(line)
 	}
 
+	moveToCurrentPosition() {
+		const pos = this.props.current_position
+		if ( pos && this.map ){
+			this.map.panTo(new google.maps.LatLng(pos.lat, pos.lng))
+		}
+	}
+
 	render() {
 		const t = this.props.transition
 		const clicked_marker = isStationDialogTransition(this.props.transition)
@@ -665,6 +673,14 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 						</div>
 					</CSSTransition>
+					{this.props.show_current_position ? (
+						<div className="menu mylocation">
+							<img 
+								src={ic_mylocation} 
+								className="icon mylocation"
+								onClick={this.moveToCurrentPosition.bind(this)}></img>
+						</div>
+					) : null}
 
 				</div>
 			</div>
