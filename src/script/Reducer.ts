@@ -43,7 +43,7 @@ export interface GlobalState {
   radar_k: number
   watch_position: boolean
   show_station_pin: boolean
-  current_position: GeolocationPosition | null
+  current_position: PropsEvent<GeolocationPosition>
   high_accuracy: boolean,
   info_dialog: InfoDialog | null
   transition: MapTransition
@@ -55,7 +55,7 @@ const initState: GlobalState = {
   radar_k: 22,
   watch_position: false,
   show_station_pin: true,
-  current_position: null,
+  current_position: createIdleEvent(),
   high_accuracy: false,
   info_dialog: null,
   transition: "loading",
@@ -89,7 +89,7 @@ const reducer: Reducer<GlobalState, GlobalAction> = (
     case ActionType.SET_CURRENT_POSITION: {
       return {
         ...state,
-        current_position: action.payload.pos
+        current_position: createEvent(action.payload.pos)
       }
     }
     case ActionType.SET_GPS_ACCURACY: {

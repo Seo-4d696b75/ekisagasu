@@ -112,27 +112,22 @@ interface MapProps {
 	radar_k: number
 	show_current_position: boolean
 	show_station_pin: boolean
-	current_position: Utils.LatLng | null
-	current_accuracy: number
-	current_heading: number | null
 	info_dialog: InfoDialog | null
 	transition: MapTransition
 	focus: PropsEvent<Utils.LatLng>
+	current_location: PropsEvent<GeolocationPosition>
 	voronoi: Array<Station>
 }
 
 function mapGlobalState2Props(state: GlobalState): MapProps {
-	const coords = state.current_position?.coords
 	return {
 		radar_k: state.radar_k,
 		show_current_position: state.watch_position,
 		show_station_pin: state.show_station_pin,
-		current_position: coords ? { lat: coords.latitude, lng: coords.longitude } : null,
-		current_accuracy: coords ? coords.accuracy : 0,
-		current_heading: coords ? coords.heading : 0,
 		info_dialog: state.info_dialog,
 		transition: state.transition,
 		focus: state.map_focus,
+		current_location: state.current_position,
 		voronoi: state.stations,
 	}
 }
@@ -142,6 +137,9 @@ interface WrappedMapProps extends MapProps {
 }
 
 interface MapState {
+	current_position: google.maps.LatLng | null
+	current_accuracy: number
+	current_heading: number | null
 	voronoi: Array<Station>
 	hide_voronoi: boolean
 	hide_pin: boolean
@@ -154,7 +152,9 @@ interface MapState {
 export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 	state: MapState = {
-
+		current_position: null,
+		current_accuracy: 0,
+		current_heading: null,
 		voronoi: [],
 		hide_voronoi: false,
 		hide_pin: false,
@@ -210,6 +210,19 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 			if (this.map) {
 				this.map.panTo(pos)
 				if (this.map.getZoom() < 14) this.map.setZoom(14)
+			}
+		})
+
+		this.props.current_location.observe("map", (pos) => {
+			const p = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude)
+			this.setState({
+				...this.state,
+				current_position: p,
+				current_accuracy: pos.coords.accuracy,
+				current_heading: pos.coords.heading,
+			})
+			if (this.props.show_current_position && this.props.transition == "idle") {
+				this.moveToCurrentPosition(p)
 			}
 		})
 	}
@@ -503,10 +516,9 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 		Actions.requestShowLine(line)
 	}
 
-	moveToCurrentPosition() {
-		const pos = this.props.current_position
-		if ( pos && this.map ){
-			this.map.panTo(new google.maps.LatLng(pos.lat, pos.lng))
+	moveToCurrentPosition(pos: google.maps.LatLng | null) {
+		if (pos && this.map) {
+			this.map.panTo(pos)
 		}
 	}
 
@@ -541,9 +553,9 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 						mapTypeControl={true}
 
 					>
-						{this.props.show_current_position && this.props.current_position ? (
+						{this.props.show_current_position && this.state.current_position ? (
 							<Marker
-								position={this.props.current_position}
+								position={this.state.current_position}
 								clickable={false}
 								icon={{
 									path: this.props.google.maps.SymbolPath.CIRCLE,
@@ -555,11 +567,11 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 								}}></Marker>
 						) : null}
 						{this.props.show_current_position
-							&& this.props.current_position
-							&& this.props.current_heading
-							&& !isNaN(this.props.current_heading) ? (
+							&& this.state.current_position
+							&& this.state.current_heading
+							&& !isNaN(this.state.current_heading) ? (
 							<Marker
-								position={this.props.current_position}
+								position={this.state.current_position}
 								clickable={false}
 								icon={{
 									//url: require("../img/direction_pin.svg"),
@@ -570,14 +582,14 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 									strokeColor: "white",
 									strokeWeight: 1.2,
 									scale: 0.3,
-									rotation: this.props.current_heading,
+									rotation: this.state.current_heading,
 								}}></Marker>
 						) : null}
-						{this.props.show_current_position && this.props.current_position ? (
+						{this.props.show_current_position && this.state.current_position ? (
 							<Circle
-								visible={this.props.current_accuracy > 10}
-								center={this.props.current_position}
-								radius={this.props.current_accuracy}
+								visible={this.state.current_accuracy > 10}
+								center={this.state.current_position}
+								radius={this.state.current_accuracy}
 								strokeColor="#0088ff"
 								strokeOpacity={0.8}
 								strokeWeight={1}
@@ -673,14 +685,20 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 						</div>
 					</CSSTransition>
-					{this.props.show_current_position ? (
-						<div className="menu mylocation">
-							<img 
-								src={ic_mylocation} 
-								className="icon mylocation"
-								onClick={this.moveToCurrentPosition.bind(this)}></img>
-						</div>
-					) : null}
+					<div className="menu mylocation">
+						<img
+							src={ic_mylocation}
+							className="icon mylocation"
+							onClick={() => {
+								if (this.props.show_current_position) {
+									this.moveToCurrentPosition(this.state.current_position)
+								} else {
+									StationService.get_current_position().then(pos => {
+										this.moveToCurrentPosition(new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude))
+									})
+								}
+							}}></img>
+					</div>
 
 				</div>
 			</div>
