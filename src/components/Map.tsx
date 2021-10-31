@@ -531,7 +531,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 		const show_voronoi = !this.state.hide_voronoi && !(isStationDialogTransition(t) && t.show_high_voronoi)
 		const polyline = isLineDialogTranstion(t) && t.show_polyline ? t : null
 		const high_voronoi = isStationDialogTransition(t) && t.show_high_voronoi ? this.state.high_voronoi : null
-		const show_station_pin = !this.state.hide_pin && this.props.show_station_pin && !polyline && show_voronoi
+		const show_station_pin = !this.state.hide_pin && this.props.show_station_pin && t == "idle" && show_voronoi
 		return (
 			<div className='Map-container'>
 				<div className='Map-relative' ref={this.map_ref}>
