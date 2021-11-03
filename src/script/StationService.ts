@@ -34,28 +34,23 @@ export class StationService {
 		this.lines.clear()
 		this.prefecture.clear()
 
-		return new StationKdTree(this).initialize("root").then(tree => {
-			this.tree = tree;
-			return axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/line.json`);
-		}).then(res => {
-			res.data.forEach(d => {
-				var line = new Line(d);
-				this.lines.set(line.code, line);
-			});
-		}).then(() => {
-			return axios.get(process.env.REACT_APP_PREFECTURE_URL);
-		}).then(res => {
-			this.prefecture = new Map();
-			res.data.split('\n').forEach((line: string) => {
-				var cells = line.split(',');
-				if (cells.length === 2) {
-					this.prefecture.set(parseInt(cells[0]), cells[1]);
-				}
-			});
-			console.log('service initialized', this);
-			this.initialized = true;
-			return this;
-		})
+		this.tree = await new StationKdTree(this).initialize("root")
+		var res = await axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/line.json`);
+		res.data.forEach(d => {
+			var line = new Line(d);
+			this.lines.set(line.code, line);
+		});
+		res = await axios.get(process.env.REACT_APP_PREFECTURE_URL);
+		this.prefecture = new Map();
+		res.data.split('\n').forEach((line: string) => {
+			var cells = line.split(',');
+			if (cells.length === 2) {
+				this.prefecture.set(parseInt(cells[0]), cells[1]);
+			}
+		});
+		console.log('service initialized', this);
+		this.initialized = true;
+		return this;
 	}
 
 	release() {
