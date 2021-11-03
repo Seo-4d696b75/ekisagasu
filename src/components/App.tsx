@@ -6,6 +6,7 @@ import Help from './Help'
 import { HashRouter, Route } from 'react-router-dom';
 import { Provider } from "react-redux"
 import { store } from "../script/Store"
+import qs from "query-string"
 
 export default class APP extends React.Component {
 
@@ -13,15 +14,16 @@ export default class APP extends React.Component {
 		return (
 			<div className="App">
 				<HashRouter basename='/'>
-					<Route exact path='/' render={() =>
-						<div>
-							<Provider store={store}>
-								<Header></Header>
-								<Map></Map>
-
-							</Provider>
-						</div>
-					}></Route>
+					<Route exact path='/' render={(props) => {
+						return (
+							<div>
+								<Provider store={store}>
+									<Header></Header>
+									<Map query={qs.parse(props.location.search)}></Map>
+								</Provider>
+							</div>
+						)
+					}}></Route>
 					<Route path='/help' component={Help}></Route>
 				</HashRouter>
 			</div>

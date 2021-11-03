@@ -17,6 +17,7 @@ import { GlobalState } from "../script/Reducer"
 import * as Actions from "../script/Actions"
 import { connect } from "react-redux"
 import { PropsEvent } from "../script/Event"
+import qs from "query-string"
 
 const VORONOI_COLOR = [
 	"#0000FF",
@@ -117,9 +118,10 @@ interface MapProps {
 	focus: PropsEvent<Utils.LatLng>
 	current_location: PropsEvent<GeolocationPosition>
 	voronoi: Array<Station>
+	query: qs.ParsedQuery<string>
 }
 
-function mapGlobalState2Props(state: GlobalState): MapProps {
+function mapGlobalState2Props(state: GlobalState, ownProps: any): MapProps {
 	return {
 		radar_k: state.radar_k,
 		show_current_position: state.watch_position,
@@ -129,6 +131,7 @@ function mapGlobalState2Props(state: GlobalState): MapProps {
 		focus: state.map_focus,
 		current_location: state.current_position,
 		voronoi: state.stations,
+		query: ownProps.query as qs.ParsedQuery<string>
 	}
 }
 
