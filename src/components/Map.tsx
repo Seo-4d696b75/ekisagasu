@@ -178,11 +178,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 	componentDidMount() {
 
-		StationService.initialize().then(service => {
-			if (this.map) {
-				this.updateBounds(this.map)
-			}
-		})
+		StationService.initialize()
 		// set callback invoked when screen resized
 		this.screenResizedCallback = this.onScreenResized.bind(this)
 		window.addEventListener("resize", this.screenResizedCallback)
@@ -402,6 +398,18 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 				console.log(err)
 			})
 			Actions.setMapTransition("idle")
+
+			StationService.initialize().then(s => {
+				this.updateBounds(map)
+				if (typeof this.props.query.line == 'string') {
+					console.log(this.props.query.line)
+					var code = parseInt(this.props.query.line)
+					var line = s.get_line_or_null(code)
+					if (line) {
+						Actions.requestShowLine(line)
+					}
+				}
+			})
 
 		}
 	}
