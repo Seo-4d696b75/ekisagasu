@@ -148,25 +148,41 @@ export class StationService {
 		return this.stations.get(code) as Station
 	}
 
-	get_station(code: number): Promise<Station> {
+	async get_station_or_null(code: number): Promise<Station | undefined> {
 		var s = this.stations.get(code);
-		if (s) return Promise.resolve(s);
+		if (s) return s
 		// step 1: get lat/lng of the target station
 		// step 2: update neighbor stations
-		return axios.get(`${process.env.REACT_APP_STATION_API_URL}/station?code=${code}`).then(res => {
+		try {
+			const res = await axios.get(`${process.env.REACT_APP_STATION_API_URL}/station?code=${code}`)
 			var pos = {
 				lat: res.data.lat,
 				lng: res.data.lng,
 			}
 			// this 'update' operation loads station data as a segment
-			return this.update_location(pos, 1)
-		}).then(() => {
+			await this.update_location(pos, 1)
 			return this.get_station_immediate(code)
-		})
+		} catch (e) {
+			console.warn("api error. station code:", code, e)
+			return undefined
+		}
+	}
+
+	async get_station(code: number): Promise<Station> {
+		var s = await this.get_station_or_null(code)
+		if (s) {
+			return s
+		} else {
+			throw Error(`station not found code:${code}`)
+		}
 	}
 
 	get_line(code: number): Line {
 		return this.lines.get(code) as Line
+	}
+
+	get_line_or_null(code: number): Line | undefined {
+		return this.lines.get(code)
 	}
 
 	get_line_detail(code: number): Promise<Line> {
