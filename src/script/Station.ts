@@ -13,20 +13,20 @@ export class Station {
 	voronoi_points: Array<LatLng[]>
 
 	constructor(data: any) {
-		this.code = data['code'];
+		this.code = data['code']
 		this.id = data['id']
-		this.name = data['name'];
+		this.name = data['name']
 		this.position = {
 			lat: data['lat'],
 			lng: data['lng']
-		};
-		this.name_kana = data['name_kana'];
-		this.prefecture = data['prefecture'];
-		this.lines = data['lines'];
-		this.next = data['next'];
+		}
+		this.name_kana = data['name_kana']
+		this.prefecture = data['prefecture']
+		this.lines = data['lines']
+		this.next = data['next']
 		this.voronoi_points = []
 
-		const voronoi = data['voronoi'];
+		const voronoi = data['voronoi']
 		if (voronoi['type'] !== 'Feature') {
 			console.error("invalid voronoi data", voronoi)
 			return
