@@ -166,7 +166,7 @@ export class StationService {
 				return this.stations_id.get(id) as Station
 			} catch (e) {
 				console.warn("api error. station id:", id, e)
-				return undefined
+				// return undefined
 			}
 		}
 		const code = parseInt(id)
@@ -214,7 +214,8 @@ export class StationService {
 
 	get_line_by_id(id: string): Line | undefined {
 		if ( id.match(/^[0-9a-f]{6}$/)){
-			return this.lines_id.get(id)
+			var line = this.lines_id.get(id)
+			if ( line ) return line
 		}
 		const code = parseInt(id)
 		if ( !isNaN(code) ){
