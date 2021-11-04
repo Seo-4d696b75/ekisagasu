@@ -18,7 +18,9 @@ export class StationService {
 	navigator_id: number | null = null
 
 	stations: Map<number, Station> = new Map()
+	stations_id: Map<string, Station> = new Map()
 	lines: Map<number, Line> = new Map()
+	lines_id: Map<string, Line> = new Map()
 	prefecture: Map<number, string> = new Map()
 
 	tree: StationKdTree | null = null
@@ -32,6 +34,8 @@ export class StationService {
 
 		this.stations.clear()
 		this.lines.clear()
+		this.stations_id.clear()
+		this.lines_id.clear()
 		this.prefecture.clear()
 
 		this.tree = await new StationKdTree(this).initialize("root")
@@ -39,6 +43,7 @@ export class StationService {
 		res.data.forEach(d => {
 			var line = new Line(d);
 			this.lines.set(line.code, line);
+			this.lines_id.set(line.id, line)
 		});
 		res = await axios.get(process.env.REACT_APP_PREFECTURE_URL);
 		this.prefecture = new Map();
@@ -57,6 +62,9 @@ export class StationService {
 		this.initialized = false;
 		this.tree?.release();
 		this.stations.clear();
+		this.stations_id.clear()
+		this.lines.clear()
+		this.lines_id.clear()
 		this.tasks.clear();
 		this.watch_current_position(false);
 
@@ -143,6 +151,30 @@ export class StationService {
 		return this.stations.get(code) as Station
 	}
 
+	async get_station_by_id(id: string): Promise<Station|undefined> {
+		if ( id.match(/^[0-9a-f]{6}$/)){
+			var s = this.stations_id.get(id)
+			if ( s ) return s
+			try {
+				const res = await axios.get(`${process.env.REACT_APP_STATION_API_URL}/station?id=${id}`)
+				var pos = {
+					lat: res.data.lat,
+					lng: res.data.lng,
+				}
+				// this 'update' operation loads station data as a segment
+				await this.update_location(pos, 1)
+				return this.stations_id.get(id) as Station
+			} catch (e) {
+				console.warn("api error. station id:", id, e)
+				return undefined
+			}
+		}
+		const code = parseInt(id)
+		if ( !isNaN(code) ){
+			return this.get_station_or_null(code)
+		}
+	}
+
 	async get_station_or_null(code: number): Promise<Station | undefined> {
 		var s = this.stations.get(code);
 		if (s) return s
@@ -180,6 +212,17 @@ export class StationService {
 		return this.lines.get(code)
 	}
 
+	get_line_by_id(id: string): Line | undefined {
+		if ( id.match(/^[0-9a-f]{6}$/)){
+			return this.lines_id.get(id)
+		}
+		const code = parseInt(id)
+		if ( !isNaN(code) ){
+			return this.get_line_or_null(code)
+		}
+		return undefined
+	}
+
 	get_line_detail(code: number): Promise<Line> {
 		const line = this.lines.get(code);
 		if (!line) {
@@ -195,6 +238,7 @@ export class StationService {
 					if (s) return s;
 					s = new Station(item);
 					this.stations.set(c, s);
+					this.stations_id.set(s.id, s)
 					return s;
 				});
 				const polyline = data.polyline_list
@@ -230,7 +274,10 @@ export class StationService {
 			var list = data.node_list.filter(e => {
 				return !e.segment;
 			}).map(e => new Station(e))
-			list.forEach(s => this.stations.set(s.code, s))
+			list.forEach(s => {
+				this.stations.set(s.code, s)
+				this.stations_id.set(s.id, s)
+			})
 			Actions.onStationLoaded(list)
 			this.tasks.set(tag, null);
 			return data;

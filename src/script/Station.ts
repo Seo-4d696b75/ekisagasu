@@ -3,6 +3,7 @@ import { LatLng } from "./Utils"
 export class Station {
 
 	code: number
+	id: string
 	name: string
 	position: LatLng
 	name_kana: string
@@ -13,6 +14,7 @@ export class Station {
 
 	constructor(data: any) {
 		this.code = data['code'];
+		this.id = data['id']
 		this.name = data['name'];
 		this.position = {
 			lat: data['lat'],
