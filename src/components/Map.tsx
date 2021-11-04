@@ -387,31 +387,49 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 					style: this.props.google.maps.MapTypeControlStyle.DROPDOWN_MENU
 				}
 			})
-			StationService.get_current_position().then(pos => {
-				var latlng = {
-					lat: pos.coords.latitude,
-					lng: pos.coords.longitude
-				}
-				map.setCenter(latlng)
-				Actions.setCurrentPosition(pos)
-			}).catch(err => {
-				console.log(err)
-			})
+
 			Actions.setMapTransition("idle")
 
 			StationService.initialize().then(s => {
-				this.updateBounds(map)
+				// parse query actions
 				if (typeof this.props.query.line == 'string') {
-					console.log(this.props.query.line)
-					var code = parseInt(this.props.query.line)
-					var line = s.get_line_or_null(code)
+					console.log('query: line', this.props.query.line)
+					var line = s.get_line_by_id(this.props.query.line)
 					if (line) {
 						Actions.requestShowLine(line)
+						return
 					}
 				}
+				if (typeof this.props.query.station == 'string') {
+					console.log('query: station', this.props.query.station)
+					s.get_station_by_id(this.props.query.station).then(station => {
+						if (station) {
+							Actions.requestShowStation(station)
+						} else {
+							this.setCenterCurrentPosition(map)
+						}
+					})
+					return
+				}
+				// if no query, set map center current position
+				this.setCenterCurrentPosition(map)
 			})
 
 		}
+	}
+
+	setCenterCurrentPosition(map: google.maps.Map) {
+		// no move animation
+		StationService.get_current_position().then(pos => {
+			var latlng = {
+				lat: pos.coords.latitude,
+				lng: pos.coords.longitude
+			}
+			map.setCenter(latlng)
+			Actions.setCurrentPosition(pos)
+		}).catch(err => {
+			console.log(err)
+		})
 	}
 
 	onMapRightClicked(props?: IMapProps, map?: google.maps.Map, event?: any) {
@@ -704,6 +722,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 								if (this.props.show_current_position) {
 									this.moveToCurrentPosition(this.state.current_position)
 								} else {
+									this.onInfoDialogClosed()
 									StationService.get_current_position().then(pos => {
 										this.moveToCurrentPosition(new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude))
 									})
