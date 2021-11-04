@@ -397,6 +397,9 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 					var line = s.get_line_by_id(this.props.query.line)
 					if (line) {
 						Actions.requestShowLine(line)
+						s.get_line_detail(line.code).then( l => {
+							this.showPolyline(l)
+						})
 						return
 					}
 				}
