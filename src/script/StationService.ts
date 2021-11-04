@@ -32,30 +32,41 @@ export class StationService {
 			return Promise.resolve(this)
 		}
 
+		const tag = "initialize"
+		var task = this.tasks.get(tag)
+		if (task) return task
+
 		this.stations.clear()
 		this.lines.clear()
 		this.stations_id.clear()
 		this.lines_id.clear()
 		this.prefecture.clear()
 
-		this.tree = await new StationKdTree(this).initialize("root")
-		var res = await axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/line.json`)
-		res.data.forEach(d => {
-			var line = new Line(d)
-			this.lines.set(line.code, line)
-			this.lines_id.set(line.id, line)
+		task = new StationKdTree(this).initialize("root").then(tree => {
+			this.tree = tree
+			return axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/line.json`)
+		}).then(res => {
+			res.data.forEach(d => {
+				var line = new Line(d)
+				this.lines.set(line.code, line)
+				this.lines_id.set(line.id, line)
+			})
+			return axios.get(process.env.REACT_APP_PREFECTURE_URL)
+		}).then(res => {
+			this.prefecture = new Map()
+			res.data.split('\n').forEach((line: string) => {
+				var cells = line.split(',')
+				if (cells.length === 2) {
+					this.prefecture.set(parseInt(cells[0]), cells[1])
+				}
+			})
+			console.log('service initialized', this)
+			this.initialized = true
+			this.tasks.set(tag, null)
+			return this
 		})
-		res = await axios.get(process.env.REACT_APP_PREFECTURE_URL)
-		this.prefecture = new Map()
-		res.data.split('\n').forEach((line: string) => {
-			var cells = line.split(',')
-			if (cells.length === 2) {
-				this.prefecture.set(parseInt(cells[0]), cells[1])
-			}
-		})
-		console.log('service initialized', this)
-		this.initialized = true
-		return this
+		this.tasks.set(tag, task)
+		return task
 	}
 
 	release() {
@@ -151,10 +162,10 @@ export class StationService {
 		return this.stations.get(code) as Station
 	}
 
-	async get_station_by_id(id: string): Promise<Station|undefined> {
-		if ( id.match(/^[0-9a-f]{6}$/)){
+	async get_station_by_id(id: string): Promise<Station | undefined> {
+		if (id.match(/^[0-9a-f]{6}$/)) {
 			var s = this.stations_id.get(id)
-			if ( s ) return s
+			if (s) return s
 			try {
 				const res = await axios.get(`${process.env.REACT_APP_STATION_API_URL}/station?id=${id}`)
 				var pos = {
@@ -170,7 +181,7 @@ export class StationService {
 			}
 		}
 		const code = parseInt(id)
-		if ( !isNaN(code) ){
+		if (!isNaN(code)) {
 			return this.get_station_or_null(code)
 		}
 	}
@@ -213,12 +224,12 @@ export class StationService {
 	}
 
 	get_line_by_id(id: string): Line | undefined {
-		if ( id.match(/^[0-9a-f]{6}$/)){
+		if (id.match(/^[0-9a-f]{6}$/)) {
 			var line = this.lines_id.get(id)
-			if ( line ) return line
+			if (line) return line
 		}
 		const code = parseInt(id)
-		if ( !isNaN(code) ){
+		if (!isNaN(code)) {
 			return this.get_line_or_null(code)
 		}
 		return undefined
@@ -230,8 +241,13 @@ export class StationService {
 			return Promise.reject(`line not found id:${code}`)
 		} else if (line.has_details) {
 			return Promise.resolve(line)
+		}
+		const tag = `line-details-${code}`
+		var task = this.tasks.get(tag)
+		if (task) {
+			return task
 		} else {
-			return axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/line/${code}.json`).then(res => {
+			task = axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/line/${code}.json`).then(res => {
 				const data = res.data
 				line.station_list = data["station_list"].map(item => {
 					var c = item['code']
@@ -253,8 +269,11 @@ export class StationService {
 					line.west = prop['west']
 				}
 				line.has_details = true
+				this.tasks.set(tag, null)
 				return line
 			})
+			this.tasks.set(tag, task)
+			return task
 		}
 	}
 
