@@ -3,6 +3,7 @@ import { PolylineProps } from "./Utils"
 
 export class Line {
 
+	id: string
 	code: number
 	name: string
 	name_kana: string
@@ -19,16 +20,17 @@ export class Line {
 	west: number = 0
 
 	constructor(data) {
-		this.code = data['code'];
-		this.name = data['name'];
-		this.name_kana = data['name_kana'];
-		this.station_size = data['station_size'];
+		this.id = data['id']
+		this.code = data['code']
+		this.name = data['name']
+		this.name_kana = data['name_kana']
+		this.station_size = data['station_size']
 		if (data['color']) {
-			this.color = data['color'];
+			this.color = data['color']
 		} else {
-			this.color = '#CCCCCC';
+			this.color = '#CCCCCC'
 		}
-		this.has_details = false;
+		this.has_details = false
 	}
 
 }

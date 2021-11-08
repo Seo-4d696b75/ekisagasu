@@ -17,6 +17,7 @@ import { GlobalState } from "../script/Reducer"
 import * as Actions from "../script/Actions"
 import { connect } from "react-redux"
 import { PropsEvent } from "../script/Event"
+import qs from "query-string"
 
 const VORONOI_COLOR = [
 	"#0000FF",
@@ -117,9 +118,10 @@ interface MapProps {
 	focus: PropsEvent<Utils.LatLng>
 	current_location: PropsEvent<GeolocationPosition>
 	voronoi: Array<Station>
+	query: qs.ParsedQuery<string>
 }
 
-function mapGlobalState2Props(state: GlobalState): MapProps {
+function mapGlobalState2Props(state: GlobalState, ownProps: any): MapProps {
 	return {
 		radar_k: state.radar_k,
 		show_current_position: state.watch_position,
@@ -129,6 +131,7 @@ function mapGlobalState2Props(state: GlobalState): MapProps {
 		focus: state.map_focus,
 		current_location: state.current_position,
 		voronoi: state.stations,
+		query: ownProps.query as qs.ParsedQuery<string>
 	}
 }
 
@@ -175,11 +178,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 	componentDidMount() {
 
-		StationService.initialize().then(service => {
-			if (this.map) {
-				this.updateBounds(this.map)
-			}
-		})
+		StationService.initialize()
 		// set callback invoked when screen resized
 		this.screenResizedCallback = this.onScreenResized.bind(this)
 		window.addEventListener("resize", this.screenResizedCallback)
@@ -388,19 +387,65 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 					style: this.props.google.maps.MapTypeControlStyle.DROPDOWN_MENU
 				}
 			})
-			StationService.get_current_position().then(pos => {
-				var latlng = {
-					lat: pos.coords.latitude,
-					lng: pos.coords.longitude
-				}
-				map.setCenter(latlng)
-				Actions.setCurrentPosition(pos)
-			}).catch(err => {
-				console.log(err)
-			})
+
 			Actions.setMapTransition("idle")
 
+			StationService.initialize().then(s => {
+				// parse query actions
+				if (typeof this.props.query.line == 'string') {
+					console.log('query: line', this.props.query.line)
+					var line = s.get_line_by_id(this.props.query.line)
+					if (line) {
+						Actions.requestShowLine(line).then( l => {
+							this.showPolyline(l)
+						})
+						return
+					}
+				}
+				if (typeof this.props.query.station == 'string') {
+					console.log('query: station', this.props.query.station)
+					s.get_station_by_id(this.props.query.station).then(station => {
+						if (station) {
+							Actions.requestShowStation(station).then(() => {
+								if (typeof this.props.query.voronoi == 'string') {
+									const str = this.props.query.voronoi.toLowerCase().trim()
+									if (Utils.parseQueryBoolean(str)) {
+										this.showRadarVoronoi(station)
+									}
+								}
+							})
+						} else {
+							this.setCenterCurrentPosition(map)
+						}
+					})
+					return
+				}
+				if (typeof this.props.query.mylocation == 'string'){
+					console.log('query: location', this.props.query.mylocation)
+					if(Utils.parseQueryBoolean(this.props.query.mylocation)){
+						Actions.setWatchCurrentPosition(true)
+					}
+				}
+				// if no query, set map center current position
+				this.setCenterCurrentPosition(map)
+			})
+
 		}
+	}
+
+	setCenterCurrentPosition(map: google.maps.Map) {
+		// no move animation
+		StationService.get_current_position().then(pos => {
+			var latlng = {
+				lat: pos.coords.latitude,
+				lng: pos.coords.longitude
+			}
+			map.setCenter(latlng)
+			Actions.setCurrentPosition(pos)
+		}).catch(err => {
+			console.log(err)
+			alert("現在位置を利用できません. ブラウザから位置情報へのアクセスを許可してください.")
+		})
 	}
 
 	onMapRightClicked(props?: IMapProps, map?: google.maps.Map, event?: any) {
@@ -693,6 +738,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 								if (this.props.show_current_position) {
 									this.moveToCurrentPosition(this.state.current_position)
 								} else {
+									this.onInfoDialogClosed()
 									StationService.get_current_position().then(pos => {
 										this.moveToCurrentPosition(new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude))
 									})

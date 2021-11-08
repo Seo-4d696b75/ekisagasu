@@ -97,3 +97,6 @@ export function parse_polyline(data: any): PolylineProps {
   }
 }
 
+export function parseQueryBoolean(str: string): boolean {
+  return ['true', 'yes', '1'].includes(str)
+}

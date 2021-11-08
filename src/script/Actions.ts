@@ -104,29 +104,32 @@ export function requestShowPosition(pos: LatLng) {
 	})
 }
 
-export function requestShowStation(s: Station) {
-	// use middleware because value of state is needed
-	store.dispatch((dispatch: Dispatch<GlobalAction>, getState: () => GlobalState) => {
-		var state = getState()
-		StationService.update_location(s.position, state.radar_k, 0).then(() => {
+export function requestShowStation(s: Station): Promise<void> {
+	return new Promise((resolve, reject) => {
+		// use middleware because value of state is needed
+		store.dispatch((dispatch: Dispatch<GlobalAction>, getState: () => GlobalState) => {
+			var state = getState()
+			StationService.update_location(s.position, state.radar_k, 0).then(() => {
 
-			dispatch({
-				type: ActionType.SHOW_STATION_ITEM,
-				payload: {
-					type: DialogType.Station,
-					props: {
-						station: s,
-						radar_list: makeRadarList(s.position, state.radar_k),
-						prefecture: StationService.get_prefecture(s.prefecture),
-						lines: s.lines.map(code => StationService.get_line(code))
+				dispatch({
+					type: ActionType.SHOW_STATION_ITEM,
+					payload: {
+						type: DialogType.Station,
+						props: {
+							station: s,
+							radar_list: makeRadarList(s.position, state.radar_k),
+							prefecture: StationService.get_prefecture(s.prefecture),
+							lines: s.lines.map(code => StationService.get_line(code))
+						}
 					}
-				}
-			})
+				})
+				resolve()
+			}).catch(e => reject(e))
 		})
 	})
 }
 
-export function requestShowLine(line: Line) {
+export function requestShowLine(line: Line): Promise<Line> {
 	store.dispatch({
 		type: ActionType.SHOW_STATION_ITEM,
 		payload: {
@@ -139,9 +142,12 @@ export function requestShowLine(line: Line) {
 	})
 	// if needed, load details of the item and update it.
 	if (!line.has_details) {
-		StationService.get_line_detail(line.code).then(l => {
+		return StationService.get_line_detail(line.code).then(l => {
 			requestShowLine(l)
+			return l
 		});
+	} else {
+		return Promise.resolve(line)
 	}
 }
 
