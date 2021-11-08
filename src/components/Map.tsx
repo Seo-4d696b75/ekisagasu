@@ -409,7 +409,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 							Actions.requestShowStation(station).then(() => {
 								if (typeof this.props.query.voronoi == 'string') {
 									const str = this.props.query.voronoi.toLowerCase().trim()
-									if (['true', 'yes', '1'].includes(str)) {
+									if (Utils.parseQueryBoolean(str)) {
 										this.showRadarVoronoi(station)
 									}
 								}
@@ -419,6 +419,12 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 						}
 					})
 					return
+				}
+				if (typeof this.props.query.mylocation == 'string'){
+					console.log('query: location', this.props.query.mylocation)
+					if(Utils.parseQueryBoolean(this.props.query.mylocation)){
+						Actions.setWatchCurrentPosition(true)
+					}
 				}
 				// if no query, set map center current position
 				this.setCenterCurrentPosition(map)
