@@ -65,7 +65,7 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 		return (
 			<div className="Info-dialog">
 
-				<div className="Container-fixed station">
+				<div className={`Container-fixed station ${info.type === DialogType.STATION ? null : "position"}`}>
 					<div className="Container-main">
 
 						<div className="Title-container station">
@@ -90,7 +90,7 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 							</div>
 						)}
 
-						<div className="Scroll-container lines">
+						<div className={`Scroll-container lines ${info.type === DialogType.STATION ? null : "position"}`}>
 
 							<table>
 								<tbody>

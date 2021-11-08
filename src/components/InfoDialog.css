@@ -39,14 +39,24 @@
 	box-shadow: 2px 0 4px grey;
 }
 
-
 .Container-fixed.station{
 	height: 200px;
 }
 
-
 .Container-radar{
 	height: calc(100% - 200px);
+}
+
+.Container-fixed.station.position{
+	height: 240px;
+}
+
+.Container-radar.position{
+	height: calc(100% - 240px);
+}
+
+.Scroll-container.lines{
+	height: 100px;
 }
 
 .Icon-action.radar{
@@ -69,6 +79,14 @@
 
 .Container-fixed.station{
 	height: 150px;
+}
+
+.Container-fixed.station.position{
+	height: 190px;
+}
+
+.Scroll-container.lines{
+	height: 60px;
 }
 
 .Container-radar.enter{
@@ -135,6 +153,13 @@
 	height: 200px;
 }
 
+.Container-fixed.station.position{
+	height: 240px;
+}
+
+.Scroll-container.lines{
+	height: 100px;
+}
 
 .Container-radar.enter{
 	visibility: visible;
@@ -348,7 +373,6 @@ table {
 .Scroll-container.lines{
 	padding: 7px;
 	width: 100%;
-	height: calc(100% - 100px);
 }
 
 .Scroll-container.radar{
