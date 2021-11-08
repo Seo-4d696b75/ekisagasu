@@ -6,10 +6,11 @@ import img_voronoi from "../img/voronoi.png";
 import img_radar from "../img/radar.png";
 import img_above from "../img/ic_above.png";
 import img_line from "../img/ic_line.png";
-import img_location from "../img/ic_location.png";
+import img_location from "../img/map_pin.svg";
+import img_mylocation from "../img/pin_mylocation.png"
 import { CSSTransition } from "react-transition-group";
 import { Station } from "../script/Station";
-import { NavType, StationDialogProps, LineDialogProps, DialogType } from "./Map"
+import { StationDialogProps, LineDialogProps, DialogType } from "./Map"
 import { Line } from "../script/Line";
 
 interface StationInfoProps {
@@ -75,21 +76,32 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 						<div className="Horizontal-container">
 							<img src={img_station} alt="icon-details" className="Icon-station" />
 							<div className="Station-details">
-								所在：{info.props.prefecture}<br />
+								所在：{info.props.prefecture}&nbsp;&nbsp; {info.type === DialogType.STATION ? null : this.formatDistance(info.props.dist)}<br />
 								場所：E{station.position.lng} N{station.position.lat}
 							</div>
 						</div>
-						{info.type === DialogType.STATION ? null : (
-							//TODO DIALOG_CURRENT_POS
+						{info.type === DialogType.SELECT_POSITION ? (
 							<div className="Horizontal-container">
-								<img src={img_location} alt="icon-details" className="Icon-station" />
+								<img src={img_location}
+									alt="icon-details"
+									className="Icon-station" />
 								<div className="Station-details">
-									距離：{this.formatDistance(info.props.dist)}<br />
-									選択：E{info.props.position.lng.toFixed(6)} N{info.props.position.lat.toFixed(6)}
+									<div className="position-title">&nbsp;選択した地点&nbsp;</div>
+									E{info.props.position.lng.toFixed(6)} N{info.props.position.lat.toFixed(6)}
 								</div>
 							</div>
-						)}
-
+						) : null}
+						{info.type === DialogType.CURRENT_POSITION ? (
+							<div className="Horizontal-container">
+								<img src={img_mylocation}
+									alt="icon-details"
+									className="Icon-station" />
+								<div className="Station-details">
+									<div className="position-title">&nbsp;選択した地点&nbsp;</div>
+									E{info.props.position.lng.toFixed(6)} N{info.props.position.lat.toFixed(6)}
+								</div>
+							</div>
+						) : null}
 						<div className={`Scroll-container lines ${info.type === DialogType.STATION ? null : "position"}`}>
 
 							<table>

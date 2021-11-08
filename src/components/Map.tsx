@@ -71,7 +71,8 @@ export type LineDialogProps = DialogPropsBase<DialogType.LINE, {
 
 export type StationDialogProps =
 	StationPosDialogProps |
-	SelectPosDialogProps 
+	SelectPosDialogProps |
+	CurrentPosDialogProps
 
 export enum NavType {
 	LOADING,
@@ -597,7 +598,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 	moveToCurrentPosition(pos: google.maps.LatLng | null) {
 		Actions.setNavStateIdle()
-		
+
 		if (pos && this.map) {
 			this.map.panTo(pos)
 		}

@@ -479,3 +479,11 @@ table {
 	max-width: 240px;
 	text-align: start;
 }
+
+.position-title {
+	font-size: smaller;
+	background-color: #154bb6;
+	color: white;
+	border-radius: 5px;
+	width:fit-content;
+}
