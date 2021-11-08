@@ -444,6 +444,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 			Actions.setCurrentPosition(pos)
 		}).catch(err => {
 			console.log(err)
+			alert("現在位置を利用できません. ブラウザから位置情報へのアクセスを許可してください.")
 		})
 	}
 
