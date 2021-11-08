@@ -9,11 +9,11 @@ import img_line from "../img/ic_line.png";
 import img_location from "../img/ic_location.png";
 import { CSSTransition } from "react-transition-group";
 import { Station } from "../script/Station";
-import { StationDialogProps, PosDialogProps, LineDialogProps, DialogType } from "./Map"
+import { NavType, StationDialogProps, LineDialogProps, DialogType } from "./Map"
 import { Line } from "../script/Line";
 
 interface StationInfoProps {
-	info: StationDialogProps | PosDialogProps
+	info: StationDialogProps
 	onClosed: (() => any)
 	onLineSelected: ((line: Line) => any)
 	onStationSelected: ((s: Station) => any)
@@ -76,38 +76,38 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 							<img src={img_station} alt="icon-details" className="Icon-station" />
 							<div className="Station-details">
 								所在：{info.props.prefecture}<br />
-				        場所：E{station.position.lng} N{station.position.lat}
+								場所：E{station.position.lng} N{station.position.lat}
 							</div>
 						</div>
-						{info.type === DialogType.Station ? (
-							<div className="Scroll-container lines">
-
-								<table>
-									<tbody>
-
-										{info.props.lines.map((line, index) => {
-											return (
-												<tr key={index}
-													onClick={() => this.props.onLineSelected(line)}
-													className="List-cell line">
-													<td className="Line-item icon"><div className="Icon-line" style={{ backgroundColor: line.color }} /></td>
-													<td className="Line-item line">{line.name}&nbsp;&nbsp;<small>{line.station_size}駅</small></td>
-												</tr>
-											);
-										})}
-									</tbody>
-								</table>
-							</div>
-
-						) : (
-								<div className="Horizontal-container">
-									<img src={img_location} alt="icon-details" className="Icon-station" />
-									<div className="Station-details">
-										距離：{this.formatDistance(info.props.location.dist)}<br />
-				        			選択：E{info.props.location.pos.lng.toFixed(6)} N{info.props.location.pos.lat.toFixed(6)}
-									</div>
+						{info.type === DialogType.STATION ? null : (
+							//TODO DIALOG_CURRENT_POS
+							<div className="Horizontal-container">
+								<img src={img_location} alt="icon-details" className="Icon-station" />
+								<div className="Station-details">
+									距離：{this.formatDistance(info.props.dist)}<br />
+									選択：E{info.props.position.lng.toFixed(6)} N{info.props.position.lat.toFixed(6)}
 								</div>
-							)}
+							</div>
+						)}
+
+						<div className="Scroll-container lines">
+
+							<table>
+								<tbody>
+
+									{info.props.lines.map((line, index) => {
+										return (
+											<tr key={index}
+												onClick={() => this.props.onLineSelected(line)}
+												className="List-cell line">
+												<td className="Line-item icon"><div className="Icon-line" style={{ backgroundColor: line.color }} /></td>
+												<td className="Line-item line">{line.name}&nbsp;&nbsp;<small>{line.station_size}駅</small></td>
+											</tr>
+										);
+									})}
+								</tbody>
+							</table>
+						</div>
 
 					</div>
 					<div className="Button-container">
@@ -277,8 +277,8 @@ export class LineDialog extends React.Component<LineInfoProps, LineInfoState> {
 								</table>
 							</div>
 						) : (
-								<p>Now Loading...</p>
-							)}
+							<p>Now Loading...</p>
+						)}
 
 						<div className="Bottom-container">
 							<div className="Icon-action toggle">

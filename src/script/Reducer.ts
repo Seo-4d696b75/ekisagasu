@@ -1,5 +1,5 @@
 import { Reducer } from "redux"
-import { DialogType, InfoDialog, MapTransition } from "../components/Map"
+import { InfoDialogNav, NavState, NavType } from "../components/Map"
 import { createEvent, createIdleEvent, PropsEvent } from "./Event"
 import { Station } from "./Station"
 import { LatLng } from "./Utils"
@@ -11,7 +11,7 @@ export enum ActionType {
   SET_CURRENT_POSITION,
   SET_GPS_ACCURACY,
   SHOW_STATION_ITEM,
-  SET_TRANSITION,
+  SET_NAV_STATE,
   LOAD_STATIONS,
 }
 
@@ -25,8 +25,8 @@ type WatchPositionAction = Action<ActionType.WATCH_CURRENT_POSITION, { watch: bo
 type ShowStationPinAction = Action<ActionType.SHOW_STATION_PIN, { show: boolean }>
 type PositionAction = Action<ActionType.SET_CURRENT_POSITION, { pos: GeolocationPosition }>
 type GPSAccuracyAction = Action<ActionType.SET_GPS_ACCURACY, { high: boolean }>
-type ShowAction = Action<ActionType.SHOW_STATION_ITEM, InfoDialog>
-type TransitionAction = Action<ActionType.SET_TRANSITION, { current: MapTransition }>
+type ShowAction = Action<ActionType.SHOW_STATION_ITEM, InfoDialogNav>
+type TransitionAction = Action<ActionType.SET_NAV_STATE, { current: NavState }>
 type LoadStationsAction = Action<ActionType.LOAD_STATIONS, { stations: Array<Station> }>
 
 export type GlobalAction =
@@ -45,8 +45,7 @@ export interface GlobalState {
   show_station_pin: boolean
   current_position: PropsEvent<GeolocationPosition>
   high_accuracy: boolean,
-  info_dialog: InfoDialog | null
-  transition: MapTransition
+  nav: NavState,
   map_focus: PropsEvent<LatLng>
   stations: Array<Station>
 }
@@ -57,8 +56,10 @@ const initState: GlobalState = {
   show_station_pin: true,
   current_position: createIdleEvent(),
   high_accuracy: false,
-  info_dialog: null,
-  transition: "loading",
+  nav: {
+    type: NavType.LOADING,
+    data: null
+  },
   map_focus: createIdleEvent(),
   stations: [],
 }
@@ -99,40 +100,31 @@ const reducer: Reducer<GlobalState, GlobalAction> = (
       }
     }
     case ActionType.SHOW_STATION_ITEM: {
-      var update = (t: MapTransition, focus?: LatLng) => {
-        return {
-          ...state,
-          info_dialog: action.payload,
-          transition: t,
-          map_focus: (focus ? createEvent(focus) : state.map_focus)
-        }
-      }
       switch (action.payload.type) {
-        case DialogType.Line:
-          return update({
-            show_polyline: false,
-            polyline_list: [],
-            stations_marker: [],
-          })
-        case DialogType.Position:
-          return update({
-            show_high_voronoi: false,
-            station: action.payload.props.station,
-            location: action.payload.props.location.pos
-          }, action.payload.props.location.pos)
-        case DialogType.Station:
-          return update({
-            show_high_voronoi: false,
-            station: action.payload.props.station,
-            location: undefined,
-          }, action.payload.props.station.position)
+        case NavType.DIALOG_LINE:
+          return {
+            ...state,
+            nav: action.payload
+          }
+        case NavType.DIALOG_SELECT_POS:
+          return {
+            ...state,
+            nav: action.payload,
+            map_focus: createEvent(action.payload.data.dialog.props.position)
+          }
+        case NavType.DIALOG_STATION_POS:
+          return {
+            ...state,
+            nav: action.payload,
+            map_focus: createEvent(action.payload.data.dialog.props.station.position)
+          }
       }
       break
     }
-    case ActionType.SET_TRANSITION: {
+    case ActionType.SET_NAV_STATE: {
       return {
         ...state,
-        transition: action.payload.current
+        nav: action.payload.current,
       }
     }
     case ActionType.LOAD_STATIONS: {
