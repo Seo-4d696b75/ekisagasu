@@ -94,6 +94,7 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 								<div className="Station-details">
 									<div className="Horizontal-container">
 										<div className="position-title">&nbsp;選択した地点&nbsp;</div>
+										<img className="arrow-right" src={img_above}/>
 										<div className="station-distance">{this.formatDistance(info.props.dist)}</div>
 									</div>
 									E{info.props.position.lng.toFixed(6)} N{info.props.position.lat.toFixed(6)}
@@ -108,6 +109,7 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 								<div className="Station-details">
 									<div className="Horizontal-container">
 										<div className="position-title">&nbsp;現在位置 &nbsp;</div>
+										<img className="arrow-right" src={img_above}/>
 										<div className="station-distance">{this.formatDistance(info.props.dist)}</div>
 									</div>
 									E{info.props.position.lng.toFixed(6)} N{info.props.position.lat.toFixed(6)}

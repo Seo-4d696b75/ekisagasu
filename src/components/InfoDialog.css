@@ -498,6 +498,14 @@ table {
 }
 
 .station-distance {
-	color: #222222;
-	margin-left: 7px;
+	color: black;
+}
+
+.arrow-right {
+	width: 16px;
+	height: 16px;
+	margin: 2px;
+	margin-top: auto;
+	margin-bottom: auto;
+	transform: rotate(90deg) scaleX(0.8) scale(1.2);
 }
