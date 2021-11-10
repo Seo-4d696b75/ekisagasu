@@ -1,5 +1,5 @@
 import { Reducer } from "redux"
-import { InfoDialogNav, NavState, NavType } from "../components/Map"
+import { NavState, NavType } from "../components/Map"
 import { createEvent, createIdleEvent, PropsEvent } from "./Event"
 import { Station } from "./Station"
 import { LatLng } from "./Utils"
@@ -10,7 +10,6 @@ export enum ActionType {
   SHOW_STATION_PIN,
   SET_CURRENT_POSITION,
   SET_GPS_ACCURACY,
-  SHOW_STATION_ITEM,
   SET_NAV_STATE,
   LOAD_STATIONS,
 }
@@ -25,8 +24,10 @@ type WatchPositionAction = Action<ActionType.WATCH_CURRENT_POSITION, { watch: bo
 type ShowStationPinAction = Action<ActionType.SHOW_STATION_PIN, { show: boolean }>
 type PositionAction = Action<ActionType.SET_CURRENT_POSITION, { pos: GeolocationPosition }>
 type GPSAccuracyAction = Action<ActionType.SET_GPS_ACCURACY, { high: boolean }>
-type ShowAction = Action<ActionType.SHOW_STATION_ITEM, InfoDialogNav>
-type TransitionAction = Action<ActionType.SET_NAV_STATE, { current: NavState }>
+type TransitionAction = Action<ActionType.SET_NAV_STATE, {
+  next: NavState,
+  focus?: LatLng
+}>
 type LoadStationsAction = Action<ActionType.LOAD_STATIONS, { stations: Array<Station> }>
 
 export type GlobalAction =
@@ -35,7 +36,6 @@ export type GlobalAction =
   ShowStationPinAction |
   PositionAction |
   GPSAccuracyAction |
-  ShowAction |
   TransitionAction |
   LoadStationsAction
 
@@ -111,32 +111,18 @@ const reducer: Reducer<GlobalState, GlobalAction> = (
         high_accuracy: action.payload.high
       }
     }
-    case ActionType.SHOW_STATION_ITEM: {
-      switch (action.payload.type) {
-        case NavType.DIALOG_LINE:
-          return {
-            ...state,
-            nav: action.payload
-          }
-        case NavType.DIALOG_SELECT_POS:
-          return {
-            ...state,
-            nav: action.payload,
-            map_focus: createEvent(action.payload.data.dialog.props.position)
-          }
-        case NavType.DIALOG_STATION_POS:
-          return {
-            ...state,
-            nav: action.payload,
-            map_focus: createEvent(action.payload.data.dialog.props.station.position)
-          }
-      }
-      break
-    }
     case ActionType.SET_NAV_STATE: {
-      return {
-        ...state,
-        nav: action.payload.current,
+      if (action.payload.focus) {
+        return {
+          ...state,
+          nav: action.payload.next,
+          map_focus: createEvent(action.payload.focus)
+        }
+      } else {
+        return {
+          ...state,
+          nav: action.payload.next,
+        }
       }
     }
     case ActionType.LOAD_STATIONS: {
