@@ -758,6 +758,17 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 						</div>
 					</CSSTransition>
+					
+					<CSSTransition
+						in={this.props.nav.type === NavType.IDLE && this.props.nav.data.dialog !== null}
+						className="Dialog-container"
+						timeout={400}>
+						<div className="Dialog-container">
+							<div className="Dialog-frame">
+								{this.renderInfoDialog()}
+							</div>
+						</div>
+					</CSSTransition>
 					<div className="menu mylocation">
 						<img
 							src={ic_mylocation}
@@ -783,8 +794,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 	renderInfoDialog(): any {
 		var dom: any = null
 		var info = this.props.nav
-		if (isDialog(info)) {
-			switch (info.data.dialog.type) {
+			switch (info?.data?.dialog?.type) {
 				case DialogType.LINE: {
 					dom = (
 						<LineDialog
@@ -807,8 +817,18 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 					)
 					break
 				}
+				case DialogType.CURRENT_POSITION: {
+					dom = (
+						<StationDialog
+							info={info.data.dialog}
+							onStationSelected={this.showStation.bind(this)}
+							onLineSelected={this.showLine.bind(this)}
+							onClosed={() => {console.log("close current location dialog")}}/>
+					)
+					break
+				}
+				default:
 			}
-		}
 		return dom
 	}
 }

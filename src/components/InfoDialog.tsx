@@ -18,7 +18,7 @@ interface StationInfoProps {
 	onClosed: (() => any)
 	onLineSelected: ((line: Line) => any)
 	onStationSelected: ((s: Station) => any)
-	onShowVoronoi: ((s: Station) => any)
+	onShowVoronoi?: ((s: Station) => any)
 }
 
 interface StationInfoState {
@@ -49,7 +49,9 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 	}
 
 	onShowVoronoi(station: Station) {
-		this.props.onShowVoronoi(station);
+		if (this.props.onShowVoronoi) {
+			this.props.onShowVoronoi(station);
+		}
 	}
 
 	formatDistance(dist: number) {
@@ -75,29 +77,39 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 						</div>
 						<div className="Horizontal-container">
 							<img src={img_station} alt="icon-details" className="Icon-station" />
-							<div className="Station-details">
-								所在：{info.props.prefecture}&nbsp;&nbsp; {info.type === DialogType.STATION ? null : this.formatDistance(info.props.dist)}<br />
-								場所：E{station.position.lng} N{station.position.lat}
+							<div>
+								<div className="Station-details">
+									{info.props.prefecture}
+								</div>
+								<div className="Station-details location">
+									E{station.position.lng} N{station.position.lat}
+								</div>
 							</div>
 						</div>
 						{info.type === DialogType.SELECT_POSITION ? (
-							<div className="Horizontal-container">
+							<div className="Horizontal-container position">
 								<img src={img_location}
 									alt="icon-details"
 									className="Icon-station" />
 								<div className="Station-details">
-									<div className="position-title">&nbsp;選択した地点&nbsp;</div>
+									<div className="Horizontal-container">
+										<div className="position-title">&nbsp;選択した地点&nbsp;</div>
+										<div className="station-distance">{this.formatDistance(info.props.dist)}</div>
+									</div>
 									E{info.props.position.lng.toFixed(6)} N{info.props.position.lat.toFixed(6)}
 								</div>
 							</div>
 						) : null}
 						{info.type === DialogType.CURRENT_POSITION ? (
-							<div className="Horizontal-container">
+							<div className="Horizontal-container position">
 								<img src={img_mylocation}
 									alt="icon-details"
 									className="Icon-station" />
 								<div className="Station-details">
-									<div className="position-title">&nbsp;選択した地点&nbsp;</div>
+									<div className="Horizontal-container">
+										<div className="position-title">&nbsp;現在位置 &nbsp;</div>
+										<div className="station-distance">{this.formatDistance(info.props.dist)}</div>
+									</div>
 									E{info.props.position.lng.toFixed(6)} N{info.props.position.lat.toFixed(6)}
 								</div>
 							</div>
