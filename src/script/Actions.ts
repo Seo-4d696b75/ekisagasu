@@ -28,7 +28,15 @@ async function checkRadarK(k: number, dispatch: Dispatch<GlobalAction>, state: G
 			break
 		}
 		case NavType.DIALOG_SELECT_POS: {
-			checker(state.nav.data.dialog.props.position, state.nav)
+		case NavType.IDLE: {
+			if (state.watch_position && state.current_location) {
+				var pos = {
+					lat: state.current_location.position.lat(),
+					lng: state.current_location.position.lng()
+				}
+				list = await checker(pos)
+				updateNavStateIdle(pos, list, dispatch)
+			}
 			break
 		}
 		default:
@@ -184,18 +192,53 @@ export function requestShowStationItem(item: StationSuggestion) {
 	}
 }
 
-export function setNavStateIdle() {
-	setNavState({
+function updateNavStateIdle(pos: LatLng, list: Array<RadarStation>, dispatch: ThunkDispatch<GlobalState,undefined,GlobalAction>) {
+	const station = list[0].station
+	dispatch({
+		type: ActionType.SET_NAV_STATE,
+		payload: {
+			next: {
 		type: NavType.IDLE,
-		data: null
+				data: {
+					dialog: {
+						type: DialogType.CURRENT_POSITION,
+						props: {
+							station: station,
+							radar_list: list,
+							prefecture: StationService.get_prefecture(station.prefecture),
+							position: pos,
+							dist: StationService.measure(station.position, pos),
+							lines: station.lines.map(code => StationService.get_line(code)),
+						}
+					},
+				},
+			}
+		}
 	})
 }
 
-export function setNavState(state: NavState) {
-	store.dispatch({
+export function setNavStateIdle() {
+	store.dispatch((dispatch, getState) => {
+		const state = getState()
+		const location = state.current_location
+		if (state.watch_position && location) {
+			const pos = { lat: location.position.lat(), lng: location.position.lng() }
+			StationService.update_location(pos, state.radar_k).then(station => {
+				if (!station) return
+				updateNavStateIdle(pos, makeRadarList(pos, state.radar_k), dispatch)
+			})
+		} else {
+			dispatch({
 		type: ActionType.SET_NAV_STATE,
 		payload: {
-			current: state
+					next: {
+						type: NavType.IDLE,
+						data: {
+							dialog: null
+						}
+					}
+				}
+			})
 		}
 	})
 }

@@ -138,7 +138,7 @@ export class StationService {
 		}
 	}
 
-	update_location(position: Utils.LatLng, k: number, r: number = 0): Promise<any> {
+	update_location(position: Utils.LatLng, k: number, r: number = 0): Promise<Station|null> {
 		if (!k || k <= 0) k = 1
 		if (!r || r < 0) r = 0
 		if (this.tree) {

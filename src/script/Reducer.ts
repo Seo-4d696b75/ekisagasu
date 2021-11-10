@@ -43,7 +43,12 @@ export interface GlobalState {
   radar_k: number
   watch_position: boolean
   show_station_pin: boolean
-  current_position: PropsEvent<GeolocationPosition>
+  current_location: null | {
+    position: google.maps.LatLng,
+    accuracy: number
+    heading: number | null
+  }
+  current_location_update: PropsEvent<GeolocationPosition>
   high_accuracy: boolean,
   nav: NavState,
   map_focus: PropsEvent<LatLng>
@@ -54,7 +59,8 @@ const initState: GlobalState = {
   radar_k: 22,
   watch_position: false,
   show_station_pin: true,
-  current_position: createIdleEvent(),
+  current_location: null,
+  current_location_update: createIdleEvent(),
   high_accuracy: false,
   nav: {
     type: NavType.LOADING,
@@ -88,9 +94,15 @@ const reducer: Reducer<GlobalState, GlobalAction> = (
       }
     }
     case ActionType.SET_CURRENT_POSITION: {
+      const coords = action.payload.pos.coords
       return {
         ...state,
-        current_position: createEvent(action.payload.pos)
+        current_location: {
+          position: new google.maps.LatLng(coords.latitude, coords.longitude),
+          accuracy: coords.accuracy,
+          heading: coords.heading
+        },
+        current_location_update: createEvent(action.payload.pos)
       }
     }
     case ActionType.SET_GPS_ACCURACY: {

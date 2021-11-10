@@ -43,7 +43,7 @@ export enum DialogType {
 	CURRENT_POSITION,
 }
 
-interface DialogPropsBase<T, E>{
+interface DialogPropsBase<T, E> {
 	type: T
 	props: E
 }
@@ -60,9 +60,9 @@ interface PosDialogPayload extends StationDialogPayload {
 	dist: number
 }
 
-type StationPosDialogProps = DialogPropsBase<DialogType.STATION, StationDialogPayload>
-type SelectPosDialogProps = DialogPropsBase<DialogType.SELECT_POSITION, PosDialogPayload>
-type CurrentPosDialogProps = DialogPropsBase<DialogType.CURRENT_POSITION, PosDialogPayload>
+export type StationPosDialogProps = DialogPropsBase<DialogType.STATION, StationDialogPayload>
+export type SelectPosDialogProps = DialogPropsBase<DialogType.SELECT_POSITION, PosDialogPayload>
+export type CurrentPosDialogProps = DialogPropsBase<DialogType.CURRENT_POSITION, PosDialogPayload>
 
 export type LineDialogProps = DialogPropsBase<DialogType.LINE, {
 	line: Line
@@ -108,12 +108,12 @@ function isDialog(nav: NavState): nav is InfoDialogNav {
 	}
 }
 
-type StationPosDialogNav = NavStateBase<NavType.DIALOG_STATION_POS, {
+export type StationPosDialogNav = NavStateBase<NavType.DIALOG_STATION_POS, {
 	dialog: StationPosDialogProps,
 	show_high_voronoi: boolean
 }>
 
-type SelectPosDialogNav = NavStateBase<NavType.DIALOG_SELECT_POS, {
+export type SelectPosDialogNav = NavStateBase<NavType.DIALOG_SELECT_POS, {
 	dialog: SelectPosDialogProps,
 	show_high_voronoi: boolean
 }>
@@ -123,6 +123,10 @@ type LineDialogNav = NavStateBase<NavType.DIALOG_LINE, {
 	show_polyline: boolean
 	polyline_list: Array<Utils.PolylineProps>
 	stations_marker: Array<Utils.LatLng>
+}>
+
+export type IdleNav = NavStateBase<NavType.IDLE, {
+	dialog: CurrentPosDialogProps | null
 }>
 
 export type StationDialogNav = 
@@ -136,7 +140,7 @@ export type InfoDialogNav =
 export type NavState =
 	InfoDialogNav |
 	NavStateBase<NavType.LOADING, null> |
-	NavStateBase<NavType.IDLE, null>
+	IdleNav
 
 interface MapProps {
 	radar_k: number
@@ -156,7 +160,7 @@ function mapGlobalState2Props(state: GlobalState, ownProps: any): MapProps {
 		show_station_pin: state.show_station_pin,
 		nav: state.nav,
 		focus: state.map_focus,
-		current_location: state.current_position,
+		current_location: state.current_location_update,
 		voronoi: state.stations,
 		query: ownProps.query as qs.ParsedQuery<string>
 	}
@@ -262,10 +266,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 		if (!isStationDialog(nav)) return
 
 		if (nav.data.show_high_voronoi) {
-			Actions.setNavState({
-				type: NavType.IDLE,
-				data: null
-			})
+			Actions.setNavStateIdle()
 			return
 		}
 		const worker = new VoronoiWorker()
@@ -322,10 +323,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 					...this.state,
 					worker_running: false,
 				})
-				Actions.setNavState({
-					type: NavType.IDLE,
-					data: null
-				})
+				Actions.setNavStateIdle()
 			}
 		})
 
@@ -583,7 +581,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 		if (isStationDialog(nav) && nav.data.show_high_voronoi) return
 		StationService.update_location(pos, this.props.radar_k, 0).then(s => {
 			console.log("update location", s)
-			this.showStation(s)
+			if (s) this.showStation(s)
 		})
 	}
 
@@ -790,7 +788,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 	renderInfoDialog(): any {
 		var dom: any = null
 		var info = this.props.nav
-		if ( isDialog(info)){
+		if (isDialog(info)) {
 			switch (info.data.dialog.type) {
 				case DialogType.LINE: {
 					dom = (
