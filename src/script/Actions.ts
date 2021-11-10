@@ -176,6 +176,34 @@ export function requestShowLine(line: Line): Promise<Line> {
 	}
 }
 
+export function showPolyline(dialog: LineDialogProps, polylines: Array<PolylineProps>, stations: Array<LatLng>) {
+	store.dispatch({
+		type: ActionType.SET_NAV_STATE,
+		payload: {
+			next: {
+				type: NavType.DIALOG_LINE,
+				data: {
+					dialog: dialog,
+					show_polyline: true,
+					polyline_list: polylines,
+					stations_marker: stations
+				}
+			}
+		}
+	})
+}
+
+export function showHighVoronoi(nav: StationDialogNav) {
+	var next = { ...nav }
+	next.data.show_high_voronoi = true
+	store.dispatch({
+		type: ActionType.SET_NAV_STATE,
+		payload: {
+			next: next
+		}
+	})
+}
+
 export function requestShowStationItem(item: StationSuggestion) {
 	switch (item.type) {
 		case "station": {

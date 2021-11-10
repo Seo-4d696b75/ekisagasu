@@ -129,13 +129,13 @@ export type IdleNav = NavStateBase<NavType.IDLE, {
 	dialog: CurrentPosDialogProps | null
 }>
 
-export type StationDialogNav = 
+export type StationDialogNav =
 	StationPosDialogNav |
 	SelectPosDialogNav
 
 export type InfoDialogNav =
 	StationDialogNav |
-	LineDialogNav 
+	LineDialogNav
 
 export type NavState =
 	InfoDialogNav |
@@ -341,8 +341,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 			worker_running: true,
 			high_voronoi: [],
 		})
-		nav.data.show_high_voronoi = true
-		Actions.setNavState({ ...nav })
+		Actions.showHighVoronoi(nav)
 		worker.postMessage(JSON.stringify({
 			type: 'start',
 			container: container,
@@ -372,15 +371,11 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 			}]
 			bounds = data
 		}
-		Actions.setNavState({
-			type: NavType.DIALOG_LINE,
-			data: {
-				...nav.data,
-				show_polyline: true,
-				polyline_list: polyline,
-				stations_marker: line.station_list.map(s => s.position)
-			}
-		})
+		Actions.showPolyline(
+			nav.data.dialog,
+			polyline,
+			line.station_list.map(s => s.position)
+		)
 		if (this.map_ref.current) {
 			var rect = this.map_ref.current.getBoundingClientRect()
 			var props = Utils.get_zoom_property(bounds, rect.width, rect.height)
