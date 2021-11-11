@@ -1,7 +1,7 @@
 import { GoogleApiWrapper, Map, Marker, Polygon, Polyline, Circle, GoogleAPI, IMapProps } from "google-maps-react"
 import React from "react"
 import "./Map.css"
-import { StationDialog, LineDialog } from "./InfoDialog"
+import { StationDialog, LineDialog, CurrentPosDialog } from "./InfoDialog"
 import StationService from "../script/StationService"
 import { CSSTransition } from "react-transition-group"
 import * as Rect from "../diagram/Rect"
@@ -819,11 +819,10 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 				}
 				case DialogType.CURRENT_POSITION: {
 					dom = (
-						<StationDialog
+						<CurrentPosDialog
 							info={info.data.dialog}
 							onStationSelected={this.showStation.bind(this)}
-							onLineSelected={this.showLine.bind(this)}
-							onClosed={() => {console.log("close current location dialog")}}/>
+							onLineSelected={this.showLine.bind(this)}/>
 					)
 					break
 				}
