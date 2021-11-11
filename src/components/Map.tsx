@@ -761,9 +761,9 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 					
 					<CSSTransition
 						in={this.props.nav.type === NavType.IDLE && this.props.nav.data.dialog !== null}
-						className="Dialog-container"
+						className="Dialog-container current-position"
 						timeout={400}>
-						<div className="Dialog-container">
+						<div className="Dialog-container current-position">
 							<div className="Dialog-frame">
 								{this.renderInfoDialog()}
 							</div>
