@@ -10,8 +10,202 @@ import img_location from "../img/map_pin.svg";
 import img_mylocation from "../img/pin_mylocation.png"
 import { CSSTransition } from "react-transition-group";
 import { Station } from "../script/Station";
-import { StationDialogProps, LineDialogProps, DialogType } from "./Map"
+import { StationDialogProps, LineDialogProps, DialogType, CurrentPosDialogProps } from "./Map"
 import { Line } from "../script/Line";
+
+function formatDistance(dist: number): string {
+	if (dist < 1000.0) {
+		return `${dist.toFixed(0)}m`;
+	} else {
+		return `${(dist / 1000).toFixed(1)}km`;
+	}
+}
+
+function renderStationTitle(station: Station) {
+	return (
+		<div className="Title-container station">
+			<p className="Title-name">{station.name}</p>
+			<p className="Title-name kana">{station.name_kana}</p>
+		</div>
+	)
+}
+
+function renderStationDetails(info: StationDialogProps, onLineSelected: (line: Line) => void) {
+	const station = info.props.station
+	return (
+		<div>
+			<div className="Horizontal-container">
+				<img src={img_station} alt="icon-details" className="Icon-station" />
+				<div>
+					<div className="Station-details">
+						{info.props.prefecture}
+					</div>
+					<div className="Station-details location">
+						E{station.position.lng} N{station.position.lat}
+					</div>
+				</div>
+			</div>
+
+			{info.type === DialogType.SELECT_POSITION ? (
+				<div className="Horizontal-container position">
+					<img src={img_location}
+						alt="icon-details"
+						className="Icon-station" />
+					<div className="Station-details">
+						<div className="Horizontal-container">
+							<div className="position-title">&nbsp;選択した地点&nbsp;</div>
+							<img className="arrow-right" src={img_above} />
+							<div className="station-distance">{formatDistance(info.props.dist)}</div>
+						</div>
+						E{info.props.position.lng.toFixed(6)} N{info.props.position.lat.toFixed(6)}
+					</div>
+				</div>
+			) : null}
+			{info.type === DialogType.CURRENT_POSITION ? (
+				<div className="Horizontal-container position">
+					<img src={img_mylocation}
+						alt="icon-details"
+						className="Icon-station" />
+					<div className="Station-details">
+						<div className="Horizontal-container">
+							<div className="position-title">&nbsp;現在位置 &nbsp;</div>
+							<img className="arrow-right" src={img_above} />
+							<div className="station-distance">{formatDistance(info.props.dist)}</div>
+						</div>
+						E{info.props.position.lng.toFixed(6)} N{info.props.position.lat.toFixed(6)}
+					</div>
+				</div>
+			) : null}
+			<div className={`Scroll-container lines ${info.type === DialogType.STATION ? null : "position"}`}>
+
+				<table>
+					<tbody>
+						{info.props.lines.map((line, index) => {
+							return (
+								<tr key={index}
+									onClick={() => onLineSelected(line)}
+									className="List-cell line">
+									<td className="Line-item icon"><div className="Icon-line" style={{ backgroundColor: line.color }} /></td>
+									<td className="Line-item line">{line.name}&nbsp;&nbsp;<small>{line.station_size}駅</small></td>
+								</tr>
+							);
+						})}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	)
+}
+
+function renderStationRadar(info: StationDialogProps, show: boolean, onStationSelected: (s: Station) => void, onClose: () => void) {
+	return (
+		<CSSTransition
+			in={show}
+			className={`Container-radar ${info.type === DialogType.STATION ? null : "position"}`}
+			timeout={400}>
+			<div className={`Container-radar ${info.type === DialogType.STATION ? null : "position"}`}>
+				<div className="Container-main">
+					<div className="Horizontal-container radar-title">
+						<img src={img_radar} alt="icon-radar" className="Icon-radar" />
+						<div className="Radar-k">x{info.props.radar_list.length}</div>
+					</div>
+					<div className="Scroll-container radar">
+						<table>
+							<tbody>
+								{info.props.radar_list.map((e, index) => {
+									var dist = formatDistance(e.dist);
+									return (
+										<tr key={index} className="List-cell station"
+											onClick={() => onStationSelected(e.station)}>
+											<td className="Radar-item index">{index + 1}</td>
+											<td className="Radar-item dist">{dist}</td>
+											<td className="Radar-item station">{e.station.name}&nbsp;&nbsp;{e.lines}</td>
+										</tr>
+									);
+								})}
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div className="Bottom-container radar">
+					<img
+						src={img_above}
+						alt="close radar"
+						className="Icon-action"
+						onClick={() => onClose()} />
+				</div>
+			</div>
+		</CSSTransition>
+	)
+}
+
+interface CurrentPosInfoProps {
+	info: CurrentPosDialogProps
+	onLineSelected: ((line: Line) => any)
+	onStationSelected: ((s: Station) => any)
+}
+
+interface CurrentPosInfoState {
+	show_radar: boolean
+	show_details: boolean
+}
+
+export class CurrentPosDialog extends React.Component<CurrentPosInfoProps, CurrentPosInfoState> {
+	state = {
+		show_radar: false,
+		show_details: false,
+	}
+
+	toggleStationDetails(show: boolean) {
+		this.setState({
+			...this.state,
+			show_details: show,
+		})
+	}
+
+	onRadarShow() {
+		this.setState({
+			...this.state,
+			show_radar: true,
+		})
+	}
+
+	onRadarClose() {
+		this.setState({
+			...this.state,
+			show_radar: false,
+		})
+	}
+
+	render() {
+		const info = this.props.info
+		const station = info.props.station
+		return (
+			<div className="Info-dialog">
+
+				<div className="Container-fixed station position">
+					<div className="Container-main">
+						{renderStationTitle(station)}
+						{renderStationDetails(info, this.props.onLineSelected)}
+					</div>
+					<div className="Button-container">
+						<img
+							src={img_delete}
+							alt="close dialog"
+							className="Icon-action close"
+							onClick={() => this.toggleStationDetails(false)} /><br />
+						<img
+							onClick={this.onRadarShow.bind(this)}
+							src={img_radar}
+							alt="show radar"
+							className="Icon-action radar" />
+					</div>
+				</div>
+				{renderStationRadar(info, this.state.show_radar, this.props.onStationSelected, this.onRadarClose)}
+			</div>
+		);
+	}
+}
 
 interface StationInfoProps {
 	info: StationDialogProps
@@ -36,7 +230,6 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 	}
 
 	onRadarShow() {
-		console.log("show radar")
 		this.setState({
 			show_radar: true,
 		});
@@ -54,14 +247,6 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 		}
 	}
 
-	formatDistance(dist: number) {
-		if (dist < 1000.0) {
-			return `${dist.toFixed(0)}m`;
-		} else {
-			return `${(dist / 1000).toFixed(1)}km`;
-		}
-	}
-
 	render() {
 		const info = this.props.info
 		const station = info.props.station
@@ -70,71 +255,8 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 
 				<div className={`Container-fixed station ${info.type === DialogType.STATION ? null : "position"}`}>
 					<div className="Container-main">
-
-						<div className="Title-container station">
-							<p className="Title-name">{station.name}</p>
-							<p className="Title-name kana">{station.name_kana}</p>
-						</div>
-						<div className="Horizontal-container">
-							<img src={img_station} alt="icon-details" className="Icon-station" />
-							<div>
-								<div className="Station-details">
-									{info.props.prefecture}
-								</div>
-								<div className="Station-details location">
-									E{station.position.lng} N{station.position.lat}
-								</div>
-							</div>
-						</div>
-						{info.type === DialogType.SELECT_POSITION ? (
-							<div className="Horizontal-container position">
-								<img src={img_location}
-									alt="icon-details"
-									className="Icon-station" />
-								<div className="Station-details">
-									<div className="Horizontal-container">
-										<div className="position-title">&nbsp;選択した地点&nbsp;</div>
-										<img className="arrow-right" src={img_above}/>
-										<div className="station-distance">{this.formatDistance(info.props.dist)}</div>
-									</div>
-									E{info.props.position.lng.toFixed(6)} N{info.props.position.lat.toFixed(6)}
-								</div>
-							</div>
-						) : null}
-						{info.type === DialogType.CURRENT_POSITION ? (
-							<div className="Horizontal-container position">
-								<img src={img_mylocation}
-									alt="icon-details"
-									className="Icon-station" />
-								<div className="Station-details">
-									<div className="Horizontal-container">
-										<div className="position-title">&nbsp;現在位置 &nbsp;</div>
-										<img className="arrow-right" src={img_above}/>
-										<div className="station-distance">{this.formatDistance(info.props.dist)}</div>
-									</div>
-									E{info.props.position.lng.toFixed(6)} N{info.props.position.lat.toFixed(6)}
-								</div>
-							</div>
-						) : null}
-						<div className={`Scroll-container lines ${info.type === DialogType.STATION ? null : "position"}`}>
-
-							<table>
-								<tbody>
-
-									{info.props.lines.map((line, index) => {
-										return (
-											<tr key={index}
-												onClick={() => this.props.onLineSelected(line)}
-												className="List-cell line">
-												<td className="Line-item icon"><div className="Icon-line" style={{ backgroundColor: line.color }} /></td>
-												<td className="Line-item line">{line.name}&nbsp;&nbsp;<small>{line.station_size}駅</small></td>
-											</tr>
-										);
-									})}
-								</tbody>
-							</table>
-						</div>
-
+						{renderStationTitle(station)}
+						{renderStationDetails(info, this.props.onLineSelected)}
 					</div>
 					<div className="Button-container">
 						<img
@@ -154,48 +276,7 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 							className="Icon-action radar" />
 					</div>
 				</div>
-				<CSSTransition
-					in={this.state.show_radar}
-					className={`Container-radar ${info.type === DialogType.STATION ? null : "position"}`}
-					timeout={400}>
-					<div className={`Container-radar ${info.type === DialogType.STATION ? null : "position"}`}>
-						<div className="Container-main">
-
-							<div className="Horizontal-container radar-title">
-								<img src={img_radar} alt="icon-radar" className="Icon-radar" />
-								<div className="Radar-k">x{info.props.radar_list.length}</div>
-							</div>
-							<div className="Scroll-container radar">
-
-								<table>
-									<tbody>
-
-										{info.props.radar_list.map((e, index) => {
-											var dist = this.formatDistance(e.dist);
-											return (
-												<tr key={index} className="List-cell station"
-													onClick={() => this.props.onStationSelected(e.station)}>
-													<td className="Radar-item index">{index + 1}</td>
-													<td className="Radar-item dist">{dist}</td>
-													<td className="Radar-item station">{e.station.name}&nbsp;&nbsp;{e.lines}</td>
-												</tr>
-											);
-										})}
-									</tbody>
-								</table>
-							</div>
-						</div>
-						<div className="Bottom-container radar">
-							<img
-								src={img_above}
-								alt="close radar"
-								className="Icon-action"
-								onClick={this.onRadarClose.bind(this)} />
-						</div>
-
-
-					</div>
-				</CSSTransition>
+				{renderStationRadar(info, this.state.show_radar, this.props.onStationSelected, this.onRadarClose)}
 			</div>
 		);
 
