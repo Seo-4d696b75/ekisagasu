@@ -32,6 +32,66 @@
 	opacity: 1.0;
 }
 
+:root{
+	--radar-height: 0px;
+	--station-list-height: 0px;
+}
+
+/* height: 0px <=> --radar-height でアニメーション */
+.Container-radar.enter{
+	visibility: visible;
+	height: 0;
+	opacity: 0.0;
+}
+
+.Container-radar.enter-active{
+	transition: all 300ms ease-in;
+	height: var(--radar-height);
+	opacity: 1.0;
+	visibility: visible;
+}
+
+.Container-radar.enter-done{
+	height: var(--radar-height);
+	visibility: visible;
+}
+
+
+.Container-radar.exit{
+	height: var(--radar-height);
+	visibility: visible;
+	opacity: 1.0;
+}
+
+.Container-radar.exit-active{
+	transition: all 300ms ease-out;
+	height: 0;
+	opacity: 0.0;
+	visibility: visible;
+}
+
+.Container-stations{
+	height: var(--station-list-height);
+}
+
+.Container-stations.enter-active{
+	transition: all 300ms ease-in;
+	height: calc(var(--station-list-height) * 2);
+}
+
+.Container-stations.enter-done{
+	height: calc(var(--station-list-height) * 2);
+}
+
+.Container-stations.exit{
+	height: calc(var(--station-list-height) * 2);
+}
+
+.Container-stations.exit-active{
+	transition: all 300ms ease-out;
+	height: var(--station-list-height);
+}
+
 .Container-stations{
 	width: 100%;
 	position: relative;
@@ -46,7 +106,16 @@
 	height: 80px;
 }
 
+.container-main.stations {
+	padding: 3px;
+	width: 100%;
+}
+
 @media screen and (min-width:900px){
+
+:root {
+	--radar-margin-top: 0px;
+}
 
 .Info-dialog{
 	width: 100%;
@@ -68,6 +137,11 @@
 
 .container-main.radar.position{
 	height: calc(100% - 220px);
+}
+
+/* 残りの高さいっぱいに表示 */
+.Container-radar{
+	height: 100%;
 }
 
 .Scroll-container.lines{
@@ -104,57 +178,12 @@
 	height: 60px;
 }
 
-.Container-radar.enter{
-	visibility: visible;
-	height: 0px;
-	opacity: 0.0;
+:root{
+	--radar-height: 200px; /* 展開時のサイズ */
+	--station-list-height: 150px; /* 基本サイズ */
 }
 
-.Container-radar.enter-active{
-	transition: all 300ms ease-in;
-	height: 200px;
-	opacity: 1.0;
-	visibility: visible;
-}
-
-.Container-radar.enter-done{
-	height: 200px;
-	visibility: visible;
-}
-
-
-.Container-radar.exit{
-	height: 200px;
-	visibility: visible;
-	opacity: 1.0;
-}
-
-.Container-radar.exit-active{
-	transition: all 300ms ease-out;
-	height: 0;
-	opacity: 0.0;
-	visibility: visible;
-}
-
-.Container-stations{
-	height: 150px;
-}
-
-.Container-stations.enter-active{
-	transition: all 300ms ease-in;
-	height: 300px;
-}
-
-.Container-stations.enter-done{
-	height: 300px;
-}
-
-.Container-stations.exit{
-	height: 300px;
-}
-
-.Container-stations.exit-active{
-	transition: all 300ms ease-out;
+.container-main.stations {
 	height: 150px;
 }
 
@@ -176,59 +205,9 @@
 	height: 100px;
 }
 
-.Container-radar.enter{
-	visibility: visible;
-	height: 0px;
-	opacity: 0.0;
-}
-
-.Container-radar.enter-active{
-	transition: all 300ms ease-in;
-	height: 300px;
-	opacity: 1.0;
-	visibility: visible;
-}
-
-.Container-radar.enter-done{
-	height: 300px;
-	visibility: visible;
-}
-
-
-.Container-radar.exit{
-	height: 300px;
-	visibility: visible;
-	opacity: 1.0;
-}
-
-.Container-radar.exit-active{
-	transition: all 300ms ease-out;
-	height: 0;
-	opacity: 0.0;
-	visibility: visible;
-}
-
-.Container-stations{
-	height: 200px;
-}
-
-
-.Container-stations.enter-active{
-	transition: all 300ms ease-in;
-	height: 400px;
-}
-
-.Container-stations.enter-done{
-	height: 400px;
-}
-
-.Container-stations.exit{
-	height: 400px;
-}
-
-.Container-stations.exit-active{
-	transition: all 300ms ease-out;
-	height: 200px;
+:root{
+		--radar-height: 200px; /* 展開時のサイズ */
+		--station-list-height: 200px; /* 基本サイズ */
 }
 
 }
