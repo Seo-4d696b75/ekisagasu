@@ -14,22 +14,6 @@
 	z-index: 5;
 }
 
-.Dialog-container.current-position{
-	display: none;
-	transform: none;
-	transition: none;
-}
-
-.Dialog-container.current-position.enter, 
-.Dialog-container.current-position.enter-active, 
-.Dialog-container.current-position.enter-done,
-.Dialog-container.current-position.exit,
-.Dialog-container.current-position.exit-active {
-	display: block;
-	transform: none;
-	transition: none;
-}
-
 @media screen and (min-width:900px){
 
 .Dialog-container,
