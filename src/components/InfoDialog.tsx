@@ -156,12 +156,12 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 				</div>
 				<CSSTransition
 					in={this.state.show_radar}
-					className="Container-radar"
+					className={`Container-radar ${info.type === DialogType.STATION ? null : "position"}`}
 					timeout={400}>
-					<div className="Container-radar">
+					<div className={`Container-radar ${info.type === DialogType.STATION ? null : "position"}`}>
 						<div className="Container-main">
 
-							<div className="Horizontal-container">
+							<div className="Horizontal-container radar-title">
 								<img src={img_radar} alt="icon-radar" className="Icon-radar" />
 								<div className="Radar-k">x{info.props.radar_list.length}</div>
 							</div>

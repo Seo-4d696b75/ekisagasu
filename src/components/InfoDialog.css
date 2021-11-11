@@ -249,7 +249,7 @@
 .Title-name{
 	font-size: large;
 	width: fit-content;
-  	margin: 0 auto;
+  margin: auto;
 	height: fit-content;
 	overflow-x: hidden;
 	white-space: nowrap;
@@ -259,6 +259,7 @@
 
 .Title-name.kana{
 	font-size: x-small;
+	margin-top: -5px;
 	padding-bottom: 1px;
 }
 
@@ -303,6 +304,10 @@
 
 .Horizontal-container.position{
 	margin-top: 5px;
+}
+
+.Horizontal-container.radar-title{
+	margin-bottom: -10px;
 }
 
 .Icon-line{
@@ -385,7 +390,7 @@ table {
 }
 
 .Scroll-container.radar{
-	height: calc(100% - 40px);
+	height: calc(100% - 30px);
 }
 
 .Scroll-container.stations{
