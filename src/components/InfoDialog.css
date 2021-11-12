@@ -2,16 +2,11 @@
 	box-sizing: border-box;
 }
 
-.Info-dialog {
+.info-dialog {
 	color: grey;
 	padding: 5px;
 	background-color: rgba(255, 255, 255, 0.9);
 	pointer-events: all;
-}
-
-.Container-fixed {
-	width: 100%;
-	position: relative;
 }
 
 .container-main {
@@ -24,7 +19,7 @@
 	height: 45px;
 }
 
-.Container-radar {
+.container-expand {
 	width: 100%;
 	height: 100%;
 	padding-right: 40px;
@@ -39,13 +34,13 @@
 
 /* height: 0px <=> --expand-height でアニメーション */
 
-.Container-radar.enter {
+.container-expand.enter {
 	visibility: visible;
 	height: 0;
 	opacity: 0.0;
 }
 
-.Container-radar.enter-active {
+.container-expand.enter-active {
 	transition: all 300ms ease-in;
 	height: var(--expand-height);
 	opacity: 1.0;
@@ -63,7 +58,7 @@
 	opacity: 1.0;
 }
 
-.Container-radar.exit-active {
+.container-expand.exit-active {
 	transition: all 300ms ease-out;
 	height: 0;
 	opacity: 0.0;
@@ -72,29 +67,29 @@
 
 /* height: --station-list-height x 1 ~ x2 でアニメーション */
 
-.Container-stations {
+.container-stations {
 	height: var(--station-list-height);
 }
 
-.Container-stations.enter-active {
+.container-stations.enter-active {
 	transition: all 300ms ease-in;
 	height: calc(var(--station-list-height) * 2);
 }
 
-.Container-stations.enter-done {
+.container-stations.enter-done {
 	height: calc(var(--station-list-height) * 2);
 }
 
-.Container-stations.exit {
+.container-stations.exit {
 	height: calc(var(--station-list-height) * 2);
 }
 
-.Container-stations.exit-active {
+.container-stations.exit-active {
 	transition: all 300ms ease-out;
 	height: var(--station-list-height);
 }
 
-.Container-stations {
+.container-stations {
 	width: 100%;
 	position: relative;
 }
@@ -114,7 +109,7 @@
 }
 
 @media screen and (min-width:900px) {
-	.Info-dialog {
+	.info-dialog {
 		width: 100%;
 		height: 100%;
 		box-shadow: 2px 0 4px grey;
@@ -132,20 +127,20 @@
 		height: calc(100% - 220px);
 	}
 	/* 残りの高さいっぱいに表示 */
-	.Container-radar {
+	.container-expand {
 		height: 100%;
 	}
-	.Scroll-container.lines {
+	.scroll-container.lines {
 		height: 100px;
 	}
-	.Icon-action.radar {
+	.icon-action.radar {
 		visibility: hidden;
 		pointer-events: none;
 	}
-	.Container-stations {
+	.container-stations {
 		height: calc(100% - 80px);
 	}
-	.Bottom-container {
+	.bottom-container {
 		display: none;
 	}
 }
@@ -157,7 +152,7 @@
 	.container-main.station-detail.position {
 		height: 140px;
 	}
-	.Scroll-container.lines {
+	.scroll-container.lines {
 		height: 60px;
 	}
 	:root {
@@ -178,7 +173,7 @@
 	.container-main.station-detail.position {
 		height: 180px;
 	}
-	.Scroll-container.lines {
+	.scroll-container.lines {
 		height: 100px;
 	}
 	:root {
@@ -190,28 +185,20 @@
 }
 
 @media screen and (max-width:900px) {
-	.Info-dialog {
+	.info-dialog {
 		margin: 10px;
 		width: calc(100% - 20px);
 		height: fit-content;
 		border-radius: 4px 4px 4px 4px;
 		box-shadow: 2px 2px 4px grey;
 	}
-	.Container-radar {
+	.container-expand {
 		height: 0;
 		visibility: hidden;
 	}
 }
 
-.Container-main {
-	position: absolute;
-	top: 0px;
-	left: 0px;
-	bottom: 0px;
-	right: 40px;
-}
-
-.Title-name {
+.title-name {
 	font-size: large;
 	width: fit-content;
 	margin: auto;
@@ -222,13 +209,13 @@
 	max-width: 100%;
 }
 
-.Title-name.kana {
+.title-name.kana {
 	font-size: x-small;
 	margin-top: -5px;
 	padding-bottom: 1px;
 }
 
-.Title-container {
+.title-container {
 	width: fit-content;
 	height: fit-content;
 	padding: 3px;
@@ -236,17 +223,17 @@
 	max-width: 100%;
 }
 
-.Title-container.line {
+.title-container.line {
 	max-width: calc(100% - 36px);
 }
 
-.Icon-station {
+.icon-station {
 	width: 27px;
 	height: 27px;
 	margin: 3px;
 }
 
-.Station-details {
+.station-details {
 	font-size: small;
 	text-align: start;
 	height: fit-content;
@@ -257,25 +244,25 @@
 	margin-left: 0;
 }
 
-.Station-details.location {
+.station-details.location {
 	margin-top: -5px;
 }
 
-.Horizontal-container {
+.horizontal-container {
 	display: flex;
 	width: 100%;
 	height: fit-content;
 }
 
-.Horizontal-container.position {
+.horizontal-container.position {
 	margin-top: 5px;
 }
 
-.Horizontal-container.radar-title {
+.horizontal-container.radar-title {
 	margin-bottom: -10px;
 }
 
-.Icon-line {
+.icon-line {
 	width: 16px;
 	height: 16px;
 	margin-right: 4px;
@@ -284,7 +271,7 @@
 	border-radius: 2px 2px 2px 2px;
 }
 
-.Icon-line.big {
+.icon-line.big {
 	width: 26px;
 	height: 26px;
 	margin: 5px;
@@ -320,24 +307,24 @@ table {
 	text-align: start;
 }
 
-.Station-cell {
+.station-cell {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	text-align: start;
 }
 
-.Station-item.name {
+.station-item.name {
 	font-size: small;
 	color: black;
 }
 
-.Station-item.name-kana {
+.station-item.name-kana {
 	font-size: x-small;
 	color: grey;
 }
 
-.Scroll-container {
+.scroll-container {
 	overflow-y: scroll;
 	width: 100%;
 	-ms-overflow-style: none;
@@ -346,28 +333,28 @@ table {
 	/* Firefox 対応 */
 }
 
-.Scroll-container::-webkit-scrollbar {
+.scroll-container::-webkit-scrollbar {
 	/* Chrome, Safari 対応 */
 	display: none;
 }
 
-.Scroll-container.lines {
+.scroll-container.lines {
 	padding: 7px;
 	width: 100%;
 	margin-top: 5px;
 }
 
-.Scroll-container.radar {
+.scroll-container.radar {
 	height: calc(100% - 30px);
 }
 
-.Scroll-container.stations {
+.scroll-container.stations {
 	padding: 7px;
 	width: 100%;
 	height: 100%;
 }
 
-.Button-container {
+.button-container {
 	position: absolute;
 	z-index: 20;
 	right: 0px;
@@ -376,7 +363,7 @@ table {
 	width: 40px;
 }
 
-.Icon-action {
+.icon-action {
 	cursor: pointer;
 	position: relative;
 	width: 30px;
@@ -385,13 +372,13 @@ table {
 	right: 0;
 }
 
-.Bottom-container {
+.bottom-container {
 	position: absolute;
 	right: 0px;
 	bottom: -5px;
 }
 
-.Icon-action:hover {
+.icon-action:hover {
 	filter: drop-shadow(2px 2px 2px grey);
 }
 
@@ -408,39 +395,39 @@ table {
 	display: none;
 }
 
-.toggle-button, .Icon-action.toggle>input[type="checkbox"] {
+.toggle-button, .icon-action.toggle>input[type="checkbox"] {
 	transform: rotateZ(180deg);
 }
 
-.Icon-action.toggle>input[type="checkbox"]:checked~.toggle-button {
+.icon-action.toggle>input[type="checkbox"]:checked~.toggle-button {
 	transform: rotateZ(0deg);
 }
 
-.Icon-radar {
+.icon-radar {
 	width: 24px;
 	height: 24px;
 	margin: 3px;
 }
 
-.Radar-k {
+.radar-k {
 	margin: 3px;
 	height: 30px;
 	width: fit-content;
 	font-size: medium;
 }
 
-.Radar-item {
+.radar-item {
 	color: grey;
 	font-size: small;
 	vertical-align: middle;
 }
 
-.Radar-item.index {
+.radar-item.index {
 	color: blue;
 	width: 20px;
 }
 
-.Radar-item.dist {
+.radar-item.dist {
 	color: black;
 	width: 60px;
 	white-space: nowrap;
@@ -450,7 +437,7 @@ table {
 	text-align: center;
 }
 
-.Radar-item.station {
+.radar-item.station {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
