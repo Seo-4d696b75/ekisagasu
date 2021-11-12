@@ -33,7 +33,7 @@ function renderStationTitle(station: Station) {
 function renderStationDetails(info: StationDialogProps, onLineSelected: (line: Line) => void) {
 	const station = info.props.station
 	return (
-		<div>
+		<div className={`container-main station-detail ${info.type === DialogType.SELECT_POSITION ? 'position' : ''}`}>
 			<div className="horizontal-container">
 				<img src={img_station} alt="icon-details" className="icon-station" />
 				<div>
@@ -215,9 +215,7 @@ export class CurrentPosDialog extends React.Component<CurrentPosInfoProps, Curre
 					className="container-expand station-detail"
 					timeout={400}>
 					<div className="container-expand station-detail">
-						<div className="container-main station-detail position">
-							{renderStationDetails(info, this.props.onLineSelected)}
-						</div>
+						{renderStationDetails(info, this.props.onLineSelected)}
 					</div>
 				</CSSTransition>
 				{renderStationRadar(info, this.state.show_radar, this.props.onStationSelected, this.onRadarClose.bind(this))}
@@ -295,9 +293,7 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 					</div>
 				</div>
 
-				<div className={`container-main station-detail ${info.type === DialogType.SELECT_POSITION ? 'position' : ''}`}>
-					{renderStationDetails(info, this.props.onLineSelected)}
-				</div>
+				{renderStationDetails(info, this.props.onLineSelected)}
 				{renderStationRadar(info, this.state.show_radar, this.props.onStationSelected, this.onRadarClose.bind(this))}
 			</div>
 		);
