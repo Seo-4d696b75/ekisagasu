@@ -2,11 +2,16 @@
 	box-sizing: border-box;
 }
 
-.info-dialog {
+.Info-dialog {
 	color: grey;
 	padding: 5px;
 	background-color: rgba(255, 255, 255, 0.9);
 	pointer-events: all;
+}
+
+.Container-fixed {
+	width: 100%;
+	position: relative;
 }
 
 .container-main {
@@ -19,7 +24,7 @@
 	height: 45px;
 }
 
-.container-expand {
+.Container-radar {
 	width: 100%;
 	height: 100%;
 	padding-right: 40px;
@@ -34,13 +39,13 @@
 
 /* height: 0px <=> --expand-height でアニメーション */
 
-.container-expand.enter {
+.Container-radar.enter {
 	visibility: visible;
 	height: 0;
 	opacity: 0.0;
 }
 
-.container-expand.enter-active {
+.Container-radar.enter-active {
 	transition: all 300ms ease-in;
 	height: var(--expand-height);
 	opacity: 1.0;
@@ -58,7 +63,7 @@
 	opacity: 1.0;
 }
 
-.container-expand.exit-active {
+.Container-radar.exit-active {
 	transition: all 300ms ease-out;
 	height: 0;
 	opacity: 0.0;
@@ -67,30 +72,29 @@
 
 /* height: --station-list-height x 1 ~ x2 でアニメーション */
 
-.container-stations {
-	padding: 7px;
+.Container-stations {
 	height: var(--station-list-height);
 }
 
-.container-stations.enter-active {
+.Container-stations.enter-active {
 	transition: all 300ms ease-in;
 	height: calc(var(--station-list-height) * 2);
 }
 
-.container-stations.enter-done {
+.Container-stations.enter-done {
 	height: calc(var(--station-list-height) * 2);
 }
 
-.container-stations.exit {
+.Container-stations.exit {
 	height: calc(var(--station-list-height) * 2);
 }
 
-.container-stations.exit-active {
+.Container-stations.exit-active {
 	transition: all 300ms ease-out;
 	height: var(--station-list-height);
 }
 
-.container-stations {
+.Container-stations {
 	width: 100%;
 	position: relative;
 }
@@ -110,7 +114,7 @@
 }
 
 @media screen and (min-width:900px) {
-	.info-dialog {
+	.Info-dialog {
 		width: 100%;
 		height: 100%;
 		box-shadow: 2px 0 4px grey;
@@ -128,20 +132,20 @@
 		height: calc(100% - 220px);
 	}
 	/* 残りの高さいっぱいに表示 */
-	.container-expand {
+	.Container-radar {
 		height: 100%;
 	}
-	.scroll-container.lines {
+	.Scroll-container.lines {
 		height: 100px;
 	}
-	.icon-action.radar {
+	.Icon-action.radar {
 		visibility: hidden;
 		pointer-events: none;
 	}
-	.container-stations {
+	.Container-stations {
 		height: calc(100% - 80px);
 	}
-	.bottom-container {
+	.Bottom-container {
 		display: none;
 	}
 }
@@ -153,7 +157,7 @@
 	.container-main.station-detail.position {
 		height: 140px;
 	}
-	.scroll-container.lines {
+	.Scroll-container.lines {
 		height: 60px;
 	}
 	:root {
@@ -161,6 +165,9 @@
 		/* 展開時のサイズ */
 		--station-list-height: 150px;
 		/* 基本サイズ */
+	}
+	.container-main.stations {
+		height: 150px;
 	}
 }
 
@@ -171,7 +178,7 @@
 	.container-main.station-detail.position {
 		height: 180px;
 	}
-	.scroll-container.lines {
+	.Scroll-container.lines {
 		height: 100px;
 	}
 	:root {
@@ -183,20 +190,20 @@
 }
 
 @media screen and (max-width:900px) {
-	.info-dialog {
+	.Info-dialog {
 		margin: 10px;
 		width: calc(100% - 20px);
 		height: fit-content;
 		border-radius: 4px 4px 4px 4px;
 		box-shadow: 2px 2px 4px grey;
 	}
-	.container-expand {
+	.Container-radar {
 		height: 0;
 		visibility: hidden;
 	}
 }
 
-.container-main {
+.Container-main {
 	position: absolute;
 	top: 0px;
 	left: 0px;
@@ -204,7 +211,7 @@
 	right: 40px;
 }
 
-.title-name {
+.Title-name {
 	font-size: large;
 	width: fit-content;
 	margin: auto;
@@ -215,13 +222,13 @@
 	max-width: 100%;
 }
 
-.title-name.kana {
+.Title-name.kana {
 	font-size: x-small;
 	margin-top: -5px;
 	padding-bottom: 1px;
 }
 
-.title-container {
+.Title-container {
 	width: fit-content;
 	height: fit-content;
 	padding: 3px;
@@ -229,17 +236,17 @@
 	max-width: 100%;
 }
 
-.title-container.line {
+.Title-container.line {
 	max-width: calc(100% - 36px);
 }
 
-.icon-station {
+.Icon-station {
 	width: 27px;
 	height: 27px;
 	margin: 3px;
 }
 
-.container-description {
+.Station-details {
 	font-size: small;
 	text-align: start;
 	height: fit-content;
@@ -250,25 +257,25 @@
 	margin-left: 0;
 }
 
-.container-description.location {
+.Station-details.location {
 	margin-top: -5px;
 }
 
-.horizontal-container {
+.Horizontal-container {
 	display: flex;
 	width: 100%;
 	height: fit-content;
 }
 
-.horizontal-container.position {
+.Horizontal-container.position {
 	margin-top: 5px;
 }
 
-.horizontal-container.radar-title {
+.Horizontal-container.radar-title {
 	margin-bottom: -10px;
 }
 
-.icon-line {
+.Icon-line {
 	width: 16px;
 	height: 16px;
 	margin-right: 4px;
@@ -277,7 +284,7 @@
 	border-radius: 2px 2px 2px 2px;
 }
 
-.icon-line.big {
+.Icon-line.big {
 	width: 26px;
 	height: 26px;
 	margin: 5px;
@@ -292,20 +299,20 @@ table {
 	border-collapse: collapse;
 }
 
-.list-cell {
+.List-cell {
 	cursor: pointer;
 }
 
-.list-cell:hover {
+.List-cell:hover {
 	background-color: rgba(0, 0, 0, 0.05);
 	border-radius: 2px 2px 2px 2px;
 }
 
-.line-item.icon {
+.Line-item.icon {
 	width: 20px;
 }
 
-.line-item.line {
+.Line-item.line {
 	font-size: small;
 	white-space: nowrap;
 	overflow: hidden;
@@ -313,24 +320,24 @@ table {
 	text-align: start;
 }
 
-.station-cell {
+.Station-cell {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	text-align: start;
 }
 
-.station-item.name {
+.Station-item.name {
 	font-size: small;
 	color: black;
 }
 
-.station-item.name-kana {
+.Station-item.name-kana {
 	font-size: x-small;
 	color: grey;
 }
 
-.scroll-container {
+.Scroll-container {
 	overflow-y: scroll;
 	width: 100%;
 	-ms-overflow-style: none;
@@ -339,27 +346,28 @@ table {
 	/* Firefox 対応 */
 }
 
-.scroll-container::-webkit-scrollbar {
+.Scroll-container::-webkit-scrollbar {
 	/* Chrome, Safari 対応 */
 	display: none;
 }
 
-.scroll-container.lines {
+.Scroll-container.lines {
 	padding: 7px;
 	width: 100%;
 	margin-top: 5px;
 }
 
-.scroll-container.radar {
+.Scroll-container.radar {
 	height: calc(100% - 30px);
 }
 
-.scroll-container.stations {
+.Scroll-container.stations {
+	padding: 7px;
 	width: 100%;
 	height: 100%;
 }
 
-.button-container {
+.Button-container {
 	position: absolute;
 	z-index: 20;
 	right: 0px;
@@ -368,7 +376,7 @@ table {
 	width: 40px;
 }
 
-.icon-action {
+.Icon-action {
 	cursor: pointer;
 	position: relative;
 	width: 30px;
@@ -377,13 +385,13 @@ table {
 	right: 0;
 }
 
-.bottom-container {
+.Bottom-container {
 	position: absolute;
 	right: 0px;
 	bottom: -5px;
 }
 
-.icon-action:hover {
+.Icon-action:hover {
 	filter: drop-shadow(2px 2px 2px grey);
 }
 
@@ -400,39 +408,39 @@ table {
 	display: none;
 }
 
-.toggle-button, .icon-action.toggle>input[type="checkbox"] {
+.toggle-button, .Icon-action.toggle>input[type="checkbox"] {
 	transform: rotateZ(180deg);
 }
 
-.icon-action.toggle>input[type="checkbox"]:checked~.toggle-button {
+.Icon-action.toggle>input[type="checkbox"]:checked~.toggle-button {
 	transform: rotateZ(0deg);
 }
 
-.icon-radar {
+.Icon-radar {
 	width: 24px;
 	height: 24px;
 	margin: 3px;
 }
 
-.radar-k {
+.Radar-k {
 	margin: 3px;
 	height: 30px;
 	width: fit-content;
 	font-size: medium;
 }
 
-.radar-item {
+.Radar-item {
 	color: grey;
 	font-size: small;
 	vertical-align: middle;
 }
 
-.radar-item.index {
+.Radar-item.index {
 	color: blue;
 	width: 20px;
 }
 
-.radar-item.dist {
+.Radar-item.dist {
 	color: black;
 	width: 60px;
 	white-space: nowrap;
@@ -442,7 +450,7 @@ table {
 	text-align: center;
 }
 
-.radar-item.station {
+.Radar-item.station {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;

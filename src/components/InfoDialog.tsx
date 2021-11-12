@@ -23,9 +23,9 @@ function formatDistance(dist: number): string {
 
 function renderStationTitle(station: Station) {
 	return (
-		<div className="titlecontainer station">
-			<p className="titlename">{station.name}</p>
-			<p className="titlename kana">{station.name_kana}</p>
+		<div className="Title-container station">
+			<p className="Title-name">{station.name}</p>
+			<p className="Title-name kana">{station.name_kana}</p>
 		</div>
 	)
 }
@@ -34,25 +34,25 @@ function renderStationDetails(info: StationDialogProps, onLineSelected: (line: L
 	const station = info.props.station
 	return (
 		<div>
-			<div className="horizontal-container">
-				<img src={img_station} alt="icon-details" className="icon-station" />
+			<div className="Horizontal-container">
+				<img src={img_station} alt="icon-details" className="Icon-station" />
 				<div>
-					<div className="container-description">
+					<div className="Station-details">
 						{info.props.prefecture}
 					</div>
-					<div className="container-description location">
+					<div className="Station-details location">
 						E{station.position.lng} N{station.position.lat}
 					</div>
 				</div>
 			</div>
 
 			{info.type === DialogType.SELECT_POSITION ? (
-				<div className="horizontal-container position">
+				<div className="Horizontal-container position">
 					<img src={img_location}
 						alt="icon-details"
-						className="icon-station" />
-					<div className="container-description">
-						<div className="horizontal-container">
+						className="Icon-station" />
+					<div className="Station-details">
+						<div className="Horizontal-container">
 							<div className="position-title">&nbsp;選択した地点&nbsp;</div>
 							<img className="arrow-right" src={img_above} />
 							<div className="station-distance">{formatDistance(info.props.dist)}</div>
@@ -62,12 +62,12 @@ function renderStationDetails(info: StationDialogProps, onLineSelected: (line: L
 				</div>
 			) : null}
 			{info.type === DialogType.CURRENT_POSITION ? (
-				<div className="horizontal-container position">
+				<div className="Horizontal-container position">
 					<img src={img_mylocation}
 						alt="icon-details"
-						className="icon-station" />
-					<div className="container-description">
-						<div className="horizontal-container">
+						className="Icon-station" />
+					<div className="Station-details">
+						<div className="Horizontal-container">
 							<div className="position-title">&nbsp;現在位置 &nbsp;</div>
 							<img className="arrow-right" src={img_above} />
 							<div className="station-distance">{formatDistance(info.props.dist)}</div>
@@ -76,7 +76,7 @@ function renderStationDetails(info: StationDialogProps, onLineSelected: (line: L
 					</div>
 				</div>
 			) : null}
-			<div className={`scroll-container lines ${info.type === DialogType.STATION ? null : "position"}`}>
+			<div className={`Scroll-container lines ${info.type === DialogType.STATION ? null : "position"}`}>
 
 				<table>
 					<tbody>
@@ -84,9 +84,9 @@ function renderStationDetails(info: StationDialogProps, onLineSelected: (line: L
 							return (
 								<tr key={index}
 									onClick={() => onLineSelected(line)}
-									className="list-cell line">
-									<td className="line-item icon"><div className="icon-line" style={{ backgroundColor: line.color }} /></td>
-									<td className="line-item line">{line.name}&nbsp;&nbsp;<small>{line.station_size}駅</small></td>
+									className="List-cell line">
+									<td className="Line-item icon"><div className="Icon-line" style={{ backgroundColor: line.color }} /></td>
+									<td className="Line-item line">{line.name}&nbsp;&nbsp;<small>{line.station_size}駅</small></td>
 								</tr>
 							);
 						})}
@@ -102,35 +102,35 @@ function renderStationRadar(info: StationDialogProps, show: boolean, onStationSe
 		<div className={`container-main radar ${info.type === DialogType.STATION ? "" : "position"}`}>
 			<CSSTransition
 				in={show}
-				className="container-expand"
+				className="Container-radar"
 				timeout={400}>
-				<div className="container-expand">
-					<div className="horizontal-container radar-title">
-						<img src={img_radar} alt="icon-radar" className="icon-radar" />
-						<div className="radar-k">x{info.props.radar_list.length}</div>
+				<div className="Container-radar">
+					<div className="Horizontal-container radar-title">
+						<img src={img_radar} alt="icon-radar" className="Icon-radar" />
+						<div className="Radar-k">x{info.props.radar_list.length}</div>
 					</div>
-					<div className="scroll-container radar">
+					<div className="Scroll-container radar">
 						<table>
 							<tbody>
 								{info.props.radar_list.map((e, index) => {
 									var dist = formatDistance(e.dist);
 									return (
-										<tr key={index} className="list-cell station"
+										<tr key={index} className="List-cell station"
 											onClick={() => onStationSelected(e.station)}>
-											<td className="radar-item index">{index + 1}</td>
-											<td className="radar-item dist">{dist}</td>
-											<td className="radar-item station">{e.station.name}&nbsp;&nbsp;{e.lines}</td>
+											<td className="Radar-item index">{index + 1}</td>
+											<td className="Radar-item dist">{dist}</td>
+											<td className="Radar-item station">{e.station.name}&nbsp;&nbsp;{e.lines}</td>
 										</tr>
 									);
 								})}
 							</tbody>
 						</table>
 					</div>
-					<div className="bottom-container radar">
+					<div className="Bottom-container radar">
 						<img
 							src={img_above}
 							alt="close radar"
-							className="icon-action"
+							className="Icon-action"
 							onClick={() => onClose()} />
 					</div>
 				</div>
@@ -182,20 +182,20 @@ export class CurrentPosDialog extends React.Component<CurrentPosInfoProps, Curre
 		const info = this.props.info
 		const station = info.props.station
 		return (
-			<div className="info-dialog">
+			<div className="Info-dialog">
 				<div className="container-main station-title">
 					{renderStationTitle(station)}
-					<div className="button-container">
+					<div className="Button-container">
 						<img
 							src={img_delete}
 							alt="close dialog"
-							className="icon-action close"
+							className="Icon-action close"
 							onClick={() => this.toggleStationDetails(false)} /><br />
 						<img
 							onClick={this.onRadarShow.bind(this)}
 							src={img_radar}
 							alt="show radar"
-							className="icon-action radar" />
+							className="Icon-action radar" />
 					</div>
 				</div>
 				<div className="container-main station-detail position">
@@ -254,27 +254,27 @@ export class StationDialog extends React.Component<StationInfoProps, StationInfo
 		const info = this.props.info
 		const station = info.props.station
 		return (
-			<div className="info-dialog">
+			<div className="Info-dialog">
 
 				<div className="container-main station-title">
 					{renderStationTitle(station)}
 
-					<div className="button-container">
+					<div className="Button-container">
 						<img
 							src={img_delete}
 							alt="close dialog"
-							className="icon-action close"
+							className="Icon-action close"
 							onClick={this.onClosed.bind(this)} /><br />
 						<img
 							onClick={this.onShowVoronoi.bind(this, station)}
 							src={img_voronoi}
 							alt="show voronoi"
-							className="icon-action" /><br />
+							className="Icon-action" /><br />
 						<img
 							onClick={this.onRadarShow.bind(this)}
 							src={img_radar}
 							alt="show radar"
-							className="icon-action radar" />
+							className="Icon-action radar" />
 					</div>
 				</div>
 
@@ -329,44 +329,44 @@ export class LineDialog extends React.Component<LineInfoProps, LineInfoState> {
 		const info = this.props.info.props
 		const line = info.line
 		return (
-			<div className="info-dialog">
+			<div className="Info-dialog">
 				<div className="container-main line">
-					<div className="horizontal-container">
-						<div className="icon-line big" style={{ backgroundColor: line.color }}></div>
-						<div className="titlecontainer line">
-							<p className="titlename">{line.name}</p>
-							<p className="titlename kana">{line.name_kana}</p>
+					<div className="Horizontal-container">
+						<div className="Icon-line big" style={{ backgroundColor: line.color }}></div>
+						<div className="Title-container line">
+							<p className="Title-name">{line.name}</p>
+							<p className="Title-name kana">{line.name_kana}</p>
 						</div>
 					</div>
 
-					<div className="horizontal-container">
-						<img src={img_station} alt="icon-details" className="icon-station" />
-						<div className="container-description">
+					<div className="Horizontal-container">
+						<img src={img_station} alt="icon-details" className="Icon-station" />
+						<div className="Station-details">
 							登録駅一覧
 						</div>
 					</div>
 
-					<div className="button-container">
+					<div className="Button-container">
 						<img
 							src={img_delete}
 							alt="close dialog"
-							className="icon-action"
+							className="Icon-action"
 							onClick={this.onClosed.bind(this)} />
 						<img
 							src={img_line}
 							alt="show polyline"
 							onClick={this.showPolyline.bind(this, line)}
-							className="icon-action" />
+							className="Icon-action" />
 					</div>
 				</div>
 				<CSSTransition
 					in={this.state.expand_stations}
-					className="container-stations"
+					className="Container-stations"
 					timeout={400}>
-					<div className="container-stations">
+					<div className="Container-stations">
 
 						{info.line_details ? (
-							<div className="scroll-container stations">
+							<div className="Scroll-container stations">
 								<table>
 									<tbody>
 
@@ -374,10 +374,10 @@ export class LineDialog extends React.Component<LineInfoProps, LineInfoState> {
 											return (
 												<tr key={index}
 													onClick={() => this.props.onStationSelected(station)}
-													className="list-cell station">
-													<td className="station-cell">
-														<span className="station-item name">{station.name}</span>&nbsp;
-														<span className="station-item name-kana">{station.name_kana}</span>
+													className="List-cell station">
+													<td className="Station-cell">
+														<span className="Station-item name">{station.name}</span>&nbsp;
+														<span className="Station-item name-kana">{station.name_kana}</span>
 													</td>
 												</tr>
 											);
@@ -389,8 +389,8 @@ export class LineDialog extends React.Component<LineInfoProps, LineInfoState> {
 							<p>Now Loading...</p>
 						)}
 
-						<div className="bottom-container">
-							<div className="icon-action toggle">
+						<div className="Bottom-container">
+							<div className="Icon-action toggle">
 								<input type="checkbox" id="toggle-list" onChange={this.toggleStationList.bind(this)}></input>
 								<label className="toggle-button" htmlFor="toggle-list">
 								</label>
