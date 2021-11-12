@@ -84,9 +84,9 @@ function renderStationDetails(info: StationDialogProps, onLineSelected: (line: L
 							return (
 								<tr key={index}
 									onClick={() => onLineSelected(line)}
-									className="List-cell line">
-									<td className="Line-item icon"><div className="icon-line" style={{ backgroundColor: line.color }} /></td>
-									<td className="Line-item line">{line.name}&nbsp;&nbsp;<small>{line.station_size}駅</small></td>
+									className="list-cell line">
+									<td className="line-item icon"><div className="icon-line" style={{ backgroundColor: line.color }} /></td>
+									<td className="line-item line">{line.name}&nbsp;&nbsp;<small>{line.station_size}駅</small></td>
 								</tr>
 							);
 						})}
@@ -115,7 +115,7 @@ function renderStationRadar(info: StationDialogProps, show: boolean, onStationSe
 								{info.props.radar_list.map((e, index) => {
 									var dist = formatDistance(e.dist);
 									return (
-										<tr key={index} className="List-cell station"
+										<tr key={index} className="list-cell station"
 											onClick={() => onStationSelected(e.station)}>
 											<td className="radar-item index">{index + 1}</td>
 											<td className="radar-item dist">{dist}</td>
@@ -378,9 +378,9 @@ export class LineDialog extends React.Component<LineInfoProps, LineInfoState> {
 				</div>
 				<CSSTransition
 					in={this.state.expand_stations}
-					className="container-stations"
+					className="container-accordion station-list"
 					timeout={400}>
-					<div className="container-stations">
+					<div className="container-accordion station-list">
 
 						{info.line_details ? (
 							<div className="scroll-container stations">
@@ -391,7 +391,7 @@ export class LineDialog extends React.Component<LineInfoProps, LineInfoState> {
 											return (
 												<tr key={index}
 													onClick={() => this.props.onStationSelected(station)}
-													className="List-cell station">
+													className="list-cell station">
 													<td className="station-cell">
 														<span className="station-item name">{station.name}</span>&nbsp;
 														<span className="station-item name-kana">{station.name_kana}</span>
@@ -403,7 +403,7 @@ export class LineDialog extends React.Component<LineInfoProps, LineInfoState> {
 								</table>
 							</div>
 						) : (
-							<p>Now Loading...</p>
+							<p className="container-description loading-mes">Now Loading...</p>
 						)}
 
 						<div className="bottom-container">
