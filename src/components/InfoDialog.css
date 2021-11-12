@@ -32,6 +32,115 @@
 	--station-list-height: 0px;
 }
 
+@media screen and (min-width:900px) {
+	.info-dialog {
+		width: 100%;
+		height: 100%;
+		box-shadow: 2px 0 4px grey;
+	}
+	.container-main.station-detail {
+		height: 140px;
+	}
+	.container-main.radar {
+		height: calc(100% - 180px);
+	}
+	.container-main.station-detail.position {
+		height: 180px;
+	}
+	.container-main.radar.position {
+		height: calc(100% - 220px);
+	}
+
+	/* 描画初期化時点ではcss transition タグが無い */
+	.container-expand.station-detail {
+		--expand-height: 180px;
+		height: 180px;
+	}
+	.container-expand.radar {
+		/* 残りの高さいっぱいに表示 */
+		--expand-height: 100%;
+		height: 100%;
+	}
+
+	.scroll-container.lines {
+		height: 100px;
+	}
+	.icon-action.radar, .icon-action.current-pos {
+		visibility: hidden;
+		pointer-events: none;
+	}
+	.container-stations {
+		--station-list-height: calc(100% - 80px);
+	}
+	.bottom-container {
+		display: none;
+	}
+}
+
+@media screen and (max-width:900px) and (max-height:800px) {
+	.container-main.station-detail {
+		height: 100px;
+	}
+	.container-main.station-detail.position {
+		height: 140px;
+	}
+	.scroll-container.lines {
+		height: 60px;
+	}
+	.container-expand.radar {
+		--expand-height: 200px;
+		/* 展開時のサイズ */
+	}
+	.container-stations {
+		--station-list-height: 150px;
+		/* 基本サイズ */
+	}
+	.container-expand.station-detail {
+		--expand-height: 140px;
+	}
+}
+
+@media screen and (max-width:900px) and (min-height:800px) {
+	.container-main.station-detail {
+		height: 140px;
+	}
+	.container-main.station-detail.position {
+		height: 180px;
+	}
+	.scroll-container.lines {
+		height: 100px;
+	}
+	.container-expand.radar {
+		--expand-height: 200px;
+		/* 展開時のサイズ */
+	}
+	.container-stations {
+		--station-list-height: 200px;
+		/* 基本サイズ */
+	}
+	.container-expand.station-detail {
+		--expand-height: 180px;
+	}
+}
+
+@media screen and (max-width:900px) {
+	.info-dialog {
+		margin: 10px;
+		width: calc(100% - 20px);
+		height: fit-content;
+		border-radius: 4px 4px 4px 4px;
+		box-shadow: 2px 2px 4px grey;
+	}
+	/* 描画初期化時点ではcss transition タグが無い */
+	.container-expand.radar {
+		height: 0;
+		visibility: hidden;
+	}
+	.container-expand.station-detail {
+		height: var(--expand-height);
+	}
+}
+
 /* height: 0px <=> --expand-height でアニメーション */
 
 .container-expand.enter {
@@ -63,6 +172,11 @@
 	height: 0;
 	opacity: 0.0;
 	visibility: visible;
+}
+
+.container-expand.exit-done {
+	height: 0;
+	visibility: hidden;
 }
 
 /* height: --station-list-height x 1 ~ x2 でアニメーション */
@@ -108,96 +222,6 @@
 	width: 100%;
 }
 
-@media screen and (min-width:900px) {
-	.info-dialog {
-		width: 100%;
-		height: 100%;
-		box-shadow: 2px 0 4px grey;
-	}
-	.container-main.station-detail {
-		height: 140px;
-	}
-	.container-main.radar {
-		height: calc(100% - 180px);
-	}
-	.container-main.station-detail.position {
-		height: 180px;
-	}
-	.container-main.radar.position {
-		height: calc(100% - 220px);
-	}
-	/* 残りの高さいっぱいに表示 */
-	.container-expand {
-		height: 100%;
-	}
-	.scroll-container.lines {
-		height: 100px;
-	}
-	.icon-action.radar {
-		visibility: hidden;
-		pointer-events: none;
-	}
-	.container-stations {
-		height: calc(100% - 80px);
-	}
-	.bottom-container {
-		display: none;
-	}
-}
-
-@media screen and (max-width:900px) and (max-height:800px) {
-	.container-main.station-detail {
-		height: 100px;
-	}
-	.container-main.station-detail.position {
-		height: 140px;
-	}
-	.scroll-container.lines {
-		height: 60px;
-	}
-	:root {
-		--expand-height: 200px;
-		/* 展開時のサイズ */
-		--station-list-height: 150px;
-		/* 基本サイズ */
-	}
-	.container-main.stations {
-		height: 150px;
-	}
-}
-
-@media screen and (max-width:900px) and (min-height:800px) {
-	.container-main.station-detail {
-		height: 200px;
-	}
-	.container-main.station-detail.position {
-		height: 180px;
-	}
-	.scroll-container.lines {
-		height: 100px;
-	}
-	:root {
-		--expand-height: 200px;
-		/* 展開時のサイズ */
-		--station-list-height: 200px;
-		/* 基本サイズ */
-	}
-}
-
-@media screen and (max-width:900px) {
-	.info-dialog {
-		margin: 10px;
-		width: calc(100% - 20px);
-		height: fit-content;
-		border-radius: 4px 4px 4px 4px;
-		box-shadow: 2px 2px 4px grey;
-	}
-	.container-expand {
-		height: 0;
-		visibility: hidden;
-	}
-}
-
 .title-name {
 	font-size: large;
 	width: fit-content;
@@ -233,7 +257,7 @@
 	margin: 3px;
 }
 
-.station-details {
+.container-description {
 	font-size: small;
 	text-align: start;
 	height: fit-content;
@@ -244,7 +268,7 @@
 	margin-left: 0;
 }
 
-.station-details.location {
+.container-description.location {
 	margin-top: -5px;
 }
 
@@ -374,8 +398,8 @@ table {
 
 .bottom-container {
 	position: absolute;
-	right: 0px;
-	bottom: -5px;
+	right: 5px;
+	bottom: 0px;
 }
 
 .icon-action:hover {
@@ -393,6 +417,10 @@ table {
 
 #toggle-list {
 	display: none;
+}
+
+.icon-action.expand {
+	transform: rotateZ(180deg);
 }
 
 .toggle-button, .icon-action.toggle>input[type="checkbox"] {

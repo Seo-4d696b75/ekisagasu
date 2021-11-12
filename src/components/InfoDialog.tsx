@@ -37,10 +37,10 @@ function renderStationDetails(info: StationDialogProps, onLineSelected: (line: L
 			<div className="horizontal-container">
 				<img src={img_station} alt="icon-details" className="icon-station" />
 				<div>
-					<div className="station-details">
+					<div className="container-description">
 						{info.props.prefecture}
 					</div>
-					<div className="station-details location">
+					<div className="container-description location">
 						E{station.position.lng} N{station.position.lat}
 					</div>
 				</div>
@@ -51,7 +51,7 @@ function renderStationDetails(info: StationDialogProps, onLineSelected: (line: L
 					<img src={img_location}
 						alt="icon-details"
 						className="icon-station" />
-					<div className="station-details">
+					<div className="container-description">
 						<div className="horizontal-container">
 							<div className="position-title">&nbsp;選択した地点&nbsp;</div>
 							<img className="arrow-right" src={img_above} />
@@ -66,7 +66,7 @@ function renderStationDetails(info: StationDialogProps, onLineSelected: (line: L
 					<img src={img_mylocation}
 						alt="icon-details"
 						className="icon-station" />
-					<div className="station-details">
+					<div className="container-description">
 						<div className="horizontal-container">
 							<div className="position-title">&nbsp;現在位置 &nbsp;</div>
 							<img className="arrow-right" src={img_above} />
@@ -102,9 +102,9 @@ function renderStationRadar(info: StationDialogProps, show: boolean, onStationSe
 		<div className={`container-main radar ${info.type === DialogType.STATION ? "" : "position"}`}>
 			<CSSTransition
 				in={show}
-				className="container-expand"
+				className="container-expand radar"
 				timeout={400}>
-				<div className="container-expand">
+				<div className="container-expand radar">
 					<div className="horizontal-container radar-title">
 						<img src={img_radar} alt="icon-radar" className="icon-radar" />
 						<div className="radar-k">x{info.props.radar_list.length}</div>
@@ -154,13 +154,14 @@ interface CurrentPosInfoState {
 export class CurrentPosDialog extends React.Component<CurrentPosInfoProps, CurrentPosInfoState> {
 	state = {
 		show_radar: false,
-		show_details: false,
+		show_details: true,
 	}
 
 	toggleStationDetails(show: boolean) {
 		this.setState({
 			...this.state,
 			show_details: show,
+			show_radar: false,
 		})
 	}
 
@@ -186,24 +187,40 @@ export class CurrentPosDialog extends React.Component<CurrentPosInfoProps, Curre
 				<div className="container-main station-title">
 					{renderStationTitle(station)}
 					<div className="button-container">
-						<img
-							src={img_delete}
-							alt="close dialog"
-							className="icon-action close"
-							onClick={() => this.toggleStationDetails(false)} /><br />
-						<img
-							onClick={this.onRadarShow.bind(this)}
-							src={img_radar}
-							alt="show radar"
-							className="icon-action radar" />
+						{this.state.show_details ? (
+							<img
+								src={img_delete}
+								alt="close dialog"
+								className="icon-action close current-pos"
+								onClick={() => this.toggleStationDetails(false)} />
+						) : (
+							<img
+								src={img_above}
+								alt="close dialog"
+								className="icon-action expand"
+								onClick={() => this.toggleStationDetails(true)} />
+						)}
+						<br />
+						{this.state.show_details ? (
+							<img
+								onClick={this.onRadarShow.bind(this)}
+								src={img_radar}
+								alt="show radar"
+								className="icon-action radar" />
+						) : null}
 					</div>
 				</div>
-				<div className="container-main station-detail position">
-					{renderStationDetails(info, this.props.onLineSelected)}
-
-				</div>
+				<CSSTransition
+					in={this.state.show_details}
+					className="container-expand station-detail"
+					timeout={400}>
+					<div className="container-expand station-detail">
+						<div className="container-main station-detail position">
+							{renderStationDetails(info, this.props.onLineSelected)}
+						</div>
+					</div>
+				</CSSTransition>
 				{renderStationRadar(info, this.state.show_radar, this.props.onStationSelected, this.onRadarClose.bind(this))}
-
 			</div>
 		);
 	}
@@ -341,7 +358,7 @@ export class LineDialog extends React.Component<LineInfoProps, LineInfoState> {
 
 					<div className="horizontal-container">
 						<img src={img_station} alt="icon-details" className="icon-station" />
-						<div className="station-details">
+						<div className="container-description">
 							登録駅一覧
 						</div>
 					</div>
