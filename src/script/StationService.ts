@@ -7,6 +7,11 @@ import * as Actions from "./Actions"
 
 const TAG_SEGMENT_PREFIX = "station-segment:"
 
+async function awaitWith<T>(task: Promise<T>, run: (result: T) => void) {
+	const result = await task
+	run(result)
+}
+
 export class StationService {
 
 	initialized = false
@@ -25,48 +30,86 @@ export class StationService {
 
 	tree: StationKdTree | null = null
 
+	/**
+	 * いくつかの関数は外部API呼び出しを行うため非同期で実行される
+	 * 関数の呼び出しのタイミングによっては, 
+	 * - 重複してネットワークリソースを要求してまう
+	 * - 内部状態をもつ計算の順序が保証できない
+	 * このserviceで適切な同期をとる
+	 */
 	tasks: Map<string, Promise<any> | null> = new Map()
 
-	async initialize(): Promise<StationService> {
-		if (this.initialized) {
-			return Promise.resolve(this)
+	task_id: number = 0
+
+	/**
+	 * tagで指定した非同期タスクの実行を同期する.
+	 * 
+	 * tagで識別される同種のタスクが同時に高々１つのみ実行されることを保証する(実行順序は保証しない)
+	 * この関数呼び出し時に以前に実行を開始した別の非同期処理がまだ完了してない場合はその完了を待ってから実行する
+	 * 
+	 * @param tag 同期するタスクの種類の識別子
+	 * @param task 同期したいタスク asynな関数・λ式を利用する.引数はこの関数の呼び出し時の状況に応じて,  
+	 *             - 該当する実行中の別タスクが存在する場合はその実行を待機して別タスクの結果を渡して実行
+	 *             - 該当する実行中の別タスクが存在しない場合はnullを渡し即座にtaskを実行
+	 * @returns task の実行結果
+	 */
+	async runSync<T>(tag: string, task: (awaitResult: T | null) => Promise<T>): Promise<T> {
+		var result: any = null
+		var wait = false
+		const id = this.task_id
+		this.task_id += 1
+		while (true) {
+			const running = this.tasks.get(tag)
+			if (running) {
+				wait = true
+				//console.log(`runSync(id:${id}) wait:`, tag)
+				result = await running
+			} else {
+				//console.log(`runSync(id:${id}) wait: ${wait} run:`, tag)
+				break
+			}
 		}
+		const awaitResult = wait ? result as T : null
+		const next = (typeof task === 'function' ? task(awaitResult) : task).then(r => {
+			this.tasks.set(tag, null)
+			//console.log(`runSync(id:${id}) done:`, tag)
+			return r
+		})
+		this.tasks.set(tag, next)
+		return next
+	}
 
-		const tag = "initialize"
-		var task = this.tasks.get(tag)
-		if (task) return task
-
-		this.stations.clear()
-		this.lines.clear()
-		this.stations_id.clear()
-		this.lines_id.clear()
-		this.prefecture.clear()
-
-		task = new StationKdTree(this).initialize("root").then(tree => {
-			this.tree = tree
-			return axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/line.json`)
-		}).then(res => {
-			res.data.forEach(d => {
-				var line = new Line(d)
-				this.lines.set(line.code, line)
-				this.lines_id.set(line.id, line)
+	async initialize(): Promise<StationService> {
+		// 複数呼び出しに対しても初期化処理をただ１回のみ実行する
+		return this.runSync("initialize", async () => {
+			if (this.initialized) return this
+			// clear collections
+			this.stations.clear()
+			this.lines.clear()
+			this.stations_id.clear()
+			this.lines_id.clear()
+			this.prefecture.clear()
+			this.tree = await new StationKdTree(this).initialize("root")
+			awaitWith(axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/line.json`), res => {
+				res.data.forEach(d => {
+					var line = new Line(d)
+					this.lines.set(line.code, line)
+					this.lines_id.set(line.id, line)
+				})
 			})
-			return axios.get(process.env.REACT_APP_PREFECTURE_URL)
-		}).then(res => {
-			this.prefecture = new Map()
-			res.data.split('\n').forEach((line: string) => {
-				var cells = line.split(',')
-				if (cells.length === 2) {
-					this.prefecture.set(parseInt(cells[0]), cells[1])
-				}
+			awaitWith(axios.get(process.env.REACT_APP_PREFECTURE_URL), res => {
+				this.prefecture = new Map()
+				res.data.split('\n').forEach((line: string) => {
+					var cells = line.split(',')
+					if (cells.length === 2) {
+						this.prefecture.set(parseInt(cells[0]), cells[1])
+					}
+				})
 			})
 			console.log('service initialized', this)
 			this.initialized = true
-			this.tasks.set(tag, null)
 			return this
 		})
-		this.tasks.set(tag, task)
-		return task
 	}
 
 	release() {
@@ -138,23 +181,31 @@ export class StationService {
 		}
 	}
 
-	update_location(position: Utils.LatLng, k: number, r: number = 0): Promise<any> {
+	async update_location(position: Utils.LatLng, k: number, r: number = 0): Promise<Station | null> {
 		if (!k || k <= 0) k = 1
 		if (!r || r < 0) r = 0
-		if (this.tree) {
-			return this.tree.updateLocation(position, k, r)
-		} else {
-			return Promise.reject("tree not initialized")
-		}
+		/* kd-tree のNodeデータは探索中に必要になって初めて非同期でロードされるため、
+		   同時に update_**を呼び出すと前回の探索が終了する前に別の探索が走る場合があり得る
+			 KdTreeは内部状態を持つ実装のため挙動が予想できない
+		*/
+		return this.runSync("update_location", async () => {
+			if (this.tree) {
+				return this.tree.updateLocation(position, k, r)
+			} else {
+				return Promise.reject("tree not initialized")
+			}
+		})
 	}
 
 	update_rect(rect: Utils.RectBounds, max: number = Number.MAX_SAFE_INTEGER): Promise<Station[]> {
 		if (max < 1) max = 1
-		if (this.tree) {
-			return this.tree.updateRectRegion(rect, max)
-		} else {
-			return Promise.reject("tree not initialized")
-		}
+		return this.runSync("update_location", async () => {
+			if (this.tree) {
+				return this.tree.updateRectRegion(rect, max)
+			} else {
+				return Promise.reject("tree not initialized")
+			}
+		})
 
 	}
 
@@ -239,42 +290,36 @@ export class StationService {
 		const line = this.lines.get(code)
 		if (!line) {
 			return Promise.reject(`line not found id:${code}`)
-		} else if (line.has_details) {
-			return Promise.resolve(line)
 		}
+		// 単一のupdate_** 呼び出しでも同一segmentが複数から要求される
 		const tag = `line-details-${code}`
-		var task = this.tasks.get(tag)
-		if (task) {
-			return task
-		} else {
-			task = axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/line/${code}.json`).then(res => {
-				const data = res.data
-				line.station_list = data["station_list"].map(item => {
-					var c = item['code']
-					var s = this.stations.get(c)
-					if (s) return s
-					s = new Station(item)
-					this.stations.set(c, s)
-					this.stations_id.set(s.id, s)
-					return s
-				})
-				const polyline = data.polyline_list
-				if (polyline) {
-					if (polyline['type'] !== 'FeatureCollection') console.error("invalide line polyline", polyline)
-					line.polyline_list = polyline["features"].map(d => Utils.parse_polyline(d))
-					const prop = polyline['properties']
-					line.north = prop['north']
-					line.south = prop['south']
-					line.east = prop['east']
-					line.west = prop['west']
-				}
-				line.has_details = true
-				this.tasks.set(tag, null)
-				return line
+		return this.runSync(tag, async () => {
+			if (line.has_details) return line
+			const res = await axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/line/${code}.json`)
+			const data = res.data
+			line.station_list = data["station_list"].map(item => {
+				var c = item['code']
+				var s = this.stations.get(c)
+				if (s) return s
+				s = new Station(item)
+				this.stations.set(c, s)
+				this.stations_id.set(s.id, s)
+				return s
 			})
-			this.tasks.set(tag, task)
-			return task
-		}
+			const polyline = data.polyline_list
+			if (polyline) {
+				if (polyline['type'] !== 'FeatureCollection') console.error("invalide line polyline", polyline)
+				line.polyline_list = polyline["features"].map(d => Utils.parse_polyline(d))
+				const prop = polyline['properties']
+				line.north = prop['north']
+				line.south = prop['south']
+				line.east = prop['east']
+				line.west = prop['west']
+			}
+			line.has_details = true
+			this.tasks.set(tag, null)
+			return line
+		})
 	}
 
 	get_prefecture(code: number): string {
@@ -283,12 +328,10 @@ export class StationService {
 
 	get_tree_segment(name: string): Promise<any> {
 		const tag = `${TAG_SEGMENT_PREFIX}${name}`
-		var task = this.tasks.get(tag)
 		// be sure to avoid loading the same segment
-		if (task) {
-			return task
-		}
-		task = axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/tree/${name}.json`).then(res => {
+		return this.runSync(tag, async (result) => {
+			if (result) return result
+			const res = await axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/tree/${name}.json`)
 			console.log("tree-segment", name, res.data)
 			const data = res.data
 			var list = data.node_list.filter(e => {
@@ -302,8 +345,6 @@ export class StationService {
 			this.tasks.set(tag, null)
 			return data
 		})
-		this.tasks.set(tag, task)
-		return task
 	}
 
 	measure(pos1: Utils.LatLng, pos2: Utils.LatLng): number {

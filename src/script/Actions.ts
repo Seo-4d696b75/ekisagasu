@@ -5,37 +5,57 @@ import { Station } from "./Station";
 import { Line } from "./Line";
 import StationService from "./StationService";
 import { Dispatch } from "redux";
-import { LatLng } from "./Utils";
-import { DialogType, RadarStation, StationDialogProps, PosDialogProps, MapTransition } from "../components/Map";
+import { LatLng, PolylineProps } from "./Utils";
+import { RadarStation, NavType, StationDialogNav, DialogType, LineDialogProps } from "../components/Map";
+import { ThunkDispatch } from "redux-thunk";
 
 
 async function checkRadarK(k: number, dispatch: Dispatch<GlobalAction>, state: GlobalState) {
-	if (state.info_dialog) {
-		var pos: LatLng | null = null
-		switch (state.info_dialog.type) {
-			case DialogType.Station: {
-				pos = state.info_dialog.props.station.position
-				break
-			}
-			case DialogType.Position: {
-				pos = state.info_dialog.props.location.pos
-				break
-			}
-			default:
-		}
-		if (!pos) return
+	const checker = async (pos: LatLng): Promise<Array<RadarStation>> => {
 		// have to update rakar list, which depneds on radar-k
 		if (k > state.radar_k) {
 			// have to update location search
 			await StationService.update_location(pos, k, 0)
 		}
-		var info = state.info_dialog as StationDialogProps | PosDialogProps
-		info.props.radar_list = makeRadarList(pos, k)
-		dispatch({
-			type: ActionType.SHOW_STATION_ITEM,
-			payload: info
-		})
+		return makeRadarList(pos, k)
 	}
+	switch (state.nav.type) {
+		case NavType.DIALOG_STATION_POS: {
+			var list = await checker(state.nav.data.dialog.props.station.position)
+			state.nav.data.dialog.props.radar_list = list
+			dispatch({
+				type: ActionType.SET_NAV_STATE,
+				payload: {
+					next: state.nav
+				}
+			})
+			break
+		}
+		case NavType.DIALOG_SELECT_POS: {
+			list = await checker(state.nav.data.dialog.props.position)
+			state.nav.data.dialog.props.radar_list = list
+			dispatch({
+				type: ActionType.SET_NAV_STATE,
+				payload: {
+					next: state.nav
+				}
+			})
+			break
+		}
+		case NavType.IDLE: {
+			if (state.watch_position && state.current_location) {
+				var pos = {
+					lat: state.current_location.position.lat(),
+					lng: state.current_location.position.lng()
+				}
+				list = await checker(pos)
+				updateNavStateIdle(pos, list, dispatch)
+			}
+			break
+		}
+		default:
+	}
+
 }
 
 export function setRadarK(value: number) {
@@ -85,19 +105,28 @@ export function requestShowPosition(pos: LatLng) {
 	store.dispatch((dispatch: Dispatch<GlobalAction>, getState: () => GlobalState) => {
 		var state = getState()
 		StationService.update_location(pos, state.radar_k, 0).then(station => {
+			if (!station) return
 			dispatch({
-				type: ActionType.SHOW_STATION_ITEM,
+				type: ActionType.SET_NAV_STATE,
 				payload: {
-					type: DialogType.Position,
-					props: {
-						station: station,
-						radar_list: makeRadarList(pos, state.radar_k),
-						prefecture: StationService.get_prefecture(station.prefecture),
-						location: {
-							pos: pos,
-							dist: StationService.measure(station.position, pos)
-						}
-					}
+					next: {
+						type: NavType.DIALOG_SELECT_POS,
+						data: {
+							dialog: {
+								type: DialogType.SELECT_POSITION,
+								props: {
+									station: station,
+									radar_list: makeRadarList(pos, state.radar_k),
+									prefecture: StationService.get_prefecture(station.prefecture),
+									position: pos,
+									dist: StationService.measure(station.position, pos),
+									lines: station.lines.map(code => StationService.get_line(code)),
+								}
+							},
+							show_high_voronoi: false,
+						},
+					},
+					focus: pos
 				}
 			})
 		})
@@ -112,15 +141,24 @@ export function requestShowStation(s: Station): Promise<void> {
 			StationService.update_location(s.position, state.radar_k, 0).then(() => {
 
 				dispatch({
-					type: ActionType.SHOW_STATION_ITEM,
+					type: ActionType.SET_NAV_STATE,
 					payload: {
-						type: DialogType.Station,
-						props: {
-							station: s,
-							radar_list: makeRadarList(s.position, state.radar_k),
-							prefecture: StationService.get_prefecture(s.prefecture),
-							lines: s.lines.map(code => StationService.get_line(code))
-						}
+						next: {
+							type: NavType.DIALOG_STATION_POS,
+							data: {
+								dialog: {
+									type: DialogType.STATION,
+									props: {
+										station: s,
+										radar_list: makeRadarList(s.position, state.radar_k),
+										prefecture: StationService.get_prefecture(s.prefecture),
+										lines: s.lines.map(code => StationService.get_line(code)),
+									}
+								},
+								show_high_voronoi: false,
+							}
+						},
+						focus: s.position
 					}
 				})
 				resolve()
@@ -129,26 +167,63 @@ export function requestShowStation(s: Station): Promise<void> {
 	})
 }
 
-export function requestShowLine(line: Line): Promise<Line> {
+export async function requestShowLine(line: Line): Promise<Line> {
 	store.dispatch({
-		type: ActionType.SHOW_STATION_ITEM,
+		type: ActionType.SET_NAV_STATE,
 		payload: {
-			type: DialogType.Line,
-			props: {
-				line: line,
-				line_details: line.has_details
+			next: {
+				type: NavType.DIALOG_LINE,
+				data: {
+					dialog: {
+						type: DialogType.LINE,
+						props: {
+							line: line,
+							line_details: line.has_details,
+						}
+					},
+					polyline_list: [],
+					stations_marker: [],
+					show_polyline: false,
+				}
 			}
 		}
 	})
 	// if needed, load details of the item and update it.
 	if (!line.has_details) {
-		return StationService.get_line_detail(line.code).then(l => {
-			requestShowLine(l)
-			return l
-		});
+		const l = await StationService.get_line_detail(line.code);
+		requestShowLine(l);
+		return l;
 	} else {
 		return Promise.resolve(line)
 	}
+}
+
+export function showPolyline(dialog: LineDialogProps, polylines: Array<PolylineProps>, stations: Array<LatLng>) {
+	store.dispatch({
+		type: ActionType.SET_NAV_STATE,
+		payload: {
+			next: {
+				type: NavType.DIALOG_LINE,
+				data: {
+					dialog: dialog,
+					show_polyline: true,
+					polyline_list: polylines,
+					stations_marker: stations
+				}
+			}
+		}
+	})
+}
+
+export function showHighVoronoi(nav: StationDialogNav) {
+	var next = { ...nav }
+	next.data.show_high_voronoi = true
+	store.dispatch({
+		type: ActionType.SET_NAV_STATE,
+		payload: {
+			next: next
+		}
+	})
 }
 
 export function requestShowStationItem(item: StationSuggestion) {
@@ -167,12 +242,53 @@ export function requestShowStationItem(item: StationSuggestion) {
 	}
 }
 
-
-export function setMapTransition(current: MapTransition) {
-	store.dispatch({
-		type: ActionType.SET_TRANSITION,
+function updateNavStateIdle(pos: LatLng, list: Array<RadarStation>, dispatch: ThunkDispatch<GlobalState,undefined,GlobalAction>) {
+	const station = list[0].station
+	dispatch({
+		type: ActionType.SET_NAV_STATE,
 		payload: {
-			current: current
+			next: {
+				type: NavType.IDLE,
+				data: {
+					dialog: {
+						type: DialogType.CURRENT_POSITION,
+						props: {
+							station: station,
+							radar_list: list,
+							prefecture: StationService.get_prefecture(station.prefecture),
+							position: pos,
+							dist: StationService.measure(station.position, pos),
+							lines: station.lines.map(code => StationService.get_line(code)),
+						}
+					},
+				},
+			}
+		}
+	})
+}
+
+export function setNavStateIdle() {
+	store.dispatch((dispatch, getState) => {
+		const state = getState()
+		const location = state.current_location
+		if (state.watch_position && location) {
+			const pos = { lat: location.position.lat(), lng: location.position.lng() }
+			StationService.update_location(pos, state.radar_k).then(station => {
+				if (!station) return
+				updateNavStateIdle(pos, makeRadarList(pos, state.radar_k), dispatch)
+			})
+		} else {
+			dispatch({
+				type: ActionType.SET_NAV_STATE,
+				payload: {
+					next: {
+						type: NavType.IDLE,
+						data: {
+							dialog: null
+						}
+					}
+				}
+			})
 		}
 	})
 }

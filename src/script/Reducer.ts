@@ -1,5 +1,5 @@
 import { Reducer } from "redux"
-import { DialogType, InfoDialog, MapTransition } from "../components/Map"
+import { NavState, NavType } from "../components/Map"
 import { createEvent, createIdleEvent, PropsEvent } from "./Event"
 import { Station } from "./Station"
 import { LatLng } from "./Utils"
@@ -10,8 +10,7 @@ export enum ActionType {
   SHOW_STATION_PIN,
   SET_CURRENT_POSITION,
   SET_GPS_ACCURACY,
-  SHOW_STATION_ITEM,
-  SET_TRANSITION,
+  SET_NAV_STATE,
   LOAD_STATIONS,
 }
 
@@ -25,8 +24,10 @@ type WatchPositionAction = Action<ActionType.WATCH_CURRENT_POSITION, { watch: bo
 type ShowStationPinAction = Action<ActionType.SHOW_STATION_PIN, { show: boolean }>
 type PositionAction = Action<ActionType.SET_CURRENT_POSITION, { pos: GeolocationPosition }>
 type GPSAccuracyAction = Action<ActionType.SET_GPS_ACCURACY, { high: boolean }>
-type ShowAction = Action<ActionType.SHOW_STATION_ITEM, InfoDialog>
-type TransitionAction = Action<ActionType.SET_TRANSITION, { current: MapTransition }>
+type TransitionAction = Action<ActionType.SET_NAV_STATE, {
+  next: NavState,
+  focus?: LatLng
+}>
 type LoadStationsAction = Action<ActionType.LOAD_STATIONS, { stations: Array<Station> }>
 
 export type GlobalAction =
@@ -35,7 +36,6 @@ export type GlobalAction =
   ShowStationPinAction |
   PositionAction |
   GPSAccuracyAction |
-  ShowAction |
   TransitionAction |
   LoadStationsAction
 
@@ -43,10 +43,14 @@ export interface GlobalState {
   radar_k: number
   watch_position: boolean
   show_station_pin: boolean
-  current_position: PropsEvent<GeolocationPosition>
+  current_location: null | {
+    position: google.maps.LatLng,
+    accuracy: number
+    heading: number | null
+  }
+  current_location_update: PropsEvent<GeolocationPosition>
   high_accuracy: boolean,
-  info_dialog: InfoDialog | null
-  transition: MapTransition
+  nav: NavState,
   map_focus: PropsEvent<LatLng>
   stations: Array<Station>
 }
@@ -55,10 +59,13 @@ const initState: GlobalState = {
   radar_k: 22,
   watch_position: false,
   show_station_pin: true,
-  current_position: createIdleEvent(),
+  current_location: null,
+  current_location_update: createIdleEvent(),
   high_accuracy: false,
-  info_dialog: null,
-  transition: "loading",
+  nav: {
+    type: NavType.LOADING,
+    data: null
+  },
   map_focus: createIdleEvent(),
   stations: [],
 }
@@ -87,9 +94,15 @@ const reducer: Reducer<GlobalState, GlobalAction> = (
       }
     }
     case ActionType.SET_CURRENT_POSITION: {
+      const coords = action.payload.pos.coords
       return {
         ...state,
-        current_position: createEvent(action.payload.pos)
+        current_location: {
+          position: new google.maps.LatLng(coords.latitude, coords.longitude),
+          accuracy: coords.accuracy,
+          heading: coords.heading
+        },
+        current_location_update: createEvent(action.payload.pos)
       }
     }
     case ActionType.SET_GPS_ACCURACY: {
@@ -98,41 +111,18 @@ const reducer: Reducer<GlobalState, GlobalAction> = (
         high_accuracy: action.payload.high
       }
     }
-    case ActionType.SHOW_STATION_ITEM: {
-      var update = (t: MapTransition, focus?: LatLng) => {
+    case ActionType.SET_NAV_STATE: {
+      if (action.payload.focus) {
         return {
           ...state,
-          info_dialog: action.payload,
-          transition: t,
-          map_focus: (focus ? createEvent(focus) : state.map_focus)
+          nav: action.payload.next,
+          map_focus: createEvent(action.payload.focus)
         }
-      }
-      switch (action.payload.type) {
-        case DialogType.Line:
-          return update({
-            show_polyline: false,
-            polyline_list: [],
-            stations_marker: [],
-          })
-        case DialogType.Position:
-          return update({
-            show_high_voronoi: false,
-            station: action.payload.props.station,
-            location: action.payload.props.location.pos
-          }, action.payload.props.location.pos)
-        case DialogType.Station:
-          return update({
-            show_high_voronoi: false,
-            station: action.payload.props.station,
-            location: undefined,
-          }, action.payload.props.station.position)
-      }
-      break
-    }
-    case ActionType.SET_TRANSITION: {
-      return {
-        ...state,
-        transition: action.payload.current
+      } else {
+        return {
+          ...state,
+          nav: action.payload.next,
+        }
       }
     }
     case ActionType.LOAD_STATIONS: {

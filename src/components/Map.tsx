@@ -1,7 +1,7 @@
 import { GoogleApiWrapper, Map, Marker, Polygon, Polyline, Circle, GoogleAPI, IMapProps } from "google-maps-react"
 import React from "react"
 import "./Map.css"
-import { StationDialog, LineDialog } from "./InfoDialog"
+import { StationDialog, LineDialog, CurrentPosDialog } from "./InfoDialog"
 import StationService from "../script/StationService"
 import { CSSTransition } from "react-transition-group"
 import * as Rect from "../diagram/Rect"
@@ -37,84 +37,116 @@ export interface RadarStation {
 }
 
 export enum DialogType {
-	Station,
-	Line,
-	Position,
+	STATION,
+	LINE,
+	SELECT_POSITION,
+	CURRENT_POSITION,
 }
 
-interface DialogProps<T, E> {
+interface DialogPropsBase<T, E> {
 	type: T
 	props: E
 }
 
-export type StationDialogProps = DialogProps<DialogType.Station, {
+interface StationDialogPayload {
 	station: Station
 	radar_list: Array<RadarStation>
 	prefecture: string
 	lines: Array<Line>
-}>
+}
 
-export type LineDialogProps = DialogProps<DialogType.Line, {
+interface PosDialogPayload extends StationDialogPayload {
+	position: Utils.LatLng
+	dist: number
+}
+
+export type StationPosDialogProps = DialogPropsBase<DialogType.STATION, StationDialogPayload>
+export type SelectPosDialogProps = DialogPropsBase<DialogType.SELECT_POSITION, PosDialogPayload>
+export type CurrentPosDialogProps = DialogPropsBase<DialogType.CURRENT_POSITION, PosDialogPayload>
+
+export type LineDialogProps = DialogPropsBase<DialogType.LINE, {
 	line: Line
 	line_details: boolean
 }>
 
-export type PosDialogProps = DialogProps<DialogType.Position, {
-	station: Station
-	radar_list: Array<RadarStation>
-	prefecture: string
-	location: {
-		pos: Utils.LatLng
-		dist: number
+export type StationDialogProps =
+	StationPosDialogProps |
+	SelectPosDialogProps |
+	CurrentPosDialogProps
+
+export enum NavType {
+	LOADING,
+	IDLE,
+	DIALOG_STATION_POS,
+	DIALOG_LINE,
+	DIALOG_SELECT_POS,
+}
+
+interface NavStateBase<T, E> {
+	type: T
+	data: E
+}
+
+function isStationDialog(nav: NavState): nav is StationDialogNav {
+	switch (nav.type) {
+		case NavType.DIALOG_SELECT_POS:
+		case NavType.DIALOG_STATION_POS:
+			return true
+		default:
+			return false
 	}
+}
+
+function isDialog(nav: NavState): nav is InfoDialogNav {
+	switch (nav.type) {
+		case NavType.DIALOG_SELECT_POS:
+		case NavType.DIALOG_STATION_POS:
+		case NavType.DIALOG_LINE:
+			return true
+		default:
+			return false
+	}
+}
+
+export type StationPosDialogNav = NavStateBase<NavType.DIALOG_STATION_POS, {
+	dialog: StationPosDialogProps,
+	show_high_voronoi: boolean
 }>
 
-export type InfoDialog =
-	StationDialogProps |
-	LineDialogProps |
-	PosDialogProps
-
-export interface StationDialogTransition {
+export type SelectPosDialogNav = NavStateBase<NavType.DIALOG_SELECT_POS, {
+	dialog: SelectPosDialogProps,
 	show_high_voronoi: boolean
-	station: Station
-	location: Utils.LatLng | undefined
-}
+}>
 
-function isStationDialogTransition(item: MapTransition): item is StationDialogTransition {
-	var t = item as any
-	return t.show_high_voronoi !== undefined && typeof t.show_high_voronoi === 'boolean'
-}
-
-export interface LineDialogTransition {
+type LineDialogNav = NavStateBase<NavType.DIALOG_LINE, {
+	dialog: LineDialogProps
 	show_polyline: boolean
 	polyline_list: Array<Utils.PolylineProps>
 	stations_marker: Array<Utils.LatLng>
-}
+}>
 
-function isLineDialogTranstion(t: any): t is LineDialogTransition {
-	return t.show_polyline !== undefined && typeof t.show_polyline === 'boolean'
-}
+export type IdleNav = NavStateBase<NavType.IDLE, {
+	dialog: CurrentPosDialogProps | null
+}>
 
-export type DialogTransition =
-	StationDialogTransition |
-	LineDialogTransition
+export type StationDialogNav =
+	StationPosDialogNav |
+	SelectPosDialogNav
 
-function isDialogTransition(item: MapTransition): item is DialogTransition {
-	var t = item as any
-	return typeof t !== 'string'
-}
+export type InfoDialogNav =
+	StationDialogNav |
+	LineDialogNav
 
-export type MapTransition =
-	DialogTransition |
-	"idle" |
-	"loading"
+export type NavState =
+	InfoDialogNav |
+	NavStateBase<NavType.LOADING, null> |
+	IdleNav
 
 interface MapProps {
 	radar_k: number
 	show_current_position: boolean
 	show_station_pin: boolean
-	info_dialog: InfoDialog | null
-	transition: MapTransition
+	nav: NavState
 	focus: PropsEvent<Utils.LatLng>
 	current_location: PropsEvent<GeolocationPosition>
 	voronoi: Array<Station>
@@ -126,10 +158,9 @@ function mapGlobalState2Props(state: GlobalState, ownProps: any): MapProps {
 		radar_k: state.radar_k,
 		show_current_position: state.watch_position,
 		show_station_pin: state.show_station_pin,
-		info_dialog: state.info_dialog,
-		transition: state.transition,
+		nav: state.nav,
 		focus: state.map_focus,
-		current_location: state.current_position,
+		current_location: state.current_location_update,
 		voronoi: state.stations,
 		query: ownProps.query as qs.ParsedQuery<string>
 	}
@@ -220,7 +251,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 				current_accuracy: pos.coords.accuracy,
 				current_heading: pos.coords.heading,
 			})
-			if (this.props.show_current_position && this.props.transition == "idle") {
+			if (this.props.show_current_position && this.props.nav.type === NavType.IDLE) {
 				this.moveToCurrentPosition(p)
 			}
 		})
@@ -231,11 +262,11 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 			console.log("worker is running")
 			return
 		}
-		const transition = this.props.transition
-		if (!isStationDialogTransition(transition)) return
+		const nav = this.props.nav
+		if (!isStationDialog(nav)) return
 
-		if (transition.show_high_voronoi) {
-			Actions.setMapTransition("idle")
+		if (nav.data.show_high_voronoi) {
+			Actions.setNavStateIdle()
 			return
 		}
 		const worker = new VoronoiWorker()
@@ -251,12 +282,11 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 					)
 				}).then(stations => {
 					var points = stations.map(s => {
-						var point = {
+						return {
 							x: s.position.lng,
 							y: s.position.lat,
 							code: s.code
 						}
-						return point
 					})
 					worker.postMessage(JSON.stringify({
 						type: 'points',
@@ -293,7 +323,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 					...this.state,
 					worker_running: false,
 				})
-				Actions.setMapTransition("idle")
+				Actions.setNavStateIdle()
 			}
 		})
 
@@ -311,10 +341,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 			worker_running: true,
 			high_voronoi: [],
 		})
-		Actions.setMapTransition({
-			...transition,
-			show_high_voronoi: true,
-		})
+		Actions.showHighVoronoi(nav)
 		worker.postMessage(JSON.stringify({
 			type: 'start',
 			container: container,
@@ -327,8 +354,9 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 	showPolyline(line: Line) {
 		if (!line.has_details || !this.map) return
-		const t = this.props.transition
-		if (!isLineDialogTranstion(t) || t.show_polyline) return
+		const nav = this.props.nav
+		if (nav.type !== NavType.DIALOG_LINE) return
+		if (nav.data.show_polyline) return
 		var polyline: Array<Utils.PolylineProps> = []
 		var bounds: Utils.RectBounds
 		if (line.polyline_list) {
@@ -343,12 +371,11 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 			}]
 			bounds = data
 		}
-		Actions.setMapTransition({
-			...t,
-			show_polyline: true,
-			polyline_list: polyline,
-			stations_marker: line.station_list.map(s => s.position)
-		})
+		Actions.showPolyline(
+			nav.data.dialog,
+			polyline,
+			line.station_list.map(s => s.position)
+		)
 		if (this.map_ref.current) {
 			var rect = this.map_ref.current.getBoundingClientRect()
 			var props = Utils.get_zoom_property(bounds, rect.width, rect.height)
@@ -388,7 +415,8 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 				}
 			})
 
-			Actions.setMapTransition("idle")
+
+			Actions.setNavStateIdle()
 
 			StationService.initialize().then(s => {
 				// parse query actions
@@ -396,7 +424,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 					console.log('query: line', this.props.query.line)
 					var line = s.get_line_by_id(this.props.query.line)
 					if (line) {
-						Actions.requestShowLine(line).then( l => {
+						Actions.requestShowLine(line).then(l => {
 							this.showPolyline(l)
 						})
 						return
@@ -420,9 +448,9 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 					})
 					return
 				}
-				if (typeof this.props.query.mylocation == 'string'){
+				if (typeof this.props.query.mylocation == 'string') {
 					console.log('query: location', this.props.query.mylocation)
-					if(Utils.parseQueryBoolean(this.props.query.mylocation)){
+					if (Utils.parseQueryBoolean(this.props.query.mylocation)) {
 						Actions.setWatchCurrentPosition(true)
 					}
 				}
@@ -511,9 +539,9 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 	}
 
 	onMapDragStart(props?: IMapProps, map?: google.maps.Map) {
-		var t = this.props.transition
-		if (isStationDialogTransition(t) && t.show_high_voronoi) return
-		if (isLineDialogTranstion(t) && t.show_polyline) return
+		const nav = this.props.nav
+		if (isStationDialog(nav) && nav.data.show_high_voronoi) return
+		if (nav.type === NavType.DIALOG_LINE && nav.data.show_polyline) return
 		if (!this.state.screen_wide) {
 			this.onInfoDialogClosed()
 		}
@@ -530,13 +558,13 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 			})
 			console.log("worker terminated")
 		}
-		Actions.setMapTransition('idle')
+		Actions.setNavStateIdle()
 	}
 
 	focusAt(pos: Utils.LatLng) {
 		if (!StationService.initialized) return
-		var t = this.props.transition
-		if (isStationDialogTransition(t) && t.show_high_voronoi) return
+		const nav = this.props.nav
+		if (isStationDialog(nav) && nav.data.show_high_voronoi) return
 
 		Actions.requestShowPosition(pos)
 
@@ -544,11 +572,11 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 	focusAtNearestStation(pos: Utils.LatLng) {
 		if (!StationService.initialized) return
-		var t = this.props.transition
-		if (isStationDialogTransition(t) && t.show_high_voronoi) return
+		const nav = this.props.nav
+		if (isStationDialog(nav) && nav.data.show_high_voronoi) return
 		StationService.update_location(pos, this.props.radar_k, 0).then(s => {
 			console.log("update location", s)
-			this.showStation(s)
+			if (s) this.showStation(s)
 		})
 	}
 
@@ -562,21 +590,21 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 	}
 
 	moveToCurrentPosition(pos: google.maps.LatLng | null) {
+		Actions.setNavStateIdle()
+
 		if (pos && this.map) {
 			this.map.panTo(pos)
 		}
 	}
 
 	render() {
-		const t = this.props.transition
-		const clicked_marker = isStationDialogTransition(this.props.transition)
-			? this.props.transition.location : undefined
-		const station_maker = isStationDialogTransition(this.props.transition)
-			? this.props.transition.station.position : undefined
-		const show_voronoi = !this.state.hide_voronoi && !(isStationDialogTransition(t) && t.show_high_voronoi)
-		const polyline = isLineDialogTranstion(t) && t.show_polyline ? t : null
-		const high_voronoi = isStationDialogTransition(t) && t.show_high_voronoi ? this.state.high_voronoi : null
-		const show_station_pin = !this.state.hide_pin && this.props.show_station_pin && t == "idle" && show_voronoi
+		const nav = this.props.nav
+		const clicked_marker = nav.type === NavType.DIALOG_SELECT_POS ? nav.data.dialog.props.position : undefined
+		const station_maker = isStationDialog(nav) ? nav.data.dialog.props.station.position : undefined
+		const show_voronoi = !this.state.hide_voronoi && !(isStationDialog(nav) && nav.data.show_high_voronoi)
+		const polyline = nav.type === NavType.DIALOG_LINE && nav.data.show_polyline ? nav.data : null
+		const high_voronoi = isStationDialog(nav) && nav.data.show_high_voronoi ? this.state.high_voronoi : null
+		const show_station_pin = !this.state.hide_pin && this.props.show_station_pin && nav.type === NavType.IDLE && show_voronoi
 		return (
 			<div className='Map-container'>
 				<div className='Map-relative' ref={this.map_ref}>
@@ -699,7 +727,7 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 					</Map>
 
 					<CSSTransition
-						in={isDialogTransition(t)}
+						in={isDialog(nav)}
 						className="Dialog-container"
 						timeout={400}>
 						<div className="Dialog-container">
@@ -730,6 +758,17 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 						</div>
 					</CSSTransition>
+					
+					<CSSTransition
+						in={this.props.show_current_position}
+						className="Dialog-container current-position"
+						timeout={400}>
+						<div className="Dialog-container current-position">
+							<div className="Dialog-frame">
+								{this.props.nav.type === NavType.IDLE && this.props.nav.data.dialog !== null ? this.renderInfoDialog() : null}
+							</div>
+						</div>
+					</CSSTransition>
 					<div className="menu mylocation">
 						<img
 							src={ic_mylocation}
@@ -754,24 +793,23 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 
 	renderInfoDialog(): any {
 		var dom: any = null
-		var info = this.props.info_dialog
-		if (info) {
-			switch (info.type) {
-				case DialogType.Line: {
+		var info = this.props.nav
+			switch (info?.data?.dialog?.type) {
+				case DialogType.LINE: {
 					dom = (
 						<LineDialog
-							info={info}
+							info={info.data.dialog}
 							onStationSelected={this.showStation.bind(this)}
 							onClosed={this.onInfoDialogClosed.bind(this)}
 							onShowPolyline={this.showPolyline.bind(this)} />
 					)
 					break
 				}
-				case DialogType.Position:
-				case DialogType.Station: {
+				case DialogType.STATION:
+				case DialogType.SELECT_POSITION: {
 					dom = (
 						<StationDialog
-							info={info}
+							info={info.data.dialog}
 							onStationSelected={this.showStation.bind(this)}
 							onLineSelected={this.showLine.bind(this)}
 							onClosed={this.onInfoDialogClosed.bind(this)}
@@ -779,8 +817,17 @@ export class MapContainer extends React.Component<WrappedMapProps, MapState> {
 					)
 					break
 				}
+				case DialogType.CURRENT_POSITION: {
+					dom = (
+						<CurrentPosDialog
+							info={info.data.dialog}
+							onStationSelected={this.showStation.bind(this)}
+							onLineSelected={this.showLine.bind(this)}/>
+					)
+					break
+				}
+				default:
 			}
-		}
 		return dom
 	}
 }
