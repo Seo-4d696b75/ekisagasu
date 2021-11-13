@@ -163,18 +163,15 @@ export class StationKdTree {
 			return Promise.reject('tree root not initialized');
 		} else if (this.search_list.length >= k && this.last_position && this.last_position.lat === position.lat && this.last_position.lng === position.lng) {
 			console.log("update skip");
-			return Promise.resolve(this.current_station);
+			return this.current_station
 		} else {
-			const time = performance.now();
-			return Promise.resolve().then(() => {
-				this.search_list = [];
-				return this.search(this.root as StationNode, position, k, r);
-			}).then(() => {
-				this.current_station = this.search_list[0].station;
-				this.last_position = position;
-				console.log(`update done. k=${k} r=${r} time=${performance.now() - time}ms size:${this.search_list.length}`);
-				return this.current_station;
-			});
+			const time = performance.now()
+			this.search_list = [];
+			await this.search(this.root, position, k, r);
+			this.current_station = this.search_list[0].station;
+			this.last_position = position;
+			console.log(`update done. k=${k} r=${r} time=${performance.now() - time}ms size:${this.search_list.length}`);
+			return this.current_station;
 		}
 	}
 
@@ -210,53 +207,52 @@ export class StationKdTree {
 		return Math.sqrt(lat * lat + lng * lng);
 	}
 
-	search(node: StationNode, position: LatLng, k: number, r: number) {
+	async search(node: StationNode, position: LatLng, k: number, r: number) {
 		const div: { value: number, threshold: number } = {
 			value: 0,
 			threshold: 0
 		}
 
-		return node.get().then(s => {
-			const d = this.measure(position, s.position);
-			var index = -1;
-			var size = this.search_list.length;
-			if (size > 0 && d < this.search_list[size - 1].dist) {
-				index = size - 1;
-				while (index > 0) {
-					if (d >= this.search_list[index - 1].dist) break;
-					index -= 1;
-				}
-			} else if (size === 0) {
-				index = 0;
+		const s = await node.get()
+		const d = this.measure(position, s.position);
+		var index = -1;
+		var size = this.search_list.length;
+		if (size > 0 && d < this.search_list[size - 1].dist) {
+			index = size - 1;
+			while (index > 0) {
+				if (d >= this.search_list[index - 1].dist) break;
+				index -= 1;
 			}
-			if (index >= 0) {
-				var e = {
-					dist: d,
-					station: s
-				};
-				this.search_list.splice(index, 0, e);
-				if (size >= k && this.search_list[size].dist > r) {
-					this.search_list.pop();
-				}
+		} else if (size === 0) {
+			index = 0;
+		}
+		if (index >= 0) {
+			var e = {
+				dist: d,
+				station: s
+			};
+			this.search_list.splice(index, 0, e);
+			if (size >= k && this.search_list[size].dist > r) {
+				this.search_list.pop();
 			}
-			var x = (node.depth % 2 === 0);
-			div.value = (x ? position.lng : position.lat);
-			div.threshold = (x ? s.position.lng : s.position.lat);
+		}
+		var x = (node.depth % 2 === 0);
+		div.value = (x ? position.lng : position.lat);
+		div.threshold = (x ? s.position.lng : s.position.lat);
 
-			var next = (div.value < div.threshold) ? node.left : node.right;
-			if (next) {
-				return this.search(next, position, k, r);
-			}
-		}).then(() => {
-			var value = div.value;
-			var th = div.threshold;
-			var next = (value < th) ? node.right : node.left;
-			var list = this.search_list;
-			if (next && Math.abs(value - th) < Math.max(list[list.length - 1].dist, r)) {
-				return this.search(next, position, k, r);
-			}
+		var next = (div.value < div.threshold) ? node.left : node.right;
+		if (next) {
+			await this.search(next, position, k, r);
+		}
 
-		});
+		var value = div.value;
+		var th = div.threshold;
+		next = (value < th) ? node.right : node.left;
+		var list = this.search_list;
+		if (next && Math.abs(value - th) < Math.max(list[list.length - 1].dist, r)) {
+			await this.search(next, position, k, r);
+		}
+
 	}
 
 	async search_rect(node: StationNode, rect: RectBounds, dst: Array<Station>, max: number): Promise<any> {
