@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import StationSearchBox from "./StationSearchBox";
 import { GlobalState } from "../script/Reducer";
 import { connect } from "react-redux"
+import { createEvent, createIdleEvent, PropsEvent } from "../script/Event";
 
 interface HeaderProps {
 	radar_k: number
@@ -32,16 +33,15 @@ function mapGlobalState2Props(state: GlobalState): HeaderProps {
 interface HeaderState {
 	show_setting: boolean
 	show_search_box: boolean
+    input_focus_request: PropsEvent<void>
 }
 
 export class Header extends React.Component<HeaderProps, HeaderState> {
 
-	search_ref = React.createRef<StationSearchBox>()
-
 	state = {
 		show_setting: false,
 		show_search_box: false,
-
+        input_focus_request: createIdleEvent<void>(),
 	}
 
 	showSetting() {
@@ -87,9 +87,10 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 	}
 
 	focusSearchBox() {
-		if (this.search_ref.current) {
-			this.search_ref.current.focus()
-		}
+		this.setState({
+            ...this.state,
+            input_focus_request: createEvent<void>(undefined),
+        })
 	}
 
 	showStationItem(item: any) {
@@ -115,7 +116,7 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 						onEntered={this.focusSearchBox.bind(this)}>
 						<div className="search-box">
 							<StationSearchBox
-								ref={this.search_ref}
+								inputFocusRequested={this.state.input_focus_request}
 								onSuggestionSelected={this.showStationItem.bind(this)}> </StationSearchBox>
 						</div>
 					</CSSTransition>
