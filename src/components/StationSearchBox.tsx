@@ -106,13 +106,15 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
         inputRef.current.input.focus()
       }
     })
-  })
+  }, [inputFocusRequested])
 
   const inputProps: Autosuggest.InputProps<StationSuggestion> = {
     placeholder: '駅・路線を検索',
     value: value,
     onChange: (_, params) => {
-      setValue(params.newValue)
+      if (params.method === "type") {
+        setValue(params.newValue)
+      }
     },
   }
 
