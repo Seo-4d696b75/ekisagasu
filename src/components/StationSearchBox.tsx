@@ -79,6 +79,10 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
   }
 
   const onSuggestionsClearRequested = () => {
+    const last_request_id = last_request_id_ref.current
+    if (last_request_id) {
+      clearTimeout(last_request_id)
+    }
     setSuggestions([])
   }
 
