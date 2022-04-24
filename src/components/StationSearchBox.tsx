@@ -1,18 +1,17 @@
-import React, { FC, useEffect, useRef, useState } from "react"
-import Autosuggest from 'react-autosuggest'
-import axios from "axios"
-import "./StationSearchBox.css"
-import Service from "../script/StationService"
 import { CircularProgress } from "@material-ui/core"
+import axios from "axios"
+import { FC, useEffect, useRef, useState } from "react"
+import Autosuggest from 'react-autosuggest'
 import { PropsEvent } from "../script/Event"
+import Service from "../script/StationService"
+import "./StationSearchBox.css"
 
 interface SearchProps {
   onSuggestionSelected: (item: StationSuggestion) => any
   inputFocusRequested: PropsEvent<void>
 }
 
-export interface StationSuggestion {
-  type: "station" | "line"
+interface StationResponse {
   code: number
   id: string
   name: string
@@ -20,9 +19,13 @@ export interface StationSuggestion {
   prefecture?: number
 }
 
+export interface StationSuggestion extends StationResponse {
+  type: "station" | "line"
+}
+
 interface SuggestSection {
   title: string
-  list: Array<StationSuggestion>
+  list: StationSuggestion[]
 }
 
 const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusRequested }) => {
@@ -30,44 +33,37 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
   const [suggestions, setSuggestions] = useState<SuggestSection[]>([])
   const [loading, setLoading] = useState(false)
 
-  const ignore_pattern = /[ｂ-ｚ]+$/i
-  const input_ref = useRef<Autosuggest>(null)
-  const last_request_id_ref = useRef<NodeJS.Timeout | null>(null)
+  const ignorePattern = /[ｂ-ｚ]+$/i
+  const inputRef = useRef<Autosuggest>(null)
+  const lastRequestIdRef = useRef<NodeJS.Timeout | null>(null)
 
   const onSuggestionsFetchRequested = (request: Autosuggest.SuggestionsFetchRequestedParams) => {
     const value = request.value
     if (value.length < 1) {
       return
     }
-    if (ignore_pattern.test(value)) return
-    const last_request_id = last_request_id_ref.current
-    if (last_request_id) {
-      clearTimeout(last_request_id)
+    if (ignorePattern.test(value)) return
+    const lastRequestId = lastRequestIdRef.current
+    if (lastRequestId) {
+      clearTimeout(lastRequestId)
     }
 
-    last_request_id_ref.current = setTimeout(() => {
+    lastRequestIdRef.current = setTimeout(() => {
       console.log('fetch suggestions', value)
       setLoading(true)
       Promise.all([
-        axios.get(`https://station-service.herokuapp.com/api/station/search?name=${value}`),
-        axios.get(`https://station-service.herokuapp.com/api/line/search?name=${value}`)
+        axios.get<StationResponse[]>(`https://station-service.herokuapp.com/api/station/search?name=${value}`),
+        axios.get<StationResponse[]>(`https://station-service.herokuapp.com/api/line/search?name=${value}`)
       ]).then(res => {
-        let stations = res[0].data as Array<any>
-        let lines = res[1].data as Array<any>
+        const [stations, lines] = res
         setSuggestions([
           {
             title: '駅・停留所',
-            list: stations.map(d => {
-              d['type'] = 'station'
-              return d as StationSuggestion
-            })
+            list: stations.data.map(d => ({ ...d, type: "station" })),
           },
           {
             title: '路線',
-            list: lines.map(d => {
-              d['type'] = 'line'
-              return d as StationSuggestion
-            })
+            list: lines.data.map(d => ({ ...d, type: "line" })),
           }
         ])
         setLoading(false)
@@ -79,9 +75,9 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
   }
 
   const onSuggestionsClearRequested = () => {
-    const last_request_id = last_request_id_ref.current
-    if (last_request_id) {
-      clearTimeout(last_request_id)
+    const lastRequestId = lastRequestIdRef.current
+    if (lastRequestId) {
+      clearTimeout(lastRequestId)
     }
     setSuggestions([])
   }
@@ -106,8 +102,8 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
   useEffect(() => {
     inputFocusRequested.observe("search-box", () => {
       console.log("focus")
-      if (input_ref.current && input_ref.current.input) {
-        input_ref.current.input.focus()
+      if (inputRef.current && inputRef.current.input) {
+        inputRef.current.input.focus()
       }
     })
   })
@@ -123,7 +119,7 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
   return (
     <div className="suggestion-container">
       <Autosuggest<StationSuggestion, SuggestSection>
-        ref={input_ref}
+        ref={inputRef}
         //className="suggestion-input"
         suggestions={suggestions}
         onSuggestionsFetchRequested={onSuggestionsFetchRequested}
