@@ -1,7 +1,7 @@
 import { GoogleApiWrapper, Map, Marker, Polygon, Polyline, Circle, GoogleAPI, IMapProps } from "google-maps-react"
 import React from "react"
 import "./Map.css"
-import { StationDialog, LineDialog, CurrentPosDialog } from "./InfoDialog"
+import { LineDialog } from "./LineDialog"
 import StationService from "../script/StationService"
 import { CSSTransition } from "react-transition-group"
 import * as Rect from "../diagram/Rect"
@@ -18,6 +18,8 @@ import * as Actions from "../script/Actions"
 import { connect } from "react-redux"
 import { PropsEvent } from "../script/Event"
 import qs from "query-string"
+import { CurrentPosDialog } from "./CurrentPosDialog"
+import { StationDialog } from "./StationDialog"
 
 const VORONOI_COLOR = [
 	"#0000FF",
