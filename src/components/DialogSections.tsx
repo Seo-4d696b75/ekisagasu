@@ -8,7 +8,7 @@ import img_station from "../img/station.png"
 import { Line } from "../script/Line"
 import { Station } from "../script/Station"
 import "./InfoDialog.css"
-import { DialogType, StationDialogProps } from "./Map"
+import { DialogType, StationDialogProps } from "./MapNavState"
 
 function formatDistance(dist: number): string {
   if (dist < 1000.0) {

@@ -1,5 +1,5 @@
 import { Reducer } from "redux"
-import { NavState, NavType } from "../components/Map"
+import { NavState, NavType } from "../components/MapNavState"
 import { createEvent, createIdleEvent, PropsEvent } from "./Event"
 import { Station } from "./Station"
 import { LatLng } from "./Utils"

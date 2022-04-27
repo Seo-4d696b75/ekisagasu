@@ -6,7 +6,7 @@ import img_station from "../img/station.png";
 import { Line } from "../script/Line";
 import { Station } from "../script/Station";
 import "./InfoDialog.css";
-import { LineDialogProps } from "./Map";
+import { LineDialogProps } from "./MapNavState";
 
 export interface LineInfoProps {
   info: LineDialogProps

@@ -6,7 +6,7 @@ import { Line } from "./Line";
 import StationService from "./StationService";
 import { Dispatch } from "redux";
 import { LatLng, PolylineProps } from "./Utils";
-import { RadarStation, NavType, StationDialogNav, DialogType, LineDialogProps } from "../components/Map";
+import { RadarStation, NavType, StationDialogNav, DialogType, LineDialogProps } from "../components/MapNavState";
 import { ThunkDispatch } from "redux-thunk";
 
 
