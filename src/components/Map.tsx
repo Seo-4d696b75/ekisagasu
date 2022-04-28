@@ -81,10 +81,8 @@ function showLine(line: Line) {
   Actions.requestShowLine(line)
 }
 
-const MapContainer: FC<WrappedMapProps> = ({ google, radarK, showCurrentPosition, showStationPin, nav, focus, currentLocation, voronoi, query }) => {
-  const [currentPosition, setCurrentPosition] = useState<google.maps.LatLng | null>(null);
-  const [currentAccuracy, setCurrentAccuracy] = useState<number>(0)
-  const [currentHeading, setCurrentHeading] = useState<number | null>(null);
+const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurrentPosition, showStationPin, nav, focus, currentLocation, currentLocationUpdate, voronoi, query }) => {
+
   const [hideVoronoi, setHideVoronoi] = useState(false)
   const [hideStationPin, setHideStationPin] = useState(false)
   const [highVoronoi, setHighVoronoi] = useState<Utils.LatLng[][]>([])
@@ -691,7 +689,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google, radarK, showCurrentPosition
       <div className='Map-relative' ref={mapElementRef}>
 
         <Map
-          google={google}
+          google={googleAPI}
           zoom={14}
           initialCenter={{ lat: 35.681236, lng: 139.767125 }}
           onReady={onMapReady}
