@@ -8,6 +8,7 @@ import { Dispatch } from "redux";
 import { LatLng, PolylineProps } from "./Utils";
 import { RadarStation, NavType, StationDialogNav, DialogType, LineDialogProps } from "../components/MapNavState";
 import { ThunkDispatch } from "redux-thunk";
+import { createEvent } from "./Event";
 
 
 async function checkRadarK(k: number, dispatch: Dispatch<GlobalAction>, state: GlobalState) {
@@ -73,13 +74,19 @@ export function setRadarK(value: number) {
 }
 
 export function setWatchCurrentPosition(value: boolean) {
-	store.dispatch({
-		type: ActionType.WATCH_CURRENT_POSITION,
-		payload: {
-			watch: value
-		}
-	});
+	store.dispatch((dispatch, getState) => {
+    dispatch({
+      type: ActionType.WATCH_CURRENT_POSITION,
+      payload: {
+        watch: value
+      }
+    })
+    if(getState().nav.type === NavType.IDLE){
+      setNavStateIdle()
+    }
+  })
 	StationService.watch_current_position(value)
+  
 }
 
 export function setCurrentPosition(pos: GeolocationPosition) {
@@ -93,12 +100,12 @@ export function setCurrentPosition(pos: GeolocationPosition) {
     }
     const previous = state.current_location?.position
     dispatch({
-		type: ActionType.SET_CURRENT_POSITION,
-		payload: {
+      type: ActionType.SET_CURRENT_POSITION,
+      payload: {
         loc: loc,
         event: previous && loc.position.equals(previous) ? state.current_location_update : createEvent(loc.position)
-		}
-	});
+      }
+    });
   })
 }
 
@@ -279,6 +286,7 @@ function updateNavStateIdleWatchinLocation(pos: LatLng, list: Array<RadarStation
 }
 
 export function setNavStateIdle() {
+  console.log("setNavStateIdle")
 	store.dispatch((dispatch, getState) => {
 		const state = getState()
 		const location = state.current_location
