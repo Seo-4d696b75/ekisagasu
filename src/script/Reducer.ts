@@ -2,7 +2,7 @@ import { Reducer } from "redux"
 import { NavState, NavType } from "../components/MapNavState"
 import { createEvent, createIdleEvent, PropsEvent } from "./Event"
 import { Station } from "./Station"
-import { LatLng } from "./Utils"
+import { CurrentLocation, LatLng } from "./Utils"
 
 export enum ActionType {
   SET_RADER_K,
@@ -22,7 +22,7 @@ interface Action<TAction, TPayload = null> {
 type RadarAction = Action<ActionType.SET_RADER_K, { k: number }>
 type WatchPositionAction = Action<ActionType.WATCH_CURRENT_POSITION, { watch: boolean }>
 type ShowStationPinAction = Action<ActionType.SHOW_STATION_PIN, { show: boolean }>
-type PositionAction = Action<ActionType.SET_CURRENT_POSITION, { pos: GeolocationPosition }>
+type PositionAction = Action<ActionType.SET_CURRENT_POSITION, { loc: CurrentLocation, event: PropsEvent<google.maps.LatLng>}>
 type GPSAccuracyAction = Action<ActionType.SET_GPS_ACCURACY, { high: boolean }>
 type TransitionAction = Action<ActionType.SET_NAV_STATE, {
   next: NavState,
@@ -43,12 +43,8 @@ export interface GlobalState {
   radar_k: number
   watch_position: boolean
   show_station_pin: boolean
-  current_location: null | {
-    position: google.maps.LatLng,
-    accuracy: number
-    heading: number | null
-  }
-  current_location_update: PropsEvent<GeolocationPosition>
+  current_location: null | CurrentLocation
+  current_location_update: PropsEvent<google.maps.LatLng>
   high_accuracy: boolean,
   nav: NavState,
   map_focus: PropsEvent<LatLng>
@@ -94,15 +90,10 @@ const reducer: Reducer<GlobalState, GlobalAction> = (
       }
     }
     case ActionType.SET_CURRENT_POSITION: {
-      const coords = action.payload.pos.coords
       return {
         ...state,
-        current_location: {
-          position: new google.maps.LatLng(coords.latitude, coords.longitude),
-          accuracy: coords.accuracy,
-          heading: coords.heading
-        },
-        current_location_update: createEvent(action.payload.pos)
+        current_location: action.payload.loc,
+        current_location_update: action.payload.event,
       }
     }
     case ActionType.SET_GPS_ACCURACY: {

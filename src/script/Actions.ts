@@ -83,12 +83,23 @@ export function setWatchCurrentPosition(value: boolean) {
 }
 
 export function setCurrentPosition(pos: GeolocationPosition) {
-	store.dispatch({
+  store.dispatch((dispatch, getState) => {
+    let state = getState()
+    const coords = pos.coords
+    const loc = {
+      position: new google.maps.LatLng(coords.latitude, coords.longitude),
+      accuracy: coords.accuracy,
+      heading: coords.heading
+    }
+    const previous = state.current_location?.position
+    dispatch({
 		type: ActionType.SET_CURRENT_POSITION,
 		payload: {
-			pos: pos
+        loc: loc,
+        event: previous && loc.position.equals(previous) ? state.current_location_update : createEvent(loc.position)
 		}
 	});
+  })
 }
 
 export function setPositionAccuracy(high: boolean) {

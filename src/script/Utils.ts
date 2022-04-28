@@ -1,5 +1,11 @@
 import { Station } from "./Station"
 
+export interface CurrentLocation {
+  position: google.maps.LatLng,
+  accuracy: number
+  heading: number | null
+}
+
 export interface LatLng {
   lat: number
   lng: number

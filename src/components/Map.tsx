@@ -39,7 +39,8 @@ interface MapProps {
   showStationPin: boolean
   nav: NavState
   focus: PropsEvent<Utils.LatLng>
-  currentLocation: PropsEvent<GeolocationPosition> // TODO イベントでラップ不要
+  currentLocation: Utils.CurrentLocation | null
+  currentLocationUpdate: PropsEvent<google.maps.LatLng>
   voronoi: Station[]
   query: qs.ParsedQuery<string>
 }
@@ -51,7 +52,8 @@ function mapGlobalState2Props(state: GlobalState, ownProps: any): MapProps {
     showStationPin: state.show_station_pin,
     nav: state.nav,
     focus: state.map_focus,
-    currentLocation: state.current_location_update,
+    currentLocation: state.current_location,
+    currentLocationUpdate: state.current_location_update,
     voronoi: state.stations,
     query: ownProps.query as qs.ParsedQuery<string>
   }
@@ -131,13 +133,10 @@ const MapContainer: FC<WrappedMapProps> = ({ google, radarK, showCurrentPosition
         }
       }
     })
-    currentLocation.observe("map", (pos) => {
-      const p = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude)
-      setCurrentPosition(p)
-      setCurrentAccuracy(pos.coords.accuracy)
-      setCurrentHeading(pos.coords.heading)
+    currentLocationUpdate.observe("map", (pos) => {
+      console.log("useEffect: observe")
       if (showCurrentPosition && nav.type === NavType.IDLE) {
-        moveToCurrentPosition(p)
+        moveToCurrentPosition(pos)
       }
     })
   })
@@ -418,6 +417,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google, radarK, showCurrentPosition
     }
   }
 
+  const currentPosition = currentLocation?.position
   const currentPositionMarker = useMemo(() => {
     if (showCurrentPosition && currentPosition) {
       console.log("render: map position marker")
@@ -437,8 +437,9 @@ const MapContainer: FC<WrappedMapProps> = ({ google, radarK, showCurrentPosition
     } else {
       return null
     }
-  }, [showCurrentPosition, currentPosition, google])
+  }, [showCurrentPosition, currentPosition])
 
+  const currentHeading = currentLocation?.heading
   const currentHeadingMarker = useMemo(() => {
     if (showCurrentPosition && currentPosition && currentHeading && !isNaN(currentHeading)) {
       return (
@@ -460,10 +461,11 @@ const MapContainer: FC<WrappedMapProps> = ({ google, radarK, showCurrentPosition
     } else {
       return null
     }
-  }, [showCurrentPosition, currentPosition, currentHeading, google])
+  }, [showCurrentPosition, currentPosition, currentHeading])
 
+  const currentAccuracy = currentLocation?.accuracy
   const currentAccuracyCircle = useMemo(() => {
-    if (showCurrentPosition && currentPosition) {
+    if (showCurrentPosition && currentPosition && currentAccuracy) {
       return (
         <Circle
           visible={currentAccuracy > 10}
