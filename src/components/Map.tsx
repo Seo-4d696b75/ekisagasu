@@ -113,6 +113,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
   }, [])
 
   const moveToCurrentPosition = (pos: google.maps.LatLng | null) => {
+    console.log("moveToCurrentPosition")
     Actions.setNavStateIdle()
     const map = googleMapRef.current
     if (pos && map) {
@@ -585,46 +586,6 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
     }
   }, [showHighVoronoi, highVoronoi, radarK])
 
-  const dialogContent = () => {
-    let dom: any = null
-    const info = nav
-    switch (info?.data?.dialog?.type) {
-      case DialogType.LINE: {
-        dom = (
-          <LineDialog
-            info={info.data.dialog}
-            onStationSelected={showStation}
-            onClosed={onInfoDialogClosed}
-            onShowPolyline={showPolyline} />
-        )
-        break
-      }
-      case DialogType.STATION:
-      case DialogType.SELECT_POSITION: {
-        dom = (
-          <StationDialog
-            info={info.data.dialog}
-            onStationSelected={showStation}
-            onLineSelected={showLine}
-            onClosed={onInfoDialogClosed}
-            onShowVoronoi={showRadarVoronoi} />
-        )
-        break
-      }
-      case DialogType.CURRENT_POSITION: {
-        dom = (
-          <CurrentPosDialog
-            info={info.data.dialog}
-            onStationSelected={showStation}
-            onLineSelected={showLine} />
-        )
-        break
-      }
-      default:
-    }
-    return dom
-  }
-
   const progressDialog = useMemo(() => (
     <CSSTransition
       in={workerRunning}
@@ -653,29 +614,50 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
       timeout={400}>
       <div className="Dialog-container">
         <div className="Dialog-frame">
-          {dialogContent()}
+          {(nav.data?.dialog?.type === DialogType.LINE) ? (
+            <LineDialog
+              info={nav.data.dialog}
+              onStationSelected={showStation}
+              onClosed={onInfoDialogClosed}
+              onShowPolyline={showPolyline} />
+          ) : (nav.data?.dialog?.type === DialogType.STATION ||
+            nav.data?.dialog?.type === DialogType.SELECT_POSITION) ? (
+            <StationDialog
+              info={nav.data.dialog}
+              onStationSelected={showStation}
+              onLineSelected={showLine}
+              onClosed={onInfoDialogClosed}
+              onShowVoronoi={showRadarVoronoi} />
+          ) : null}
           {progressDialog}
         </div>
       </div>
     </CSSTransition>
   )
 
-  const currentPosDialog = (nav.type === NavType.IDLE && nav.data.dialog !== null) ? (
+  const currentPosDialog = (
     <CSSTransition
       in={showCurrentPosition}
       className="Dialog-container current-position"
       timeout={400}>
       <div className="Dialog-container current-position">
         <div className="Dialog-frame">
-          {dialogContent()}
+          {nav.type === NavType.IDLE && nav.data.dialog !== null ? (
+            <CurrentPosDialog
+              info={nav.data.dialog}
+              onStationSelected={showStation}
+              onLineSelected={showLine} />
+          ) : null}
         </div>
       </div>
     </CSSTransition>
-  ) : null
+  )
 
   const onCurrentPosRequested = () => {
     if (showCurrentPosition) {
-      moveToCurrentPosition(currentPosition)
+      if (currentPosition) {
+        moveToCurrentPosition(currentPosition)
+      }
     } else {
       onInfoDialogClosed()
       StationService.get_current_position().then(pos => {
