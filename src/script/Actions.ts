@@ -49,7 +49,7 @@ async function checkRadarK(k: number, dispatch: Dispatch<GlobalAction>, state: G
 					lng: state.current_location.position.lng()
 				}
 				list = await checker(pos)
-				updateNavStateIdle(pos, list, dispatch)
+				updateNavStateIdleWatchinLocation(pos, list, dispatch)
 			}
 			break
 		}
@@ -253,7 +253,7 @@ export function requestShowStationItem(item: StationSuggestion) {
 	}
 }
 
-function updateNavStateIdle(pos: LatLng, list: Array<RadarStation>, dispatch: ThunkDispatch<GlobalState,undefined,GlobalAction>) {
+function updateNavStateIdleWatchinLocation(pos: LatLng, list: Array<RadarStation>, dispatch: ThunkDispatch<GlobalState,undefined,GlobalAction>) {
 	const station = list[0].station
 	dispatch({
 		type: ActionType.SET_NAV_STATE,
@@ -286,7 +286,7 @@ export function setNavStateIdle() {
 			const pos = { lat: location.position.lat(), lng: location.position.lng() }
 			StationService.update_location(pos, state.radar_k).then(station => {
 				if (!station) return
-				updateNavStateIdle(pos, makeRadarList(pos, state.radar_k), dispatch)
+				updateNavStateIdleWatchinLocation(pos, makeRadarList(pos, state.radar_k), dispatch)
 			})
 		} else {
 			dispatch({
