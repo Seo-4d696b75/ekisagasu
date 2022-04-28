@@ -1,4 +1,4 @@
-import { FC, useMemo } from "react"
+import { FC, useMemo, useRef } from "react"
 import { CSSTransition } from "react-transition-group"
 import img_above from "../img/ic_above.png"
 import img_location from "../img/map_pin.svg"
@@ -37,11 +37,31 @@ export interface StationDetailProps {
 
 export const StationDetails: FC<StationDetailProps> = ({ info, onLineSelected }) => {
   const station = info.props.station
-  return useMemo(() => {
+  const lines = info.props.lines
+
+  const onLineSelectedRef = useRef<(l: Line) => void>()
+  onLineSelectedRef.current = onLineSelected
+
+  const table = useMemo(() => (
+    <table>
+      <tbody>
+        {lines.map((line, index) => {
+          return (
+            <tr key={index}
+              onClick={() => onLineSelectedRef.current?.(line)}
+              className="list-cell line">
+              <td className="line-item icon"><div className="icon-line" style={{ backgroundColor: line.color }} /></td>
+              <td className="line-item line">{line.name}&nbsp;&nbsp;<small>{line.station_size}駅</small></td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
+  ), [lines])
+  const detail = useMemo(() => {
     console.log("render: station details")
     return (
-
-      <div className={`container-main station-detail ${info.type === DialogType.SELECT_POSITION ? 'position' : ''}`}>
+      <>
         <div className="horizontal-container">
           <img src={img_station} alt="icon-details" className="icon-station" />
           <div>
@@ -62,7 +82,7 @@ export const StationDetails: FC<StationDetailProps> = ({ info, onLineSelected })
             <div className="container-description">
               <div className="horizontal-container">
                 <div className="position-title">&nbsp;選択した地点&nbsp;</div>
-                <img className="arrow-right" src={img_above} />
+                <img className="arrow-right" src={img_above} alt="arrow-right" />
                 <div className="station-distance">{formatDistance(info.props.dist)}</div>
               </div>
               E{info.props.position.lng.toFixed(6)} N{info.props.position.lat.toFixed(6)}
@@ -77,33 +97,24 @@ export const StationDetails: FC<StationDetailProps> = ({ info, onLineSelected })
             <div className="container-description">
               <div className="horizontal-container">
                 <div className="position-title">&nbsp;現在位置 &nbsp;</div>
-                <img className="arrow-right" src={img_above} />
+                <img className="arrow-right" src={img_above} alt="arrow-right" />
                 <div className="station-distance">{formatDistance(info.props.dist)}</div>
               </div>
               E{info.props.position.lng.toFixed(6)} N{info.props.position.lat.toFixed(6)}
             </div>
           </div>
         ) : null}
-        <div className={`scroll-container lines ${info.type === DialogType.STATION ? null : "position"}`}>
-
-          <table>
-            <tbody>
-              {info.props.lines.map((line, index) => {
-                return (
-                  <tr key={index}
-                    onClick={() => onLineSelected(line)}
-                    className="list-cell line">
-                    <td className="line-item icon"><div className="icon-line" style={{ backgroundColor: line.color }} /></td>
-                    <td className="line-item line">{line.name}&nbsp;&nbsp;<small>{line.station_size}駅</small></td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      </>
     )
-  }, [info])
+  }, [info, station])
+  return (
+    <div className={`container-main station-detail ${info.type === DialogType.SELECT_POSITION ? 'position' : ''}`}>
+      {detail}
+      <div className={`scroll-container lines ${info.type === DialogType.STATION ? null : "position"}`}>
+        {table}
+      </div>
+    </div>
+  )
 }
 
 export interface StationRadarProps {
@@ -115,6 +126,12 @@ export interface StationRadarProps {
 
 export const StationRadar: FC<StationRadarProps> = ({ info, show, onStationSelected, onClose }) => {
   const radarList = info.props.radar_list
+
+  const onStationSelectedRef = useRef<(s: Station) => void>()
+  const onCloseRef = useRef<() => void>()
+  onStationSelectedRef.current = onStationSelected
+  onCloseRef.current = onClose
+
   const content = useMemo(() => {
     console.log("render: station radar")
     return (
@@ -130,7 +147,7 @@ export const StationRadar: FC<StationRadarProps> = ({ info, show, onStationSelec
                 var dist = formatDistance(e.dist)
                 return (
                   <tr key={index} className="list-cell station"
-                    onClick={() => onStationSelected(e.station)}>
+                    onClick={() => onStationSelectedRef.current?.(e.station)}>
                     <td className="radar-item index">{index + 1}</td>
                     <td className="radar-item dist">{dist}</td>
                     <td className="radar-item station">{e.station.name}&nbsp;&nbsp;{e.lines}</td>
@@ -145,7 +162,7 @@ export const StationRadar: FC<StationRadarProps> = ({ info, show, onStationSelec
             src={img_above}
             alt="close radar"
             className="icon-action"
-            onClick={() => onClose()} />
+            onClick={() => onCloseRef.current?.()} />
         </div>
       </div>
     )

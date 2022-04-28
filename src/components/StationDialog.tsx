@@ -1,4 +1,4 @@
-import { FC, useMemo, useState } from "react";
+import { FC, useMemo, useRef, useState } from "react";
 import img_delete from "../img/ic_delete.png";
 import img_radar from "../img/radar.png";
 import img_voronoi from "../img/voronoi.png";
@@ -21,11 +21,15 @@ export const StationDialog: FC<StationInfoProps> = ({ info, onClosed, onLineSele
 
   const station = info.props.station
 
-  const showVoronoiCallback = () => {
+  const showVoronoiCallbackRef = useRef<() => void>()
+  showVoronoiCallbackRef.current = () => {
     if (onShowVoronoi) {
       onShowVoronoi(station)
     }
   }
+
+  const onClosedRef = useRef<() => void>()
+  onClosedRef.current = onClosed
 
   const actionBottonSection = useMemo(() => {
     return (
@@ -34,9 +38,9 @@ export const StationDialog: FC<StationInfoProps> = ({ info, onClosed, onLineSele
           src={img_delete}
           alt="close dialog"
           className="icon-action close"
-          onClick={() => onClosed()} /><br />
+          onClick={() => onClosedRef.current?.()} /><br />
         <img
-          onClick={showVoronoiCallback}
+          onClick={() => showVoronoiCallbackRef.current?.()}
           src={img_voronoi}
           alt="show voronoi"
           className="icon-action" /><br />
