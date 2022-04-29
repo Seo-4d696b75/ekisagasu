@@ -610,7 +610,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
 
   // when dialog closed, dialog props will be undefined before animation completed.
   // so cache dialog props using ref object.
-  const dialogProps = useInfoDialog(nav)
+  const infoDialogProps = useInfoDialog(nav)
 
   const InfoDialog = (
     <CSSTransition
@@ -619,16 +619,16 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
       timeout={300}>
       <div className="Dialog-container">
         <div className="Dialog-frame">
-          {(dialogProps?.type === DialogType.LINE) ? (
+          {(infoDialogProps?.type === DialogType.LINE) ? (
             <LineDialog
-              info={dialogProps}
+              info={infoDialogProps}
               onStationSelected={showStation}
               onClosed={onInfoDialogClosed}
               onShowPolyline={showPolyline} />
-          ) : (dialogProps?.type === DialogType.STATION ||
-            dialogProps?.type === DialogType.SELECT_POSITION) ? (
+          ) : (infoDialogProps?.type === DialogType.STATION ||
+            infoDialogProps?.type === DialogType.SELECT_POSITION) ? (
             <StationDialog
-              info={dialogProps}
+              info={infoDialogProps}
               onStationSelected={showStation}
               onLineSelected={showLine}
               onClosed={onInfoDialogClosed}
@@ -640,6 +640,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
     </CSSTransition>
   )
 
+  const currentPosDialogProps = useCurrentPosDialog(nav)
   const currentPosDialog = (
     <CSSTransition
       in={showCurrentPosition}
@@ -647,9 +648,9 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
       timeout={300}>
       <div className="Dialog-container current-position">
         <div className="Dialog-frame">
-          {nav.type === NavType.IDLE && nav.data.dialog !== null ? (
+          {currentPosDialogProps ? (
             <CurrentPosDialog
-              info={nav.data.dialog}
+              info={currentPosDialogProps}
               onStationSelected={showStation}
               onLineSelected={showLine} />
           ) : null}
@@ -711,14 +712,23 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
   )
 }
 
-type InfoDialogProps = StationDialogProps|SelectPosDialogProps|LineDialogProps
+type InfoDialogProps = StationDialogProps | SelectPosDialogProps | LineDialogProps
 
 function useInfoDialog(nav: NavState): InfoDialogProps | undefined {
   const dialogPropsRef = useRef<InfoDialogProps>()
-  if(isInfoDialog(nav)){
+  if (isInfoDialog(nav)) {
     dialogPropsRef.current = nav.data.dialog
   }
   return dialogPropsRef.current
+}
+
+function useCurrentPosDialog(nav: NavState): CurrentPosDialogProps | undefined {
+  const ref = useRef<CurrentPosDialogProps>()
+  if (nav.type === NavType.IDLE && nav.data.dialog) {
+    ref.current = nav.data.dialog
+  }
+  if(isInfoDialog(nav)) return undefined
+  return ref.current
 }
 
 const LoadingContainer = (props: any) => (
