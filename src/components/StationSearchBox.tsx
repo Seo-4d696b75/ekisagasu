@@ -1,22 +1,17 @@
-import React from "react";
-import Autosuggest from 'react-autosuggest';
-import axios from "axios";
-import "./StationSearchBox.css";
-import Service from "../script/StationService";
 import { CircularProgress } from "@material-ui/core"
+import axios from "axios"
+import { FC, useEffect, useMemo, useRef, useState } from "react"
+import Autosuggest from 'react-autosuggest'
+import { PropsEvent } from "../script/Event"
+import Service from "../script/StationService"
+import "./StationSearchBox.css"
 
 interface SearchProps {
   onSuggestionSelected: (item: StationSuggestion) => any
+  inputFocusRequested: PropsEvent<void>
 }
 
-interface SearchState {
-  value: string
-  suggestions: Array<SuggestSection>
-  loading: boolean
-}
-
-export interface StationSuggestion {
-  type: "station" | "line"
+interface StationResponse {
   code: number
   id: string
   name: string
@@ -24,163 +19,138 @@ export interface StationSuggestion {
   prefecture?: number
 }
 
-interface SuggestSection {
-  title: string
-  list: Array<StationSuggestion>
+export interface StationSuggestion extends StationResponse {
+  type: "station" | "line"
 }
 
-export default class StationSearchBox extends React.Component<SearchProps, SearchState> {
+interface SuggestSection {
+  title: string
+  list: StationSuggestion[]
+}
 
-  constructor(props: SearchProps) {
-    super(props);
-    this.state = {
-      value: '',
-      suggestions: [],
-      loading: false,
-    };
-  }
+const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusRequested }) => {
+  const [value, setValue] = useState("")
+  const [suggestions, setSuggestions] = useState<SuggestSection[]>([])
+  const [loading, setLoading] = useState(false)
 
+  const ignorePattern = /[ｂ-ｚ]+$/i // ローマ字入力中の値は無視したい
+  const inputRef = useRef<Autosuggest>(null)
+  const lastRequestIdRef = useRef<NodeJS.Timeout | null>(null)
 
-  input_value = '';
-  ignore_pattern = /[ｂ-ｚ]+$/i
-  input_ref = React.createRef<Autosuggest>()
-  last_request_id: NodeJS.Timeout | null = null
-
-
-  onChange(event: React.FormEvent<any>, params: Autosuggest.ChangeEvent) {
-    this.setState({
-      ...this.state,
-      value: params.newValue
-    })
-    this.input_value = params.newValue
-  }
-
-
-  onSuggestionsFetchRequested(request: Autosuggest.SuggestionsFetchRequestedParams) {
-    var value = request.value
+  const onSuggestionsFetchRequested = (request: Autosuggest.SuggestionsFetchRequestedParams) => {
+    const value = request.value
     if (value.length < 1) {
-      return;
+      return
     }
-    if (this.ignore_pattern.test(value)) return;
-    if (this.last_request_id) {
-      clearTimeout(this.last_request_id);
+    if (ignorePattern.test(value)) return
+    const lastRequestId = lastRequestIdRef.current
+    if (lastRequestId) {
+      clearTimeout(lastRequestId)
     }
 
-    this.last_request_id = setTimeout(() => {
-      console.log('fetch suggestions', value);
-      this.setState({
-        ...this.state,
-        loading: true
-      })
+    lastRequestIdRef.current = setTimeout(() => {
+      console.log('fetch suggestions', value)
+      setLoading(true)
       Promise.all([
-        axios.get(`https://station-service.herokuapp.com/api/station/search?name=${value}`),
-        axios.get(`https://station-service.herokuapp.com/api/line/search?name=${value}`)
+        axios.get<StationResponse[]>(`https://station-service.herokuapp.com/api/station/search?name=${value}`),
+        axios.get<StationResponse[]>(`https://station-service.herokuapp.com/api/line/search?name=${value}`)
       ]).then(res => {
-        var stations = res[0].data as Array<any>
-        var lines = res[1].data as Array<any>
-        this.setState({
-          ...this.state,
-          suggestions: [
-            {
-              title: '駅・停留所',
-              list: stations.map(d => {
-                d['type'] = 'station';
-                return d as StationSuggestion;
-              })
-            },
-            {
-              title: '路線',
-              list: lines.map(d => {
-                d['type'] = 'line';
-                return d as StationSuggestion;
-              })
-            }
-          ],
-          loading: false,
-        });
+        const [stations, lines] = res
+        setSuggestions([
+          {
+            title: '駅・停留所',
+            list: stations.data.map(d => ({ ...d, type: "station" })),
+          },
+          {
+            title: '路線',
+            list: lines.data.map(d => ({ ...d, type: "line" })),
+          }
+        ])
+        setLoading(false)
       }).catch(err => {
-        console.log(err);
-      });
+        console.log(err)
+        setLoading(false)
+      })
     }, 500)
   }
 
-  onSuggestionsClearRequested() {
-    this.setState({
-      ...this.state,
-      suggestions: []
-    });
-  }
-
-  getSuggestionValue(suggestion: StationSuggestion): string {
-    return suggestion.name;
-  }
-
-  getSectionSuggestions(section: SuggestSection): Array<StationSuggestion> {
-    return section.list;
-  }
-
-  renderSectionTitle(section: any) {
-    return (
-      <strong>{section.title}</strong>
-    );
-  }
-
-  renderSuggestion(suggestion: StationSuggestion, param: Autosuggest.RenderSuggestionParams) {
-    return (
-      <div>
-        {suggestion.prefecture ? (
-          <span className="suggestion-prefecture">{Service.get_prefecture(suggestion.prefecture)}</span>
-        ) : null}
-        {suggestion.name}
-      </div>
-    );
-  }
-
-  onSuggestionSelected(event: React.FormEvent<any>, data: Autosuggest.SuggestionSelectedEventData<StationSuggestion>) {
-    var suggestion = data.suggestion
-    console.log("selected", suggestion);
-    if (this.props.onSuggestionSelected) {
-      this.props.onSuggestionSelected(suggestion);
+  const onSuggestionsClearRequested = () => {
+    const lastRequestId = lastRequestIdRef.current
+    if (lastRequestId) {
+      clearTimeout(lastRequestId)
     }
-  };
-
-  focus() {
-    console.log("focus")
-    if (this.input_ref.current && this.input_ref.current.input) {
-      this.input_ref.current.input.focus()
-    }
+    setSuggestions([])
   }
 
-  render() {
-    var value = this.state.value;
-    if (value !== this.input_value && this.input_value.length === 0) {
-      value = '';
-    }
+  useEffect(() => {
+    inputFocusRequested.observe("search-box", () => {
+      //console.log("focus")
+      if (inputRef.current && inputRef.current.input) {
+        inputRef.current.input.focus()
+      }
+    })
+  }, [inputFocusRequested])
+
+  const searchBox = useMemo(() => {
+    //console.log("render: search box")
     const inputProps: Autosuggest.InputProps<StationSuggestion> = {
       placeholder: '駅・路線を検索',
       value: value,
-      onChange: this.onChange.bind(this),
-    };
+      onChange: (_, params) => {
+        if (params.method === "type") {
+          setValue(params.newValue)
+        }
+      },
+    }
     return (
-      <div className="suggestion-container">
-        <Autosuggest<StationSuggestion, SuggestSection>
-          ref={this.input_ref}
-          //className="suggestion-input"
-          suggestions={this.state.suggestions}
-          onSuggestionsFetchRequested={this.onSuggestionsFetchRequested.bind(this)}
-          onSuggestionsClearRequested={this.onSuggestionsClearRequested.bind(this)}
-          multiSection={true}
-          getSuggestionValue={this.getSuggestionValue}
-          getSectionSuggestions={this.getSectionSuggestions}
-          renderSectionTitle={this.renderSectionTitle}
-          renderSuggestion={this.renderSuggestion}
-          onSuggestionSelected={this.onSuggestionSelected.bind(this)}
-          inputProps={inputProps}></Autosuggest>
-        <div className={`suggestion-loading ${this.state.loading ? "show" : ""}`}>
-          <CircularProgress color="primary" size={26} thickness={5.0} variant="indeterminate" />
-        </div>
+      <Autosuggest<StationSuggestion, SuggestSection>
+        ref={inputRef}
+        //className="suggestion-input"
+        suggestions={suggestions}
+        onSuggestionsFetchRequested={onSuggestionsFetchRequested}
+        onSuggestionsClearRequested={onSuggestionsClearRequested}
+        multiSection={true}
+        getSuggestionValue={(suggenstion) => suggenstion.name}
+        getSectionSuggestions={(section) => section.list}
+        renderSectionTitle={renderSectionTitle}
+        renderSuggestion={renderSuggestion}
+        onSuggestionSelected={(_, data) => onSuggestionSelected(data.suggestion)}
+        inputProps={inputProps}></Autosuggest>
+    )
+  }, [suggestions, value])
+
+  const loadingProgress = useMemo(() => {
+    //console.log("render: loading")
+    return (
+      <div className={`suggestion-loading ${loading ? "show" : ""}`}>
+        <CircularProgress color="primary" size={26} thickness={5.0} variant="indeterminate" />
       </div>
     )
-  }
+  }, [loading])
 
+  return (
+    <div className="suggestion-container">
+      {searchBox}
+      {loadingProgress}
+    </div>
+  )
 }
+
+const renderSectionTitle = (section: any) => {
+  return (
+    <strong>{section.title}</strong>
+  )
+}
+
+const renderSuggestion = (suggestion: StationSuggestion, param: Autosuggest.RenderSuggestionParams) => {
+  return (
+    <div>
+      {suggestion.prefecture ? (
+        <span className="suggestion-prefecture">{Service.get_prefecture(suggestion.prefecture)}</span>
+      ) : null}
+      {suggestion.name}
+    </div>
+  )
+}
+
+export default StationSearchBox

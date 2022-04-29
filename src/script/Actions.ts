@@ -6,8 +6,9 @@ import { Line } from "./Line";
 import StationService from "./StationService";
 import { Dispatch } from "redux";
 import { LatLng, PolylineProps } from "./Utils";
-import { RadarStation, NavType, StationDialogNav, DialogType, LineDialogProps } from "../components/Map";
+import { RadarStation, NavType, StationDialogNav, DialogType, LineDialogProps } from "../components/MapNavState";
 import { ThunkDispatch } from "redux-thunk";
+import { createEvent } from "./Event";
 
 
 async function checkRadarK(k: number, dispatch: Dispatch<GlobalAction>, state: GlobalState) {
@@ -49,7 +50,7 @@ async function checkRadarK(k: number, dispatch: Dispatch<GlobalAction>, state: G
 					lng: state.current_location.position.lng()
 				}
 				list = await checker(pos)
-				updateNavStateIdle(pos, list, dispatch)
+				updateNavStateIdleWatchinLocation(pos, list, dispatch)
 			}
 			break
 		}
@@ -73,22 +74,39 @@ export function setRadarK(value: number) {
 }
 
 export function setWatchCurrentPosition(value: boolean) {
-	store.dispatch({
-		type: ActionType.WATCH_CURRENT_POSITION,
-		payload: {
-			watch: value
-		}
-	});
+	store.dispatch((dispatch, getState) => {
+    dispatch({
+      type: ActionType.WATCH_CURRENT_POSITION,
+      payload: {
+        watch: value
+      }
+    })
+    if(getState().nav.type === NavType.IDLE){
+      setNavStateIdle()
+    }
+  })
 	StationService.watch_current_position(value)
+  
 }
 
 export function setCurrentPosition(pos: GeolocationPosition) {
-	store.dispatch({
-		type: ActionType.SET_CURRENT_POSITION,
-		payload: {
-			pos: pos
-		}
-	});
+  store.dispatch((dispatch, getState) => {
+    let state = getState()
+    const coords = pos.coords
+    const loc = {
+      position: new google.maps.LatLng(coords.latitude, coords.longitude),
+      accuracy: coords.accuracy,
+      heading: coords.heading
+    }
+    const previous = state.current_location?.position
+    dispatch({
+      type: ActionType.SET_CURRENT_POSITION,
+      payload: {
+        loc: loc,
+        event: previous && loc.position.equals(previous) ? state.current_location_update : createEvent(loc.position)
+      }
+    });
+  })
 }
 
 export function setPositionAccuracy(high: boolean) {
@@ -242,7 +260,7 @@ export function requestShowStationItem(item: StationSuggestion) {
 	}
 }
 
-function updateNavStateIdle(pos: LatLng, list: Array<RadarStation>, dispatch: ThunkDispatch<GlobalState,undefined,GlobalAction>) {
+function updateNavStateIdleWatchinLocation(pos: LatLng, list: Array<RadarStation>, dispatch: ThunkDispatch<GlobalState,undefined,GlobalAction>) {
 	const station = list[0].station
 	dispatch({
 		type: ActionType.SET_NAV_STATE,
@@ -268,6 +286,7 @@ function updateNavStateIdle(pos: LatLng, list: Array<RadarStation>, dispatch: Th
 }
 
 export function setNavStateIdle() {
+  console.log("setNavStateIdle")
 	store.dispatch((dispatch, getState) => {
 		const state = getState()
 		const location = state.current_location
@@ -275,7 +294,7 @@ export function setNavStateIdle() {
 			const pos = { lat: location.position.lat(), lng: location.position.lng() }
 			StationService.update_location(pos, state.radar_k).then(station => {
 				if (!station) return
-				updateNavStateIdle(pos, makeRadarList(pos, state.radar_k), dispatch)
+				updateNavStateIdleWatchinLocation(pos, makeRadarList(pos, state.radar_k), dispatch)
 			})
 		} else {
 			dispatch({
