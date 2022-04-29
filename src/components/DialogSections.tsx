@@ -1,4 +1,4 @@
-import { FC, useMemo, useRef } from "react"
+import { FC, useMemo } from "react"
 import { CSSTransition } from "react-transition-group"
 import img_above from "../img/ic_above.png"
 import img_location from "../img/map_pin.svg"
@@ -7,6 +7,7 @@ import img_radar from "../img/radar.png"
 import img_station from "../img/station.png"
 import { Line } from "../script/Line"
 import { Station } from "../script/Station"
+import { useRefCallback } from "./Hooks"
 import "./InfoDialog.css"
 import { DialogType, StationDialogProps } from "./MapNavState"
 
@@ -39,8 +40,7 @@ export const StationDetails: FC<StationDetailProps> = ({ info, onLineSelected })
   const station = info.props.station
   const lines = info.props.lines
 
-  const onLineSelectedRef = useRef<(l: Line) => void>()
-  onLineSelectedRef.current = onLineSelected
+  const onLineSelectedRef = useRefCallback(onLineSelected)
 
   const table = useMemo(() => (
     <table>
@@ -48,7 +48,7 @@ export const StationDetails: FC<StationDetailProps> = ({ info, onLineSelected })
         {lines.map((line, index) => {
           return (
             <tr key={index}
-              onClick={() => onLineSelectedRef.current?.(line)}
+              onClick={() => onLineSelectedRef(line)}
               className="list-cell line">
               <td className="line-item icon"><div className="icon-line" style={{ backgroundColor: line.color }} /></td>
               <td className="line-item line">{line.name}&nbsp;&nbsp;<small>{line.station_size}駅</small></td>
@@ -127,10 +127,8 @@ export interface StationRadarProps {
 export const StationRadar: FC<StationRadarProps> = ({ info, show, onStationSelected, onClose }) => {
   const radarList = info.props.radarList
 
-  const onStationSelectedRef = useRef<(s: Station) => void>()
-  const onCloseRef = useRef<() => void>()
-  onStationSelectedRef.current = onStationSelected
-  onCloseRef.current = onClose
+  const onStationSelectedRef = useRefCallback(onStationSelected)
+  const onCloseRef = useRefCallback(onClose)
 
   const content = useMemo(() => {
     console.log("render: station radar")
@@ -147,7 +145,7 @@ export const StationRadar: FC<StationRadarProps> = ({ info, show, onStationSelec
                 var dist = formatDistance(e.dist)
                 return (
                   <tr key={index} className="list-cell station"
-                    onClick={() => onStationSelectedRef.current?.(e.station)}>
+                    onClick={() => onStationSelectedRef(e.station)}>
                     <td className="radar-item index">{index + 1}</td>
                     <td className="radar-item dist">{dist}</td>
                     <td className="radar-item station">{e.station.name}&nbsp;&nbsp;{e.lines}</td>
@@ -162,7 +160,7 @@ export const StationRadar: FC<StationRadarProps> = ({ info, show, onStationSelec
             src={img_above}
             alt="close radar"
             className="icon-action"
-            onClick={() => onCloseRef.current?.()} />
+            onClick={() => onCloseRef()} />
         </div>
       </div>
     )

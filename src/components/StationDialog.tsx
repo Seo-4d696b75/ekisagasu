@@ -1,10 +1,11 @@
-import { FC, useMemo, useRef, useState } from "react";
+import { FC, useMemo, useState } from "react";
 import img_delete from "../img/ic_delete.png";
 import img_radar from "../img/radar.png";
 import img_voronoi from "../img/voronoi.png";
 import { Line } from "../script/Line";
 import { Station } from "../script/Station";
 import { StationDetails, StationRadar, StationTitle } from "./DialogSections";
+import { useRefCallback } from "./Hooks";
 import "./InfoDialog.css";
 import { StationDialogProps } from "./MapNavState";
 
@@ -21,15 +22,13 @@ export const StationDialog: FC<StationInfoProps> = ({ info, onClosed, onLineSele
 
   const station = info.props.station
 
-  const showVoronoiCallbackRef = useRef<() => void>()
-  showVoronoiCallbackRef.current = () => {
+  const showVoronoiCallbackRef = useRefCallback(() => {
     if (onShowVoronoi) {
       onShowVoronoi(station)
     }
-  }
+  })
 
-  const onClosedRef = useRef<() => void>()
-  onClosedRef.current = onClosed
+  const onClosedRef = useRefCallback(onClosed)
 
   const actionBottonSection = useMemo(() => {
     return (
@@ -38,9 +37,9 @@ export const StationDialog: FC<StationInfoProps> = ({ info, onClosed, onLineSele
           src={img_delete}
           alt="close dialog"
           className="icon-action close"
-          onClick={() => onClosedRef.current?.()} /><br />
+          onClick={() => onClosedRef()} /><br />
         <img
-          onClick={() => showVoronoiCallbackRef.current?.()}
+          onClick={() => showVoronoiCallbackRef()}
           src={img_voronoi}
           alt="show voronoi"
           className="icon-action" /><br />
