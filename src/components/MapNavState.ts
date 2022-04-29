@@ -82,19 +82,20 @@ export function isDialog(nav: NavState): nav is InfoDialogNav {
 
 export type StationPosDialogNav = NavStateBase<NavType.DIALOG_STATION_POS, {
   dialog: StationPosDialogProps,
-	show_high_voronoi: boolean
+  showDialog: boolean
+  showHighVoronoi: boolean
 }>
 
 export type SelectPosDialogNav = NavStateBase<NavType.DIALOG_SELECT_POS, {
   dialog: SelectPosDialogProps,
-	show_high_voronoi: boolean
+  showDialog: boolean
+  showHighVoronoi: boolean
 }>
 
 type LineDialogNav = NavStateBase<NavType.DIALOG_LINE, {
   dialog: LineDialogProps
-	show_polyline: boolean
-	polyline_list: Array<Utils.PolylineProps>
-	stations_marker: Array<Utils.LatLng>
+  showDialog: boolean
+  showPolyline: boolean
   polylineList: Utils.PolylineProps[]
   stationMakers: Utils.LatLng[]
 }>

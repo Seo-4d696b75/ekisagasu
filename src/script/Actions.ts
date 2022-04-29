@@ -344,3 +344,57 @@ export function setShowStationPin(show: boolean) {
 		}
 	})
 }
+
+export function closeDialog(){
+  store.dispatch((dispatch, getState) => {
+    const nav = getState().nav
+    switch(nav.type){
+      case NavType.DIALOG_LINE: {
+        dispatch({
+          type: ActionType.SET_NAV_STATE,
+          payload: {
+            next: {
+              type: NavType.DIALOG_LINE,
+              data: {
+                ...nav.data,
+                showDialog: false,
+              }
+            }
+          }
+        })
+        break
+      }
+      case NavType.DIALOG_STATION_POS: {
+        dispatch({
+          type: ActionType.SET_NAV_STATE,
+          payload: {
+            next: {
+              type: NavType.DIALOG_STATION_POS,
+              data: {
+                ...nav.data,
+                showDialog: false,
+              }
+            }
+          }
+        })
+        break
+      }
+      case NavType.DIALOG_SELECT_POS: {
+        dispatch({
+          type: ActionType.SET_NAV_STATE,
+          payload: {
+            next: {
+              type: NavType.DIALOG_SELECT_POS,
+              data: {
+                ...nav.data,
+                showDialog: false,
+              }
+            }
+          }
+        })
+        break
+      }
+      default:
+    }
+  })
+}

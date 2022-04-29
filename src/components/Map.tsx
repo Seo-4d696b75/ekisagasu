@@ -610,9 +610,10 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
 
   const InfoDialog = (
     <CSSTransition
-      in={isDialog(nav)}
+      in={isDialog(nav) && nav.data.showDialog}
+      onExited={() => Actions.setNavStateIdle()}
       className="Dialog-container"
-      timeout={400}>
+      timeout={300}>
       <div className="Dialog-container">
         <div className="Dialog-frame">
           {(nav.data?.dialog?.type === DialogType.LINE) ? (
@@ -640,7 +641,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
     <CSSTransition
       in={showCurrentPosition}
       className="Dialog-container current-position"
-      timeout={400}>
+      timeout={300}>
       <div className="Dialog-container current-position">
         <div className="Dialog-frame">
           {nav.type === NavType.IDLE && nav.data.dialog !== null ? (
