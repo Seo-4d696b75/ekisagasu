@@ -405,7 +405,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
   const onMapDragStart = (props?: IMapProps, map?: google.maps.Map) => {
     if (isStationDialog(nav) && nav.data.show_high_voronoi) return
     if (nav.type === NavType.DIALOG_LINE && nav.data.show_polyline) return
-    if (screenWide) {
+    if (!screenWide) {
       onInfoDialogClosed()
     }
   }
