@@ -19,7 +19,7 @@ import { PropsEvent } from "../script/Event"
 import qs from "query-string"
 import { CurrentPosDialog } from "./CurrentPosDialog"
 import { StationDialog } from "./StationDialog"
-import { NavState, NavType, isStationDialog, isDialog, DialogType } from "./MapNavState"
+import { NavState, NavType, isStationDialog, isInfoDialog, DialogType, StationDialogProps, CurrentPosDialogProps, LineDialogProps, SelectPosDialogProps } from "./MapNavState"
 import { CurrentPosIcon } from "./MapSections"
 
 const VORONOI_COLOR = [
@@ -360,8 +360,8 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
       setWorkerRunning(false)
       console.log("worker terminated")
     }
-    Actions.closeDialog() // delay setting nav state idle until animation complated
-    //Actions.setNavStateIdle()
+    //Actions.closeDialog() // delay setting nav state idle until animation complated
+    Actions.setNavStateIdle()
   }
 
   const focusAt = (pos: Utils.LatLng) => {
@@ -608,24 +608,27 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
     </CSSTransition>
   ), [workerRunning, highVoronoi, radarK])
 
+  // when dialog closed, dialog props will be undefined before animation completed.
+  // so cache dialog props using ref object.
+  const dialogProps = useInfoDialog(nav)
+
   const InfoDialog = (
     <CSSTransition
-      in={isDialog(nav) && nav.data.showDialog}
-      onExited={() => Actions.setNavStateIdle()}
+      in={isInfoDialog(nav)}
       className="Dialog-container"
       timeout={300}>
       <div className="Dialog-container">
         <div className="Dialog-frame">
-          {(nav.data?.dialog?.type === DialogType.LINE) ? (
+          {(dialogProps?.type === DialogType.LINE) ? (
             <LineDialog
-              info={nav.data.dialog}
+              info={dialogProps}
               onStationSelected={showStation}
               onClosed={onInfoDialogClosed}
               onShowPolyline={showPolyline} />
-          ) : (nav.data?.dialog?.type === DialogType.STATION ||
-            nav.data?.dialog?.type === DialogType.SELECT_POSITION) ? (
+          ) : (dialogProps?.type === DialogType.STATION ||
+            dialogProps?.type === DialogType.SELECT_POSITION) ? (
             <StationDialog
-              info={nav.data.dialog}
+              info={dialogProps}
               onStationSelected={showStation}
               onLineSelected={showLine}
               onClosed={onInfoDialogClosed}
@@ -706,6 +709,16 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
       </div>
     </div>
   )
+}
+
+type InfoDialogProps = StationDialogProps|SelectPosDialogProps|LineDialogProps
+
+function useInfoDialog(nav: NavState): InfoDialogProps | undefined {
+  const dialogPropsRef = useRef<InfoDialogProps>()
+  if(isInfoDialog(nav)){
+    dialogPropsRef.current = nav.data.dialog
+  }
+  return dialogPropsRef.current
 }
 
 const LoadingContainer = (props: any) => (

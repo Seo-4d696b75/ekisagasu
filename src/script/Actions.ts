@@ -6,7 +6,7 @@ import { Line } from "./Line";
 import StationService from "./StationService";
 import { Dispatch } from "redux";
 import { LatLng, PolylineProps } from "./Utils";
-import { RadarStation, NavType, StationDialogNav, DialogType, LineDialogProps, isDialog, InfoDialogNav } from "../components/MapNavState";
+import { RadarStation, NavType, StationDialogNav, DialogType, LineDialogProps, isInfoDialog, InfoDialogNav } from "../components/MapNavState";
 import { ThunkDispatch } from "redux-thunk";
 import { createEvent } from "./Event";
 
@@ -343,58 +343,4 @@ export function setShowStationPin(show: boolean) {
 			show: show
 		}
 	})
-}
-
-export function closeDialog(){
-  store.dispatch((dispatch, getState) => {
-    const nav = getState().nav
-    switch(nav.type){
-      case NavType.DIALOG_LINE: {
-        dispatch({
-          type: ActionType.SET_NAV_STATE,
-          payload: {
-            next: {
-              type: NavType.DIALOG_LINE,
-              data: {
-                ...nav.data,
-                showDialog: false,
-              }
-            }
-          }
-        })
-        break
-      }
-      case NavType.DIALOG_STATION_POS: {
-        dispatch({
-          type: ActionType.SET_NAV_STATE,
-          payload: {
-            next: {
-              type: NavType.DIALOG_STATION_POS,
-              data: {
-                ...nav.data,
-                showDialog: false,
-              }
-            }
-          }
-        })
-        break
-      }
-      case NavType.DIALOG_SELECT_POS: {
-        dispatch({
-          type: ActionType.SET_NAV_STATE,
-          payload: {
-            next: {
-              type: NavType.DIALOG_SELECT_POS,
-              data: {
-                ...nav.data,
-                showDialog: false,
-              }
-            }
-          }
-        })
-        break
-      }
-      default:
-    }
-  })
 }

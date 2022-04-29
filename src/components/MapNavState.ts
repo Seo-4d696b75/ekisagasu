@@ -69,7 +69,7 @@ export function isStationDialog(nav: NavState): nav is StationDialogNav {
   }
 }
 
-export function isDialog(nav: NavState): nav is InfoDialogNav {
+export function isInfoDialog(nav: NavState): nav is InfoDialogNav {
   switch (nav.type) {
     case NavType.DIALOG_SELECT_POS:
     case NavType.DIALOG_STATION_POS:
@@ -82,19 +82,16 @@ export function isDialog(nav: NavState): nav is InfoDialogNav {
 
 export type StationPosDialogNav = NavStateBase<NavType.DIALOG_STATION_POS, {
   dialog: StationPosDialogProps,
-  showDialog: boolean
   showHighVoronoi: boolean
 }>
 
 export type SelectPosDialogNav = NavStateBase<NavType.DIALOG_SELECT_POS, {
   dialog: SelectPosDialogProps,
-  showDialog: boolean
   showHighVoronoi: boolean
 }>
 
 type LineDialogNav = NavStateBase<NavType.DIALOG_LINE, {
   dialog: LineDialogProps
-  showDialog: boolean
   showPolyline: boolean
   polylineList: Utils.PolylineProps[]
   stationMakers: Utils.LatLng[]
