@@ -161,7 +161,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
       return
     }
     if (!isStationDialog(nav)) return
-    if (nav.data.show_high_voronoi) {
+    if (nav.data.showHighVoronoi) {
       Actions.setNavStateIdle()
       return
     }
@@ -243,7 +243,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
     const map = googleMapRef.current
     if (!line.has_details || !map) return
     if (nav.type !== NavType.DIALOG_LINE) return
-    if (nav.data.show_polyline) return
+    if (nav.data.showPolyline) return
     let polyline: Utils.PolylineProps[] = []
     let bounds: Utils.RectBounds
     if (line.polyline_list) {
@@ -360,18 +360,19 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
       setWorkerRunning(false)
       console.log("worker terminated")
     }
-    Actions.setNavStateIdle()
+    Actions.closeDialog() // delay setting nav state idle until animation complated
+    //Actions.setNavStateIdle()
   }
 
   const focusAt = (pos: Utils.LatLng) => {
     if (!StationService.initialized) return
-    if (isStationDialog(nav) && nav.data.show_high_voronoi) return
+    if (isStationDialog(nav) && nav.data.showHighVoronoi) return
     Actions.requestShowPosition(pos)
   }
 
   const focusAtNearestStation = (pos: Utils.LatLng) => {
     if (!StationService.initialized) return
-    if (isStationDialog(nav) && nav.data.show_high_voronoi) return
+    if (isStationDialog(nav) && nav.data.showHighVoronoi) return
     StationService.update_location(pos, radarK, 0).then(s => {
       console.log("update location", s)
       if (s) Actions.requestShowStation(s)
@@ -403,8 +404,8 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
   }
 
   const onMapDragStart = (props?: IMapProps, map?: google.maps.Map) => {
-    if (isStationDialog(nav) && nav.data.show_high_voronoi) return
-    if (nav.type === NavType.DIALOG_LINE && nav.data.show_polyline) return
+    if (isStationDialog(nav) && nav.data.showHighVoronoi) return
+    if (nav.type === NavType.DIALOG_LINE && nav.data.showPolyline) return
     if (!screenWide) {
       onInfoDialogClosed()
     }
@@ -500,11 +501,11 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
     </Marker>
   ), [selectedStationPos])
 
-  const lineData = nav.type === NavType.DIALOG_LINE && nav.data.show_polyline ? nav.data : null
+  const lineData = nav.type === NavType.DIALOG_LINE && nav.data.showPolyline ? nav.data : null
   const lineMarkers = useMemo(() => {
     if (lineData) {
       console.log("render: map polyline marker")
-      return lineData.stations_marker.map((pos, i) => (
+      return lineData.stationMakers.map((pos, i) => (
         <Marker
           key={i}
           position={pos}
@@ -517,7 +518,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
   }, [lineData])
   const linePolylines = useMemo(() => {
     if (lineData) {
-      return lineData.polyline_list.map((p, i) => (
+      return lineData.polylineList.map((p, i) => (
         <Polyline
           key={i}
           path={p.points}
@@ -533,7 +534,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
   }, [lineData])
 
 
-  const showVoronoi = !hideVoronoi && !(isStationDialog(nav) && nav.data.show_high_voronoi)
+  const showVoronoi = !hideVoronoi && !(isStationDialog(nav) && nav.data.showHighVoronoi)
   const voronoiPolygones = useMemo(() => {
     if (showVoronoi) {
       console.log("render: map voronoi")
@@ -567,7 +568,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
     }
   }, [showStationMarker, voronoi])
 
-  const showHighVoronoi = isStationDialog(nav) && nav.data.show_high_voronoi
+  const showHighVoronoi = isStationDialog(nav) && nav.data.showHighVoronoi
   const highVoronoiPolygones = useMemo(() => {
     if (showHighVoronoi) {
       console.log("render: map high vorornoi")

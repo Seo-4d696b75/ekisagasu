@@ -125,7 +125,7 @@ export interface StationRadarProps {
 }
 
 export const StationRadar: FC<StationRadarProps> = ({ info, show, onStationSelected, onClose }) => {
-  const radarList = info.props.radar_list
+  const radarList = info.props.radarList
 
   const onStationSelectedRef = useRef<(s: Station) => void>()
   const onCloseRef = useRef<() => void>()

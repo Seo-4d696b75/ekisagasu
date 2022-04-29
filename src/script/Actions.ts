@@ -6,7 +6,7 @@ import { Line } from "./Line";
 import StationService from "./StationService";
 import { Dispatch } from "redux";
 import { LatLng, PolylineProps } from "./Utils";
-import { RadarStation, NavType, StationDialogNav, DialogType, LineDialogProps } from "../components/MapNavState";
+import { RadarStation, NavType, StationDialogNav, DialogType, LineDialogProps, isDialog, InfoDialogNav } from "../components/MapNavState";
 import { ThunkDispatch } from "redux-thunk";
 import { createEvent } from "./Event";
 
@@ -23,7 +23,7 @@ async function checkRadarK(k: number, dispatch: Dispatch<GlobalAction>, state: G
 	switch (state.nav.type) {
 		case NavType.DIALOG_STATION_POS: {
 			var list = await checker(state.nav.data.dialog.props.station.position)
-			state.nav.data.dialog.props.radar_list = list
+			state.nav.data.dialog.props.radarList = list
 			dispatch({
 				type: ActionType.SET_NAV_STATE,
 				payload: {
@@ -34,7 +34,7 @@ async function checkRadarK(k: number, dispatch: Dispatch<GlobalAction>, state: G
 		}
 		case NavType.DIALOG_SELECT_POS: {
 			list = await checker(state.nav.data.dialog.props.position)
-			state.nav.data.dialog.props.radar_list = list
+			state.nav.data.dialog.props.radarList = list
 			dispatch({
 				type: ActionType.SET_NAV_STATE,
 				payload: {
@@ -134,14 +134,15 @@ export function requestShowPosition(pos: LatLng) {
 								type: DialogType.SELECT_POSITION,
 								props: {
 									station: station,
-									radar_list: makeRadarList(pos, state.radar_k),
+									radarList: makeRadarList(pos, state.radar_k),
 									prefecture: StationService.get_prefecture(station.prefecture),
 									position: pos,
 									dist: StationService.measure(station.position, pos),
 									lines: station.lines.map(code => StationService.get_line(code)),
 								}
 							},
-							show_high_voronoi: false,
+              showDialog: true,
+							showHighVoronoi: false,
 						},
 					},
 					focus: pos
@@ -168,12 +169,13 @@ export function requestShowStation(s: Station): Promise<void> {
 									type: DialogType.STATION,
 									props: {
 										station: s,
-										radar_list: makeRadarList(s.position, state.radar_k),
+										radarList: makeRadarList(s.position, state.radar_k),
 										prefecture: StationService.get_prefecture(s.prefecture),
 										lines: s.lines.map(code => StationService.get_line(code)),
 									}
 								},
-								show_high_voronoi: false,
+                showDialog: true,
+								showHighVoronoi: false,
 							}
 						},
 						focus: s.position
@@ -199,9 +201,10 @@ export async function requestShowLine(line: Line): Promise<Line> {
 							line_details: line.has_details,
 						}
 					},
-					polyline_list: [],
-					stations_marker: [],
-					show_polyline: false,
+					polylineList: [],
+					stationMakers: [],
+          showDialog: true,
+					showPolyline: false,
 				}
 			}
 		}
@@ -224,9 +227,10 @@ export function showPolyline(dialog: LineDialogProps, polylines: Array<PolylineP
 				type: NavType.DIALOG_LINE,
 				data: {
 					dialog: dialog,
-					show_polyline: true,
-					polyline_list: polylines,
-					stations_marker: stations
+					showDialog: true,
+          showPolyline: true,
+					polylineList: polylines,
+					stationMakers: stations
 				}
 			}
 		}
@@ -235,7 +239,7 @@ export function showPolyline(dialog: LineDialogProps, polylines: Array<PolylineP
 
 export function showHighVoronoi(nav: StationDialogNav) {
 	var next = { ...nav }
-	next.data.show_high_voronoi = true
+	next.data.showHighVoronoi = true
 	store.dispatch({
 		type: ActionType.SET_NAV_STATE,
 		payload: {
@@ -272,7 +276,7 @@ function updateNavStateIdleWatchinLocation(pos: LatLng, list: Array<RadarStation
 						type: DialogType.CURRENT_POSITION,
 						props: {
 							station: station,
-							radar_list: list,
+							radarList: list,
 							prefecture: StationService.get_prefecture(station.prefecture),
 							position: pos,
 							dist: StationService.measure(station.position, pos),
