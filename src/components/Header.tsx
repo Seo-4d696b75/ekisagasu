@@ -1,16 +1,17 @@
 import React, { FC, useMemo, useState } from "react";
-import { connect } from "react-redux";
+import { connect, useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { CSSTransition } from "react-transition-group";
 import img_delete from "../img/ic_delete.png";
 import img_help from "../img/ic_help.png";
 import img_search from "../img/ic_search.png";
 import img_setting from "../img/ic_settings.png";
-import * as Action from "../script/Actions";
 import { createEvent, createIdleEvent } from "../script/Event";
 import { GlobalState } from "../script/Reducer";
+import { RootState } from "../script/store_";
 import "./Header.css";
 import StationSearchBox, { StationSuggestion } from "./StationSearchBox";
+import * as action from "../script/actions_";
 
 interface HeaderProps {
   radarK: number
@@ -30,7 +31,15 @@ function mapGlobalState2Props(state: GlobalState): HeaderProps {
   }
 }
 
-const Header: FC<HeaderProps> = ({ radarK, showPosition, showStationPin, highAccuracy }) => {
+const Header: FC = () => {
+  const {
+    radarK,
+    watchCurrentLocation,
+    showStationPin,
+    isHighAccuracyLocation,
+  } = useSelector((state: RootState) => state.mapState)
+  const dispatch = useDispatch()
+
   const [showSetting, setShowSetting] = useState(false)
   const [showSearchBox, setShowSearchBox] = useState(false)
   const [inputFocusRequest, setInputFocusRequest] = useState(createIdleEvent<void>())
@@ -38,11 +47,11 @@ const Header: FC<HeaderProps> = ({ radarK, showPosition, showStationPin, highAcc
   const onRadarKChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log("radar-k chnaged", e.target.value)
     var k = parseInt(e.target.value)
-    Action.setRadarK(k)
+    dispatch(action.setRadarK(k))
   }
 
   const showStationItem = (item: StationSuggestion) => {
-    Action.requestShowStationItem(item)
+    dispatch(action.requestShowStationItem(item))
     setShowSearchBox(false)
   }
 
@@ -119,12 +128,12 @@ const Header: FC<HeaderProps> = ({ radarK, showPosition, showStationPin, highAcc
         <input id="toggle-position"
           className="toggle-input"
           type='checkbox'
-          checked={showPosition}
-          onChange={(e) => Action.setWatchCurrentPosition(e.target.checked)} />
+          checked={watchCurrentLocation}
+          onChange={(e) => dispatch(action.setWatchCurrentLocation(e.target.checked))} />
         <label htmlFor="toggle-position" className="toggle-label" />
       </div>
     </div>
-  ), [showPosition])
+  ), [watchCurrentLocation])
 
   const settingAccuracySection = useMemo(() => (
     <div className="switch-container">
@@ -133,12 +142,12 @@ const Header: FC<HeaderProps> = ({ radarK, showPosition, showStationPin, highAcc
         <input id="toggle-accuracy"
           className="toggle-input"
           type='checkbox'
-          checked={highAccuracy}
-          onChange={(e) => Action.setPositionAccuracy(e.target.checked)} />
+          checked={isHighAccuracyLocation}
+          onChange={(e) => dispatch(action.setHighAccuracyLocation(e.target.checked))} />
         <label htmlFor="toggle-accuracy" className="toggle-label" />
       </div>
     </div>
-  ), [highAccuracy])
+  ), [isHighAccuracyLocation])
 
   const settingStationPinSection = useMemo(() => (
     <div className="switch-container">
@@ -148,23 +157,25 @@ const Header: FC<HeaderProps> = ({ radarK, showPosition, showStationPin, highAcc
           className="toggle-input"
           type='checkbox'
           checked={showStationPin}
-          onChange={(e) => Action.setShowStationPin(e.target.checked)} />
+          onChange={(e) => dispatch(action.setShowStationPin(e.target.checked))} />
         <label htmlFor="toggle-pin" className="toggle-label" />
       </div>
     </div>
   ), [showStationPin])
 
-  const settingSection = useMemo(() => {
-    //console.log("render: setting dialog")
-    return (
+  return (
+    <div className='Map-header'>
+      <div className="Header-frame">
+        <div className="App-title"> 駅サガース </div>
+        {searchBoxSection}
+        {actionButtonSection}
+      </div>
       <CSSTransition
         in={showSetting}
         className="Setting-container"
         timeout={400}>
-
         <div className="Setting-container">
           <div className="Setting-frame">
-
             <img
               src={img_delete}
               alt="close dialog"
@@ -176,19 +187,7 @@ const Header: FC<HeaderProps> = ({ radarK, showPosition, showStationPin, highAcc
             {settingStationPinSection}
           </div>
         </div>
-
       </CSSTransition>
-    )
-  }, [showSetting, radarK, showPosition, highAccuracy, showStationPin])
-
-  return (
-    <div className='Map-header'>
-      <div className="Header-frame">
-        <div className="App-title"> 駅サガース </div>
-        {searchBoxSection}
-        {actionButtonSection}
-      </div>
-      {settingSection}
     </div>
   )
 }

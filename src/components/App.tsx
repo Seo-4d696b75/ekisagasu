@@ -5,7 +5,7 @@ import Map from './Map'
 import Help from './Help'
 import { HashRouter, Route } from 'react-router-dom';
 import { Provider } from "react-redux"
-import { store } from "../script/Store"
+import { store } from "../script/store_"
 import qs from "query-string"
 
 export default class APP extends React.Component {

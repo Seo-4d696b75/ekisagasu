@@ -13,14 +13,15 @@ import { CircularProgress } from "@material-ui/core"
 import { Station } from "../script/Station"
 import { Line } from "../script/Line"
 import { GlobalState } from "../script/Reducer"
-import * as Actions from "../script/Actions"
-import { connect } from "react-redux"
+import { connect, useDispatch } from "react-redux"
 import { PropsEvent } from "../script/Event"
 import qs from "query-string"
 import { CurrentPosDialog } from "./CurrentPosDialog"
 import { StationDialog } from "./StationDialog"
 import { NavState, NavType, isStationDialog, isInfoDialog, DialogType, StationDialogProps, CurrentPosDialogProps, LineDialogProps, SelectPosDialogProps } from "./MapNavState"
 import { CurrentPosIcon } from "./MapSections"
+import * as action from "../script/actions_"
+import { AppDispatch } from "../script/store_"
 
 const VORONOI_COLOR = [
   "#0000FF",
@@ -73,14 +74,6 @@ function getUIEvent(clickEvent: any): UIEvent {
   throw Error("UIEvent not found")
 }
 
-function showStation(station: Station) {
-  Actions.requestShowStation(station)
-}
-
-function showLine(line: Line) {
-  Actions.requestShowLine(line)
-}
-
 const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurrentPosition, showStationPin, nav, focus, currentLocation, currentLocationUpdate, voronoi, query }) => {
 
   const [hideVoronoi, setHideVoronoi] = useState(false)
@@ -112,9 +105,19 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
     }
   }, [])
 
+  const dispatch = useDispatch<AppDispatch>()
+
+  const showStation = (station: Station) => {
+    dispatch(action.requestShowStation(station))
+  }
+
+  const showLine = (line: Line) => {
+    dispatch(action.requestShowLine(line))
+  }
+
   const moveToCurrentPosition = (pos: google.maps.LatLng | null) => {
     console.log("moveToCurrentPosition")
-    Actions.setNavStateIdle()
+    dispatch(action.setNavStateIdle())
     const map = googleMapRef.current
     if (pos && map) {
       map.panTo(pos)
@@ -148,7 +151,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
         lng: pos.coords.longitude
       }
       map.setCenter(latlng)
-      Actions.setCurrentPosition(pos)
+      dispatch(action.setCurrentLocation(pos))
     }).catch(err => {
       console.log(err)
       alert("現在位置を利用できません. ブラウザから位置情報へのアクセスを許可してください.")
@@ -162,7 +165,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
     }
     if (!isStationDialog(nav)) return
     if (nav.data.showHighVoronoi) {
-      Actions.setNavStateIdle()
+      dispatch(action.setNavStateIdle())
       return
     }
     const worker = new VoronoiWorker()
@@ -215,7 +218,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
         worker.terminate()
         workerRef.current = null
         setWorkerRunning(false)
-        Actions.setNavStateIdle()
+        dispatch(action.setNavStateIdle())
       }
     })
 
@@ -230,7 +233,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
     }
     setWorkerRunning(true)
     setHighVoronoi([])
-    Actions.showHighVoronoi(nav)
+    dispatch(action.requestShowHighVoronoi(nav))
     worker.postMessage(JSON.stringify({
       type: 'start',
       container: container,
@@ -258,11 +261,11 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
       }]
       bounds = data
     }
-    Actions.showPolyline(
-      nav.data.dialog,
-      polyline,
-      line.station_list.map(s => s.position)
-    )
+    dispatch(action.requestShowPolyline({
+      dialog: nav.data.dialog,
+      polylines: polyline,
+      stations: line.station_list.map(s => s.position),
+    }))
     const mapElement = mapElementRef.current
     if (mapElement) {
       var rect = mapElement.getBoundingClientRect()
@@ -274,7 +277,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
     }
   }
 
-  const onMapReady = (props?: IMapProps, map?: google.maps.Map, event?: any) => {
+  const onMapReady = async (props?: IMapProps, map?: google.maps.Map, event?: any) => {
     console.log("map ready", props)
     if (map) {
 
@@ -287,47 +290,50 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
           style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
         }
       })
-      Actions.setNavStateIdle()
+      dispatch(action.setNavStateIdle())
 
-      StationService.initialize().then(s => {
-        // parse query actions
-        if (typeof query.line == 'string') {
-          console.log('query: line', query.line)
-          var line = s.get_line_by_id(query.line)
-          if (line) {
-            Actions.requestShowLine(line).then(l => {
-              showPolyline(l)
-            })
-            return
+      const s = await StationService.initialize()
+      // parse query actions
+      if (typeof query.line == 'string') {
+        console.log('query: line', query.line)
+        var line = s.get_line_by_id(query.line)
+        if (line) {
+          try {
+            let result = await dispatch(action.requestShowLine(line)).unwrap()
+            showPolyline(result.line)
+          } catch (e) {
+            console.warn("fail to show line details. query:", query.line, e)
           }
-        }
-        if (typeof query.station == 'string') {
-          console.log('query: station', query.station)
-          s.get_station_by_id(query.station).then(station => {
-            if (station) {
-              Actions.requestShowStation(station).then(() => {
-                if (typeof query.voronoi == 'string') {
-                  const str = query.voronoi.toLowerCase().trim()
-                  if (Utils.parseQueryBoolean(str)) {
-                    showRadarVoronoi(station)
-                  }
-                }
-              })
-            } else {
-              setCenterCurrentPosition(map)
-            }
-          })
           return
         }
-        if (typeof query.mylocation == 'string') {
-          console.log('query: location', query.mylocation)
-          if (Utils.parseQueryBoolean(query.mylocation)) {
-            Actions.setWatchCurrentPosition(true)
+      }
+      if (typeof query.station == 'string') {
+        console.log('query: station', query.station)
+        try {
+          let result = await dispatch(action.requestShowStationPromise(
+            s.get_station_by_id(query.station)
+          )).unwrap()
+          if (typeof query.voronoi == 'string') {
+            const str = query.voronoi.toLowerCase().trim()
+            if (Utils.parseQueryBoolean(str)) {
+              showRadarVoronoi(result.station)
+            }
           }
+        } catch (e) {
+          console.warn("fail to show station, query:", query.station, e)
+          setCenterCurrentPosition(map)
         }
-        // if no query, set map center current position
-        setCenterCurrentPosition(map)
-      })
+        return
+      }
+      if (typeof query.mylocation == 'string') {
+        console.log('query: location', query.mylocation)
+        if (Utils.parseQueryBoolean(query.mylocation)) {
+          dispatch(action.setWatchCurrentLocation(true))
+        }
+      }
+      // if no query, set map center current position
+      setCenterCurrentPosition(map)
+
     }
   }
 
@@ -360,14 +366,13 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
       setWorkerRunning(false)
       console.log("worker terminated")
     }
-    //Actions.closeDialog() // delay setting nav state idle until animation complated
-    Actions.setNavStateIdle()
+    dispatch(action.setNavStateIdle())
   }
 
   const focusAt = (pos: Utils.LatLng) => {
     if (!StationService.initialized) return
     if (isStationDialog(nav) && nav.data.showHighVoronoi) return
-    Actions.requestShowPosition(pos)
+    dispatch(action.requestShowSelectedPosition(pos))
   }
 
   const focusAtNearestStation = (pos: Utils.LatLng) => {
@@ -375,7 +380,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
     if (isStationDialog(nav) && nav.data.showHighVoronoi) return
     StationService.update_location(pos, radarK, 0).then(s => {
       console.log("update location", s)
-      if (s) Actions.requestShowStation(s)
+      if (s) dispatch(action.requestShowStation(s))
     })
   }
 
@@ -727,7 +732,7 @@ function useCurrentPosDialog(nav: NavState): CurrentPosDialogProps | undefined {
   if (nav.type === NavType.IDLE && nav.data.dialog) {
     ref.current = nav.data.dialog
   }
-  if(isInfoDialog(nav)) return undefined
+  if (isInfoDialog(nav)) return undefined
   return ref.current
 }
 

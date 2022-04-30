@@ -90,7 +90,7 @@ export type SelectPosDialogNav = NavStateBase<NavType.DIALOG_SELECT_POS, {
   showHighVoronoi: boolean
 }>
 
-type LineDialogNav = NavStateBase<NavType.DIALOG_LINE, {
+export type LineDialogNav = NavStateBase<NavType.DIALOG_LINE, {
   dialog: LineDialogProps
   showPolyline: boolean
   polylineList: Utils.PolylineProps[]
