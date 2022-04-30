@@ -1,0 +1,127 @@
+import { createSlice, PayloadAction } from "@reduxjs/toolkit"
+import { DialogType, NavState, NavType, StationDialogNav } from "../components/MapNavState"
+import { appendLoadedStation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStation, requestShowStationPromise, setCurrentLocation, setHighAccuracyLocation, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions_"
+import { createEvent, createIdleEvent, PropsEvent } from "./Event"
+import { Station } from "./Station"
+import { CurrentLocation, LatLng } from "./Utils"
+
+export interface GlobalMapState {
+  radarK: number
+  watchCurrentLocation: boolean
+  showStationPin: boolean
+  isHighAccuracyLocation: boolean
+  currentLocation: CurrentLocation | null
+  currentPositionUpdate: PropsEvent<google.maps.LatLng>
+  nav: NavState
+  mapFocusRequest: PropsEvent<LatLng>
+  stations: Station[]
+}
+
+const initUserSetting: GlobalMapState = {
+  radarK: 18,
+  watchCurrentLocation: false,
+  showStationPin: true,
+  isHighAccuracyLocation: false,
+  currentLocation: null,
+  currentPositionUpdate: createIdleEvent(),
+  nav: {
+    type: NavType.LOADING,
+    data: null
+  },
+  mapFocusRequest: createIdleEvent(),
+  stations: [],
+}
+
+export const userSettingSlice = createSlice({
+  name: "map",
+  initialState: initUserSetting,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(setRadarK.fulfilled, (state, action) => {
+        state.radarK = action.payload.k
+        state.nav = (action.payload.nav ?? state.nav)
+      })
+      .addCase(setWatchCurrentLocation.fulfilled, (state, action) => {
+        state.watchCurrentLocation = action.payload.watch
+        state.nav = (action.payload.nav ?? state.nav)
+      })
+      .addCase(setShowStationPin, (state, action) => {
+        state.showStationPin = action.payload
+      })
+      .addCase(setHighAccuracyLocation, (state, action) => {
+        state.isHighAccuracyLocation = action.payload
+      })
+      .addCase(setCurrentLocation, (state, action) => {
+        const coords = action.payload.coords
+        const loc = {
+          position: new google.maps.LatLng(coords.latitude, coords.longitude),
+          accuracy: coords.accuracy,
+          heading: coords.heading
+        }
+        const previous = state.currentLocation?.position
+        state.currentLocation = loc
+        state.currentPositionUpdate = (previous && loc.position.equals(previous)) ?
+          state.currentPositionUpdate : createEvent(loc.position)
+      })
+      .addCase(requestShowSelectedPosition.fulfilled, (state, action) => {
+        state.nav = action.payload.nav
+        state.mapFocusRequest = createEvent(action.payload.focus)
+      })
+      .addCase(requestShowStationPromise.fulfilled, (state, action) => {
+        state.nav = action.payload.nav
+        state.mapFocusRequest = createEvent(action.payload.focus)
+      })
+      .addCase(requestShowLine.pending, (state, action) => {
+        let line = action.meta.arg
+        let next: NavState = {
+          type: NavType.DIALOG_LINE,
+          data: {
+            dialog: {
+              type: DialogType.LINE,
+              props: {
+                line: line,
+                line_details: line.has_details,
+              }
+            },
+            polylineList: [],
+            stationMakers: [],
+            showPolyline: false,
+          }
+        }
+        state.nav = next
+      })
+      .addCase(requestShowLine.fulfilled, (state, action) => {
+        state.nav = action.payload.nav
+      })
+      .addCase(requestShowPolyline, (state,action)=>{
+        state.nav = {
+          type: NavType.DIALOG_LINE,
+          data: {
+            dialog: action.payload.dialog,
+            showPolyline: true,
+            polylineList: action.payload.polylines,
+            stationMakers: action.payload.stations
+          }
+        }
+      })
+      .addCase(requestShowHighVoronoi, (state,action) => {
+        let next: StationDialogNav = {
+          ...action.payload
+        }
+        next.data.showHighVoronoi = true
+        state.nav = next
+      })
+      .addCase(setNavStateIdle.fulfilled, (state, action)=>{
+        state.nav = action.payload
+      })
+      .addCase(appendLoadedStation, (state, action) => {
+        state.stations = [
+          ...state.stations,
+          ...action.payload,
+        ]
+      })
+  }
+})
+
+export default userSettingSlice.reducer
