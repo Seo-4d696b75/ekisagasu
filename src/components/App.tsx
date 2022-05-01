@@ -6,7 +6,6 @@ import Help from './Help'
 import { HashRouter, Route } from 'react-router-dom';
 import { Provider } from "react-redux"
 import { store } from "../script/store_"
-import qs from "query-string"
 
 export default class APP extends React.Component {
 
@@ -19,7 +18,7 @@ export default class APP extends React.Component {
 							<div>
 								<Provider store={store}>
 									<Header></Header>
-									<Map query={qs.parse(props.location.search)}></Map>
+									<Map></Map>
 								</Provider>
 							</div>
 						)

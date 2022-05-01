@@ -2,7 +2,7 @@ import { CircularProgress } from "@material-ui/core"
 import axios from "axios"
 import { FC, useEffect, useMemo, useRef, useState } from "react"
 import Autosuggest from 'react-autosuggest'
-import { PropsEvent } from "../script/Event"
+import { handleIf, PropsEvent } from "../script/Event"
 import Service from "../script/StationService"
 import "./StationSearchBox.css"
 
@@ -83,7 +83,7 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
   }
 
   useEffect(() => {
-    inputFocusRequested.observe("search-box", () => {
+    handleIf(inputFocusRequested, () => {
       //console.log("focus")
       if (inputRef.current && inputRef.current.input) {
         inputRef.current.input.focus()

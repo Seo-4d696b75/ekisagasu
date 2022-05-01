@@ -24,12 +24,12 @@ export const LineDialog: FC<LineInfoProps> = ({ info, onClosed, onStationSelecte
   }
 
   const line = info.props.line
-  const hasDetails = info.props.line_details
+  const lineDetails = info.props.line.detail
 
   const onClosedRef = useRefCallback(onClosed)
 
   const showPolylineRef = useRefCallback(() => {
-    if (line.has_details) {
+    if (line.detail) {
       onShowPolyline(line)
     }
   })
@@ -42,7 +42,7 @@ export const LineDialog: FC<LineInfoProps> = ({ info, onClosed, onStationSelecte
           <div className="icon-line big" style={{ backgroundColor: line.color }}></div>
           <div className="title-container line">
             <p className="title-name">{line.name}</p>
-            <p className="title-name kana">{line.name_kana}</p>
+            <p className="title-name kana">{line.nameKana}</p>
           </div>
         </div>
 
@@ -75,19 +75,19 @@ export const LineDialog: FC<LineInfoProps> = ({ info, onClosed, onStationSelecte
     console.log("render: station list")
     return (
       <div className="container-accordion station-list">
-        {hasDetails ? (
+        {lineDetails ? (
           <div className="scroll-container stations">
             <table>
               <tbody>
 
-                {line.station_list.map((station, index) => {
+                {lineDetails.stations.map((station, index) => {
                   return (
                     <tr key={index}
                       onClick={() => onStationSelectedRef(station)}
                       className="list-cell station">
                       <td className="station-cell">
                         <span className="station-item name">{station.name}</span>&nbsp;
-                        <span className="station-item name-kana">{station.name_kana}</span>
+                        <span className="station-item name-kana">{station.nameKana}</span>
                       </td>
                     </tr>
                   );
@@ -109,7 +109,7 @@ export const LineDialog: FC<LineInfoProps> = ({ info, onClosed, onStationSelecte
         </div>
       </div>
     )
-  }, [line, hasDetails])
+  }, [lineDetails])
 
   return (
     <div className="info-dialog">

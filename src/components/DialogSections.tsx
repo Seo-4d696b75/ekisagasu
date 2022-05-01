@@ -25,7 +25,7 @@ export const StationTitle: FC<{ station: Station }> = ({ station }) => {
     return (
       <div className="title-container station">
         <p className="title-name">{station.name}</p>
-        <p className="title-name kana">{station.name_kana}</p>
+        <p className="title-name kana">{station.nameKana}</p>
       </div>
     )
   }, [station])
@@ -51,7 +51,7 @@ export const StationDetails: FC<StationDetailProps> = ({ info, onLineSelected })
               onClick={() => onLineSelectedRef(line)}
               className="list-cell line">
               <td className="line-item icon"><div className="icon-line" style={{ backgroundColor: line.color }} /></td>
-              <td className="line-item line">{line.name}&nbsp;&nbsp;<small>{line.station_size}駅</small></td>
+              <td className="line-item line">{line.name}&nbsp;&nbsp;<small>{line.stationSize}駅</small></td>
             </tr>
           )
         })}
