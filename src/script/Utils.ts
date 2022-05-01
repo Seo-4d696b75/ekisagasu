@@ -1,7 +1,10 @@
 import { Station } from "./Station"
 
+/**
+ * Serializable location data similer with GeoLocationPosition
+ */
 export interface CurrentLocation {
-  position: google.maps.LatLng,
+  position: LatLng,
   accuracy: number
   heading: number | null
 }
