@@ -11,7 +11,7 @@ export interface GlobalMapState {
   showStationPin: boolean
   isHighAccuracyLocation: boolean
   currentLocation: CurrentLocation | null
-  currentPositionUpdate: PropsEvent<google.maps.LatLng>
+  currentPositionUpdate: PropsEvent<LatLng>
   nav: NavState
   mapFocusRequest: PropsEvent<LatLng>
   stations: Station[]
@@ -49,20 +49,16 @@ export const userSettingSlice = createSlice({
       .addCase(setShowStationPin, (state, action) => {
         state.showStationPin = action.payload
       })
-      .addCase(setHighAccuracyLocation, (state, action) => {
+      .addCase(setHighAccuracyLocation.fulfilled, (state, action) => {
         state.isHighAccuracyLocation = action.payload
       })
-      .addCase(setCurrentLocation, (state, action) => {
-        const coords = action.payload.coords
-        const loc = {
-          position: new google.maps.LatLng(coords.latitude, coords.longitude),
-          accuracy: coords.accuracy,
-          heading: coords.heading
-        }
+      .addCase(setCurrentLocation.fulfilled, (state, action) => {
+        const loc = action.payload
         const previous = state.currentLocation?.position
         state.currentLocation = loc
-        state.currentPositionUpdate = (previous && loc.position.equals(previous)) ?
-          state.currentPositionUpdate : createEvent(loc.position)
+        state.currentPositionUpdate =
+          (previous && loc.position.lat === previous.lat && loc.position.lng === previous.lng) ?
+            state.currentPositionUpdate : createEvent(loc.position)
       })
       .addCase(requestShowSelectedPosition.fulfilled, (state, action) => {
         state.nav = action.payload.nav
@@ -81,7 +77,6 @@ export const userSettingSlice = createSlice({
               type: DialogType.LINE,
               props: {
                 line: line,
-                line_details: line.has_details,
               }
             },
             polylineList: [],
@@ -94,7 +89,7 @@ export const userSettingSlice = createSlice({
       .addCase(requestShowLine.fulfilled, (state, action) => {
         state.nav = action.payload.nav
       })
-      .addCase(requestShowPolyline, (state,action)=>{
+      .addCase(requestShowPolyline, (state, action) => {
         state.nav = {
           type: NavType.DIALOG_LINE,
           data: {
@@ -105,14 +100,14 @@ export const userSettingSlice = createSlice({
           }
         }
       })
-      .addCase(requestShowHighVoronoi, (state,action) => {
+      .addCase(requestShowHighVoronoi, (state, action) => {
         let next: StationDialogNav = {
           ...action.payload
         }
         next.data.showHighVoronoi = true
         state.nav = next
       })
-      .addCase(setNavStateIdle.fulfilled, (state, action)=>{
+      .addCase(setNavStateIdle.fulfilled, (state, action) => {
         state.nav = action.payload
       })
       .addCase(appendLoadedStation, (state, action) => {
