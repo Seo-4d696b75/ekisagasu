@@ -1,6 +1,4 @@
 
-export type Observer<T> = (value: T) => void
-
 enum EventState {
   Idle,
   Active,
@@ -15,33 +13,22 @@ type ActiveEvent<T> = {
   value: T
 }
 
-type EventValue<T> = IdleEvent | ActiveEvent<T>
+export type PropsEvent<T> =
+  IdleEvent | ActiveEvent<T>
 
-export class PropsEvent<T> {
-
-  constructor(value: EventValue<T>){
-    this.value = value
+export function handleIf<T>(event: PropsEvent<T>, handler: (value: T) => void) {
+  if (event.state === EventState.Active) {
+    handler(event.value)
   }
-
-  value: EventValue<T>
-  history = new Set<string>()
-
-  observe(key: string, observer: Observer<T>){
-    if ( this.value.state === EventState.Active && !this.history.has(key) ){
-      this.history.add(key)
-      observer(this.value.value)
-    }
-  }
-
 }
 
-export function createIdleEvent<T>(): PropsEvent<T>{
-  return new PropsEvent({state: EventState.Idle})
+export function createIdleEvent<T>(): PropsEvent<T> {
+  return { state: EventState.Idle }
 }
 
-export function createEvent<T>(value: T): PropsEvent<T>{
-  return new PropsEvent({
+export function createEvent<T>(value: T): PropsEvent<T> {
+  return {
     state: EventState.Active,
     value: value,
-  })
+  }
 }
