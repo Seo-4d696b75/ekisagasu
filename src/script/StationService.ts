@@ -7,9 +7,26 @@ import * as Actions from "./Actions"
 
 const TAG_SEGMENT_PREFIX = "station-segment:"
 
-async function awaitWith<T>(task: Promise<T>, run: (result: T) => void) {
-  const result = await task
-  run(result)
+interface StationNodeResponse extends StationAPIResponse {
+  left?: number
+  right?: number
+  segment: undefined
+}
+
+interface StationLeafNodeResponse {
+  code: number
+  segment: string
+}
+
+function isStationLeafNode(node: StationNodeResponse | StationLeafNodeResponse): node is StationLeafNodeResponse {
+  return node.segment !== undefined
+}
+
+interface StationTreeSegmentResponse {
+  name: string
+  root: number
+  station_size: number
+  node_list: (StationNodeResponse | StationLeafNodeResponse)[]
 }
 
 export class StationService {
@@ -90,22 +107,21 @@ export class StationService {
       this.lines_id.clear()
       this.prefecture.clear()
       this.tree = await new StationKdTree(this).initialize("root")
-      awaitWith(axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/line.json`), res => {
-        res.data.forEach(d => {
-          var line = new Line(d)
+      let lineRes = await axios.get<LineAPIResponse[]>(`${process.env.REACT_APP_DATA_BASE_URL}/line.json`)
+      lineRes.data.forEach(d => {
+        let line = parseLine(d)
           this.lines.set(line.code, line)
           this.lines_id.set(line.id, line)
         })
-      })
-      awaitWith(axios.get(process.env.REACT_APP_PREFECTURE_URL), res => {
+
+      let prefectureRes = await axios.get<string>(process.env.REACT_APP_PREFECTURE_URL)
         this.prefecture = new Map()
-        res.data.split('\n').forEach((line: string) => {
+      prefectureRes.data.split('\n').forEach((line: string) => {
           var cells = line.split(',')
           if (cells.length === 2) {
             this.prefecture.set(parseInt(cells[0]), cells[1])
           }
         })
-      })
       console.log('service initialized', this)
       this.initialized = true
       return this
@@ -290,30 +306,10 @@ export class StationService {
     // 単一のupdate_** 呼び出しでも同一segmentが複数から要求される
     const tag = `line-details-${code}`
     return this.runSync(tag, async () => {
-      if (line.has_details) return line
-      const res = await axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/line/${code}.json`)
-      const data = res.data
-      line.station_list = data["station_list"].map(item => {
-        var c = item['code']
-        var s = this.stations.get(c)
-        if (s) return s
-        s = new Station(item)
-        this.stations.set(c, s)
-        this.stations_id.set(s.id, s)
-        return s
-      })
-      const polyline = data.polyline_list
-      if (polyline) {
-        if (polyline['type'] !== 'FeatureCollection') console.error("invalide line polyline", polyline)
-        line.polyline_list = polyline["features"].map(d => Utils.parse_polyline(d))
-        const prop = polyline['properties']
-        line.north = prop['north']
-        line.south = prop['south']
-        line.east = prop['east']
-        line.west = prop['west']
-      }
-      line.has_details = true
-      this.tasks.set(tag, null)
+      if (line.detail) return line
+      let res = await axios.get<LineDetailAPIResponse>(`${process.env.REACT_APP_DATA_BASE_URL}/line/${code}.json`)
+      let detail = parseLineDetail(res.data)
+      line.detail = detail
       return line
     })
   }
@@ -322,17 +318,16 @@ export class StationService {
     return this.prefecture.get(code) as string
   }
 
-  get_tree_segment(name: string): Promise<any> {
+  get_tree_segment(name: string): Promise<StationTreeSegmentResponse> {
     const tag = `${TAG_SEGMENT_PREFIX}${name}`
     // be sure to avoid loading the same segment
-    return this.runSync(tag, async (result) => {
-      if (result) return result
-      const res = await axios.get(`${process.env.REACT_APP_DATA_BASE_URL}/tree/${name}.json`)
+    return this.runSync(tag, async () => {
+      const res = await axios.get<StationTreeSegmentResponse>(`${process.env.REACT_APP_DATA_BASE_URL}/tree/${name}.json`)
       console.log("tree-segment", name, res.data)
       const data = res.data
-      var list = data.node_list.filter(e => {
-        return !e.segment
-      }).map(e => new Station(e))
+      var list = data.node_list.map(e => {
+        return isStationLeafNode(e) ? null : parseStation(e)
+      }).filter((e): e is Station => e !== null)
       list.forEach(s => {
         this.stations.set(s.code, s)
         this.stations_id.set(s.id, s)

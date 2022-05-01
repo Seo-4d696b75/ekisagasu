@@ -1,36 +1,86 @@
-import { Station } from "./Station"
+import { parseStation, Station, StationAPIResponse } from "./Station"
 import { PolylineProps } from "./Utils"
 
-export class Line {
+export interface Line {
 
+	id: string
+	code: number
+	name: string
+	nameKana: string
+	stationSize: number
+	color: string
+
+	detail?: LineDetail
+}
+
+export interface LineDetail {
+  stations: Station[]
+  polylines: PolylineProps[]
+  north: number
+  south: number
+  east: number
+  west: number
+}
+
+export interface LineAPIResponse {
 	id: string
 	code: number
 	name: string
 	name_kana: string
 	station_size: number
-	color: string
+	color?: string
+}
 
-	has_details: boolean
+export interface LineDetailAPIResponse extends LineAPIResponse {
+  station_list: StationAPIResponse[]
+  polyline_list?: {
+    type: "FeatureCollection",
+    features: {
+      type: "Feature"
+      geometry: {
+        type: "LineString"
+        coordinates: number[][]
+      },
+      properties: {
+        start: string
+        end: string
+      }
+    }[]
+    properties: {
+      north: number
+      south: number
+      east: number
+      west: number
+    }
+  }
+}
 
-	station_list: Array<Station> = []
-	polyline_list: Array<PolylineProps> = []
-	north: number = 90
-	south: number = 0
-	east: number = 180
-	west: number = 0
-
-	constructor(data) {
-		this.id = data['id']
-		this.code = data['code']
-		this.name = data['name']
-		this.name_kana = data['name_kana']
-		this.station_size = data['station_size']
-		if (data['color']) {
-			this.color = data['color']
-		} else {
-			this.color = '#CCCCCC'
-		}
-		this.has_details = false
+export function parseLine(data: LineAPIResponse): Line {
+  return {
+	  id: data['id'],
+		code: data['code'],
+		name: data['name'],
+		nameKana: data['name_kana'],
+		stationSize: data['station_size'],
+    color: data['color'] ?? '#CCCCCC',
 	}
+}
 
+export function parseLineDetail(data: LineDetailAPIResponse): LineDetail {
+  const collection = data.polyline_list
+  return {
+    stations: data.station_list.map(e => parseStation(e)),
+    polylines: collection?.features?.map(e => {
+      let points = e.geometry.coordinates.map(p => ({lat: p[1], lng: p[0]}))
+      return {
+        points: points,
+        start: e.properties.start,
+        end: e.properties.end,
+      }
+    }) ?? [],
+    north: collection?.properties?.north ?? 90,
+    south: collection?.properties?.south ?? -90,
+    east: collection?.properties?.east ?? 180,
+    west: collection?.properties?.west ?? -180,
+  }
 }
