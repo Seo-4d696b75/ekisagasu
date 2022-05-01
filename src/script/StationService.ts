@@ -70,30 +70,25 @@ export class StationService {
    *             - 該当する実行中の別タスクが存在しない場合はnullを渡し即座にtaskを実行
    * @returns task の実行結果
    */
-  async runSync<T>(tag: string, task: (awaitResult: T | null) => Promise<T>): Promise<T> {
-    var result: any = null
-    var wait = false
-    const id = this.task_id
+  async runSync<T>(tag: string, task: () => Promise<T>): Promise<T> {
     this.task_id += 1
     while (true) {
       const running = this.tasks.get(tag)
       if (running) {
-        wait = true
         //console.log(`runSync(id:${id}) wait:`, tag)
-        result = await running
+        await running
       } else {
         //console.log(`runSync(id:${id}) wait: ${wait} run:`, tag)
         break
       }
     }
-    const awaitResult = wait ? result as T : null
-    const next = (typeof task === 'function' ? task(awaitResult) : task).then(r => {
+    const next = task().then(r => {
       this.tasks.set(tag, null)
       //console.log(`runSync(id:${id}) done:`, tag)
       return r
     })
     this.tasks.set(tag, next)
-    return next
+    return await next
   }
 
   async initialize(): Promise<StationService> {
@@ -204,7 +199,7 @@ export class StationService {
        同時に update_**を呼び出すと前回の探索が終了する前に別の探索が走る場合があり得る
        KdTreeは内部状態を持つ実装のため挙動が予想できない
     */
-    return this.runSync("update_location", async () => {
+    return await this.runSync("update_location", async () => {
       if (this.tree) {
         return this.tree.updateLocation(position, k, r)
       } else {
@@ -213,9 +208,9 @@ export class StationService {
     })
   }
 
-  update_rect(rect: Utils.RectBounds, max: number = Number.MAX_SAFE_INTEGER): Promise<Station[]> {
+  async update_rect(rect: Utils.RectBounds, max: number = Number.MAX_SAFE_INTEGER): Promise<Station[]> {
     if (max < 1) max = 1
-    return this.runSync("update_location", async () => {
+    return await this.runSync("update_location", async () => {
       if (this.tree) {
         return this.tree.updateRectRegion(rect, max)
       } else {
