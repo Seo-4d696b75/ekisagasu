@@ -197,7 +197,10 @@ export class StationKdTree {
 	getNearStations(size: number): Array<Station> {
 		if (!this.search_list) return [];
 		if (size < 0) size = 0;
-		if (size > this.search_list.length) size = this.search_list.length;
+		if (size > this.search_list.length) {
+      console.warn("getNearStations size longer than actual", size, this.search_list.length)
+      size = this.search_list.length;
+    }
 		return this.search_list.slice(0, size).map(e => e.station);
 	}
 
