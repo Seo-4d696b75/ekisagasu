@@ -38,13 +38,25 @@ export type CurrentPosDialogProps = DialogPropsBase<DialogType.CURRENT_POSITION,
 
 export type LineDialogProps = DialogPropsBase<DialogType.LINE, {
   line: Line
-  line_details: boolean
 }>
 
 export type StationDialogProps =
   StationPosDialogProps |
   SelectPosDialogProps |
   CurrentPosDialogProps
+
+type DialogProps =
+  StationDialogProps |
+  LineDialogProps
+
+function copyDialogProps(dialog: DialogProps): DialogProps {
+  return {
+    type: dialog.type,
+    props: {
+      ...dialog.props
+    }
+  } as DialogProps
+}
 
 export enum NavType {
   LOADING,
@@ -113,3 +125,45 @@ export type NavState =
   InfoDialogNav |
   NavStateBase<NavType.LOADING, null> |
   IdleNav
+
+export function copyNavState(state: NavState): NavState {
+  switch (state.type) {
+    case NavType.DIALOG_LINE: {
+      return {
+        type: NavType.DIALOG_LINE,
+        data: {
+          dialog: copyDialogProps(state.data.dialog) as LineDialogProps,
+          showPolyline: state.data.showPolyline,
+          polylineList: state.data.polylineList,
+          stationMakers: state.data.stationMakers,
+        }
+      }
+    }
+    case NavType.DIALOG_SELECT_POS:
+    case NavType.DIALOG_STATION_POS: {
+      return {
+        type: state.type,
+        data: {
+          dialog: copyDialogProps(state.data.dialog),
+          showHighVoronoi: state.data.showHighVoronoi,
+        }
+      } as StationDialogNav
+    }
+    case NavType.IDLE: {
+      return {
+        type: NavType.IDLE,
+        data: {
+          dialog: state.data.dialog ?
+            copyDialogProps(state.data.dialog) as CurrentPosDialogProps
+            : null
+        }
+      }
+    }
+    case NavType.LOADING: {
+      return {
+        type: NavType.LOADING,
+        data: null,
+      }
+    }
+  }
+}
