@@ -1,9 +1,10 @@
 import axios from "axios"
 import { StationKdTree } from "./KdTree"
-import { Station } from "./Station"
-import { Line } from "./Line"
+import { parseStation, Station, StationAPIResponse } from "./Station"
+import { Line, LineAPIResponse, LineDetailAPIResponse, parseLine, parseLineDetail } from "./Line"
 import * as Utils from "./Utils"
-import * as Actions from "./Actions"
+import * as actions from "./actions_"
+import { store } from "./store_"
 
 const TAG_SEGMENT_PREFIX = "station-segment:"
 
@@ -105,18 +106,18 @@ export class StationService {
       let lineRes = await axios.get<LineAPIResponse[]>(`${process.env.REACT_APP_DATA_BASE_URL}/line.json`)
       lineRes.data.forEach(d => {
         let line = parseLine(d)
-          this.lines.set(line.code, line)
-          this.lines_id.set(line.id, line)
-        })
+        this.lines.set(line.code, line)
+        this.lines_id.set(line.id, line)
+      })
 
       let prefectureRes = await axios.get<string>(process.env.REACT_APP_PREFECTURE_URL)
-        this.prefecture = new Map()
+      this.prefecture = new Map()
       prefectureRes.data.split('\n').forEach((line: string) => {
-          var cells = line.split(',')
-          if (cells.length === 2) {
-            this.prefecture.set(parseInt(cells[0]), cells[1])
-          }
-        })
+        var cells = line.split(',')
+        if (cells.length === 2) {
+          this.prefecture.set(parseInt(cells[0]), cells[1])
+        }
+      })
       console.log('service initialized', this)
       this.initialized = true
       return this
@@ -154,7 +155,7 @@ export class StationService {
         }
         this.navigator_id = navigator.geolocation.watchPosition(
           (pos) => {
-            Actions.setCurrentPosition(pos)
+            store.dispatch(actions.setCurrentLocation(pos))
           },
           (err) => {
             console.log(err)
@@ -327,7 +328,7 @@ export class StationService {
         this.stations.set(s.code, s)
         this.stations_id.set(s.id, s)
       })
-      Actions.onStationLoaded(list)
+      store.dispatch(actions.appendLoadedStation(list))
       this.tasks.set(tag, null)
       return data
     })
