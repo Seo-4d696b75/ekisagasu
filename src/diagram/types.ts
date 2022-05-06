@@ -1,33 +1,33 @@
 
 export interface Point {
-	x: number
-	y: number
+  x: number
+  y: number
 }
 
 
 export interface Line {
-	a: number
-	b: number
-	c: number
+  a: number
+  b: number
+  c: number
 }
 
 
 export interface Edge {
-	a: Point
-	b: Point
+  a: Point
+  b: Point
 }
 
 
 export interface Triangle {
-	a: Point
-	b: Point
-	c: Point
+  a: Point
+  b: Point
+  c: Point
 }
 
 
 export interface Circle {
-	center: Point
-	radius: number
+  center: Point
+  radius: number
 }
 
 export interface Rect {
@@ -38,4 +38,4 @@ export interface Rect {
 }
 
 
-export class DiagramError extends Error {}
+export class DiagramError extends Error { }

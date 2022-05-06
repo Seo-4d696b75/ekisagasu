@@ -1,25 +1,25 @@
 import * as point from "./Point"
 import * as edge from "./Edge"
-import {Point, Line, Edge, DiagramError} from "./types"
+import { Point, Line, Edge, DiagramError } from "./types"
 
-class LineInitError extends DiagramError {}
+class LineInitError extends DiagramError { }
 
 class LineError extends DiagramError {
-	constructor(mes: string, line?: Line) {
-		super(line ? `${mes} line:${toString(line)}` : mes)
-	}
+  constructor(mes: string, line?: Line) {
+    super(line ? `${mes} line:${toString(line)}` : mes)
+  }
 }
 
 export function toString(line: Line): string {
-	return `{ax+by+c=0 with a:${line.a},b:${line.b},c:${line.c}}`
+  return `{ax+by+c=0 with a:${line.a},b:${line.b},c:${line.c}}`
 }
 
 export function isLine(p: any): p is Line {
-	return p !== null &&
-		typeof p === "object" &&
-		typeof p.a === "number" &&
-		typeof p.b === "number" &&
-		typeof p.c === "number"
+  return p !== null &&
+    typeof p === "object" &&
+    typeof p.a === "number" &&
+    typeof p.b === "number" &&
+    typeof p.c === "number"
 }
 
 /**
@@ -31,49 +31,49 @@ export function isLine(p: any): p is Line {
  * @param c 
  */
 export function init(a: number | Point, b: number | Point, c?: number): Line {
-	if (typeof a === "number" && typeof b === "number") {
-		if (typeof c === "number") {
-			if (b === 0) {
-				if (a === 0) {
-					throw new LineInitError("a = b = 0")
-				}
-				return {
-					a: 1.0,
-					b: 0.0,
-					c: c / a,
-				};
-			} else {
-				return {
-					a: a / b,
-					b: 1.0,
-					c: c / b,
-				};
-			}
-		} else {
-			return {
-				a: -a,
-				b: 1.0,
-				c: -b,
-			};
-		}
-	} else if (point.isPoint(a) && point.isPoint(b)) {
-		if (point.equals(a, b)) {
-			throw new LineInitError(`duplicated point: ${point.toString(a)}`)
-		} else if (a.x === b.x) {
-			return {
-				a: 1.0,
-				b: 0.0,
-				c: -(a.x + b.x) / 2,
-			};
-		} else {
-			return {
-				a: (b.y - a.y) / (a.x - b.x),
-				b: 1.0,
-				c: (b.x * a.y - a.x * b.y) / (a.x - b.x),
-			};
-		}
-	}
-	throw new LineInitError(`cannot get an instance with a:${a} b:${b} c:${c}`)
+  if (typeof a === "number" && typeof b === "number") {
+    if (typeof c === "number") {
+      if (b === 0) {
+        if (a === 0) {
+          throw new LineInitError("a = b = 0")
+        }
+        return {
+          a: 1.0,
+          b: 0.0,
+          c: c / a,
+        };
+      } else {
+        return {
+          a: a / b,
+          b: 1.0,
+          c: c / b,
+        };
+      }
+    } else {
+      return {
+        a: -a,
+        b: 1.0,
+        c: -b,
+      };
+    }
+  } else if (point.isPoint(a) && point.isPoint(b)) {
+    if (point.equals(a, b)) {
+      throw new LineInitError(`duplicated point: ${point.toString(a)}`)
+    } else if (a.x === b.x) {
+      return {
+        a: 1.0,
+        b: 0.0,
+        c: -(a.x + b.x) / 2,
+      };
+    } else {
+      return {
+        a: (b.y - a.y) / (a.x - b.x),
+        b: 1.0,
+        c: (b.x * a.y - a.x * b.y) / (a.x - b.x),
+      };
+    }
+  }
+  throw new LineInitError(`cannot get an instance with a:${a} b:${b} c:${c}`)
 }
 
 /**
@@ -85,70 +85,70 @@ export function init(a: number | Point, b: number | Point, c?: number): Line {
  * @param {point} c 
  */
 export function onLine(a: Line | Point, b: Point, c?: Point): boolean {
-	if (isLine(a) && point.isPoint(b)) {
-		var line = a;
-		var p = b;
-		return Math.abs(line.a * p.x + line.b * p.y + line.c) === 0;
-	}
-	if (point.isPoint(a) && point.isPoint(b) && point.isPoint(c)) {
-		var v = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-		return v === 0;
-	}
-	throw new LineError("invalid arguments")
+  if (isLine(a) && point.isPoint(b)) {
+    var line = a;
+    var p = b;
+    return Math.abs(line.a * p.x + line.b * p.y + line.c) === 0;
+  }
+  if (point.isPoint(a) && point.isPoint(b) && point.isPoint(c)) {
+    var v = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+    return v === 0;
+  }
+  throw new LineError("invalid arguments")
 }
 
 export function equals(l1: Line, l2: Line): boolean {
-	return l1.a === l2.a && l1.b === l2.b && l1.c === l2.c;
+  return l1.a === l2.a && l1.b === l2.b && l1.c === l2.c;
 }
 
 export function getIntersection(l1: Line, l2: Line | Edge): Point | null {
-	if (edge.isEdge(l2)) {
-		// l1:Line l2:edge
-		var line = l1;
-		var e = l2;
-		if ((line.a * e.a.x + line.b * e.a.y + line.c) * (line.a * e.b.x + line.b * e.b.y + line.c) <= 0) {
-			l2 = edge.toLine(e);
-		} else {
-			return null;
-		}
-	}
-	// l1:Line l2:Line
-	var det = l1.a * l2.b - l2.a * l1.b;
-	if (det === 0) {
-		return null;
-	} else {
-		return {
-			x: (l1.b * l2.c - l2.b * l1.c) / det,
-			y: (l2.a * l1.c - l1.a * l2.c) / det,
-		};
-	}
+  if (edge.isEdge(l2)) {
+    // l1:Line l2:edge
+    var line = l1;
+    var e = l2;
+    if ((line.a * e.a.x + line.b * e.a.y + line.c) * (line.a * e.b.x + line.b * e.b.y + line.c) <= 0) {
+      l2 = edge.toLine(e);
+    } else {
+      return null;
+    }
+  }
+  // l1:Line l2:Line
+  var det = l1.a * l2.b - l2.a * l1.b;
+  if (det === 0) {
+    return null;
+  } else {
+    return {
+      x: (l1.b * l2.c - l2.b * l1.c) / det,
+      y: (l2.a * l1.c - l1.a * l2.c) / det,
+    };
+  }
 }
 
 export function getPerpendicularBisector(p1: Point | Edge, p2?: Point): Line {
-	if (edge.isEdge(p1)) {
-		// p1:edge p2:null
-		var e = p1;
-		p1 = e.a;
-		p2 = e.b;
-	}
-	if (p2) {
+  if (edge.isEdge(p1)) {
+    // p1:edge p2:null
+    var e = p1;
+    p1 = e.a;
+    p2 = e.b;
+  }
+  if (p2) {
 
-		// p1,p2:Point
-		return {
-			a: p1.x - p2.x,
-			b: p1.y - p2.y,
-			c: (-Math.pow(p1.x, 2) - Math.pow(p1.y, 2) + Math.pow(p2.x, 2) + Math.pow(p2.y, 2)) / 2,
-		}
-	}
-	throw new LineError(`invalid arguments p1:${p1},p2:${p2}`)
+    // p1,p2:Point
+    return {
+      a: p1.x - p2.x,
+      b: p1.y - p2.y,
+      c: (-Math.pow(p1.x, 2) - Math.pow(p1.y, 2) + Math.pow(p2.x, 2) + Math.pow(p2.y, 2)) / 2,
+    }
+  }
+  throw new LineError(`invalid arguments p1:${p1},p2:${p2}`)
 }
 
 export function getDistance(line: Line, point: Point): number {
-	return Math.abs(point.x * line.a + point.y * line.b + line.c) / Math.sqrt(line.a * line.a + line.b * line.b);
+  return Math.abs(point.x * line.a + point.y * line.b + line.c) / Math.sqrt(line.a * line.a + line.b * line.b);
 }
 
 export function onSameSide(line: Line, p1: Point, p2: Point): boolean {
-	var v1 = line.a * p1.x + line.b * p1.y + line.c;
-	var v2 = line.a * p2.x + line.b * p2.y + line.c;
-	return v1 * v2 >= 0;
+  var v1 = line.a * p1.x + line.b * p1.y + line.c;
+  var v2 = line.a * p2.x + line.b * p2.y + line.c;
+  return v1 * v2 >= 0;
 }
