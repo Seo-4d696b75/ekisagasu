@@ -297,19 +297,23 @@ export class StationService {
     return undefined
   }
 
-  get_line_detail(code: number): Promise<Line> {
+  async get_line_detail(code: number): Promise<Line> {
     const line = this.lines.get(code)
     if (!line) {
-      return Promise.reject(`line not found id:${code}`)
+      throw Error(`line not found id:${code}`)
     }
     // 単一のupdate_** 呼び出しでも同一segmentが複数から要求される
     const tag = `line-details-${code}`
-    return this.runSync(tag, async () => {
+    return await this.runSync(tag, async () => {
       if (line.detail) return line
       let res = await axios.get<LineDetailAPIResponse>(`${process.env.REACT_APP_DATA_BASE_URL}/line/${code}.json`)
       let detail = parseLineDetail(res.data)
-      line.detail = detail
-      return line
+      let next: Line = {
+        ...line,
+        detail: detail
+      }
+      this.lines.set(code, next)
+      return next
     })
   }
 
