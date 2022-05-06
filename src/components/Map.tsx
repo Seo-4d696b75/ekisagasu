@@ -1,27 +1,27 @@
-import { GoogleApiWrapper, Map, Marker, Polygon, Polyline, Circle, GoogleAPI, IMapProps } from "google-maps-react"
-import { FC, useEffect, useMemo, useRef, useState } from "react"
-import "./Map.css"
-import { LineDialog } from "./LineDialog"
-import StationService from "../script/StationService"
-import { CSSTransition } from "react-transition-group"
-import * as Rect from "../diagram/Rect"
-import pin_station from "../img/map_pin_station.svg"
-import pin_location from "../img/map_pin.svg"
-import * as Utils from "../script/Utils"
-import VoronoiWorker from "worker-loader!./../script/VoronoiWorker";  // eslint-disable-line import/no-webpack-loader-syntax
 import { CircularProgress } from "@material-ui/core"
-import { Station } from "../script/Station"
-import { Line } from "../script/Line"
-import { GlobalState } from "../script/Reducer"
-import { connect, useDispatch } from "react-redux"
-import { PropsEvent } from "../script/Event"
+import { Circle, GoogleAPI, GoogleApiWrapper, IMapProps, Map, Marker, Polygon, Polyline } from "google-maps-react"
 import qs from "query-string"
-import { CurrentPosDialog } from "./CurrentPosDialog"
-import { StationDialog } from "./StationDialog"
-import { NavState, NavType, isStationDialog, isInfoDialog, DialogType, StationDialogProps, CurrentPosDialogProps, LineDialogProps, SelectPosDialogProps } from "./MapNavState"
-import { CurrentPosIcon } from "./MapSections"
+import { FC, useEffect, useMemo, useRef, useState } from "react"
+import { useDispatch, useSelector } from "react-redux"
+import { useParams } from "react-router-dom"
+import { CSSTransition } from "react-transition-group"
+import VoronoiWorker from "worker-loader!./../script/VoronoiWorker"; // eslint-disable-line import/no-webpack-loader-syntax
+import * as Rect from "../diagram/Rect"
+import pin_location from "../img/map_pin.svg"
+import pin_station from "../img/map_pin_station.svg"
 import * as action from "../script/actions_"
-import { AppDispatch } from "../script/store_"
+import { handleIf } from "../script/Event"
+import { Line } from "../script/Line"
+import { Station } from "../script/Station"
+import StationService from "../script/StationService"
+import { AppDispatch, RootState } from "../script/store_"
+import * as Utils from "../script/Utils"
+import { CurrentPosDialog } from "./CurrentPosDialog"
+import { LineDialog } from "./LineDialog"
+import "./Map.css"
+import { CurrentPosDialogProps, DialogType, isInfoDialog, isStationDialog, LineDialogProps, NavState, NavType, SelectPosDialogProps, StationDialogProps } from "./MapNavState"
+import { CurrentPosIcon } from "./MapSections"
+import { StationDialog } from "./StationDialog"
 
 const VORONOI_COLOR = [
   "#0000FF",
@@ -35,32 +35,6 @@ const ZOOM_TH_PIN = 12
 const VORONOI_SIZE_TH = 500
 
 interface MapProps {
-  radarK: number
-  showCurrentPosition: boolean
-  showStationPin: boolean
-  nav: NavState
-  focus: PropsEvent<Utils.LatLng>
-  currentLocation: Utils.CurrentLocation | null
-  currentLocationUpdate: PropsEvent<google.maps.LatLng>
-  voronoi: Station[]
-  query: qs.ParsedQuery<string>
-}
-
-function mapGlobalState2Props(state: GlobalState, ownProps: any): MapProps {
-  return {
-    radarK: state.radar_k,
-    showCurrentPosition: state.watch_position,
-    showStationPin: state.show_station_pin,
-    nav: state.nav,
-    focus: state.map_focus,
-    currentLocation: state.current_location,
-    currentLocationUpdate: state.current_location_update,
-    voronoi: state.stations,
-    query: ownProps.query as qs.ParsedQuery<string>
-  }
-}
-
-interface WrappedMapProps extends MapProps {
   google: GoogleAPI
 }
 
@@ -74,7 +48,18 @@ function getUIEvent(clickEvent: any): UIEvent {
   throw Error("UIEvent not found")
 }
 
-const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurrentPosition, showStationPin, nav, focus, currentLocation, currentLocationUpdate, voronoi, query }) => {
+const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
+
+  const {
+    radarK,
+    watchCurrentLocation: showCurrentPosition,
+    showStationPin,
+    nav,
+    mapFocusRequest: focus,
+    currentLocation,
+    currentPositionUpdate,
+    stations: voronoi,
+  } = useSelector((state: RootState) => state.mapState)
 
   const [hideVoronoi, setHideVoronoi] = useState(false)
   const [hideStationPin, setHideStationPin] = useState(false)
@@ -244,27 +229,28 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
 
   const showPolyline = (line: Line) => {
     const map = googleMapRef.current
-    if (!line.has_details || !map) return
+    if (!line.detail || !map) return
     if (nav.type !== NavType.DIALOG_LINE) return
     if (nav.data.showPolyline) return
     let polyline: Utils.PolylineProps[] = []
     let bounds: Utils.RectBounds
-    if (line.polyline_list) {
-      polyline = line.polyline_list
-      bounds = line
+    if (line.detail.polylines) {
+      polyline = line.detail.polylines
+      bounds = line.detail
     } else {
-      let data = Utils.get_bounds(line.station_list)
+      let stations = line.detail.stations
+      let data = Utils.get_bounds(line.detail.stations)
       polyline = [{
-        points: line.station_list.map(s => s.position),
-        start: line.station_list[0].name,
-        end: line.station_list[line.station_list.length - 1].name,
+        points: stations.map(s => s.position),
+        start: stations[0].name,
+        end: stations[stations.length - 1].name,
       }]
       bounds = data
     }
     dispatch(action.requestShowPolyline({
       dialog: nav.data.dialog,
       polylines: polyline,
-      stations: line.station_list.map(s => s.position),
+      stations: line.detail.stations.map(s => s.position),
     }))
     const mapElement = mapElementRef.current
     if (mapElement) {
@@ -276,6 +262,8 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
       console.log('zoom to', props, line)
     }
   }
+
+  const query = useParams<any>()
 
   const onMapReady = async (props?: IMapProps, map?: google.maps.Map, event?: any) => {
     console.log("map ready", props)
@@ -546,7 +534,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
       return voronoi.map((s, i) => (
         <Polygon
           key={i}
-          paths={s.voronoi_points}
+          paths={s.voronoiPolygon}
           strokeColor="#0000FF"
           strokeWeight={1}
           strokeOpacity={0.8}
@@ -667,7 +655,7 @@ const MapContainer: FC<WrappedMapProps> = ({ google: googleAPI, radarK, showCurr
   const onCurrentPosRequested = () => {
     if (showCurrentPosition) {
       if (currentPosition) {
-        moveToCurrentPosition(currentPosition)
+        moveToCurrentPosition(new google.maps.LatLng(currentPosition.lat, currentPosition.lng))
       }
     } else {
       onInfoDialogClosed()
@@ -740,11 +728,9 @@ const LoadingContainer = (props: any) => (
   <div className='Map-container'>Map is loading...</div>
 )
 
-export default connect(mapGlobalState2Props)(
-  GoogleApiWrapper({
+export default GoogleApiWrapper({
     apiKey: process.env.REACT_APP_API_KEY,
     language: "ja",
     LoadingContainer: LoadingContainer,
   })(MapContainer)
-)
 
