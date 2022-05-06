@@ -74,8 +74,16 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   const mapElementRef = useRef<HTMLDivElement>(null)
   const uiEventRef = useRef<UIEvent | null>(null)
 
+  const dispatch = useDispatch<AppDispatch>()
+
   useEffect(() => {
     // componentDidMount
+    StationService.onGeolocationPositionChangedCallback = (pos) => {
+      dispatch(action.setCurrentLocation(pos))
+    }
+    StationService.onStationLoadedCallback = (list) => {
+      dispatch(action.appendLoadedStation(list))
+    }
     StationService.initialize()
     const onScreenResized = () => {
       let wide = window.innerWidth >= 900
@@ -91,8 +99,6 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
       googleMapRef.current = null
     }
   }, [])
-
-  const dispatch = useDispatch<AppDispatch>()
 
   const showStation = (station: Station) => {
     dispatch(action.requestShowStation(station))

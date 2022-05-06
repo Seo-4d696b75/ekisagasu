@@ -135,7 +135,8 @@ export class StationService {
     this.lines_id.clear()
     this.tasks.clear()
     this.watch_current_position(false)
-
+    this.onGeolocationPositionChangedCallback = undefined
+    this.onStationLoadedCallback = undefined
     console.log('service released')
   }
 
@@ -148,6 +149,8 @@ export class StationService {
     }
   }
 
+  onGeolocationPositionChangedCallback: ((pos: GeolocationPosition) => void) | undefined = undefined
+
   watch_current_position(enable: boolean) {
     if (enable) {
       if (navigator.geolocation) {
@@ -157,7 +160,7 @@ export class StationService {
         }
         this.navigator_id = navigator.geolocation.watchPosition(
           (pos) => {
-            store.dispatch(actions.setCurrentLocation(pos))
+            this.onGeolocationPositionChangedCallback?.(pos)
           },
           (err) => {
             console.log(err)
@@ -195,7 +198,7 @@ export class StationService {
     }
   }
 
-  async update_location(position: Utils.LatLng, k: number, r: number = 0): Promise<Station | null> {
+  async update_location(position: LatLng, k: number, r: number = 0): Promise<Station | null> {
     if (!k || k <= 0) k = 1
     if (!r || r < 0) r = 0
     /* kd-tree のNodeデータは探索中に必要になって初めて非同期でロードされるため、
@@ -211,7 +214,7 @@ export class StationService {
     })
   }
 
-  async update_rect(rect: Utils.RectBounds, max: number = Number.MAX_SAFE_INTEGER): Promise<Station[]> {
+  async update_rect(rect: RectBounds, max: number = Number.MAX_SAFE_INTEGER): Promise<Station[]> {
     if (max < 1) max = 1
     return await this.runSync("update_location", async () => {
       if (this.tree) {
@@ -320,6 +323,8 @@ export class StationService {
     return this.prefecture.get(code) as string
   }
 
+  onStationLoadedCallback: ((list: Station[]) => void) | undefined = undefined
+
   get_tree_segment(name: string): Promise<StationTreeSegmentResponse> {
     const tag = `${TAG_SEGMENT_PREFIX}${name}`
     // be sure to avoid loading the same segment
@@ -334,13 +339,13 @@ export class StationService {
         this.stations.set(s.code, s)
         this.stations_id.set(s.id, s)
       })
-      store.dispatch(actions.appendLoadedStation(list))
+      this.onStationLoadedCallback?.(list)
       this.tasks.set(tag, null)
       return data
     })
   }
 
-  measure(pos1: Utils.LatLng, pos2: Utils.LatLng): number {
+  measure(pos1: LatLng, pos2: LatLng): number {
     var lng1 = Math.PI * pos1.lng / 180
     var lat1 = Math.PI * pos1.lat / 180
     var lng2 = Math.PI * pos2.lng / 180
@@ -350,8 +355,8 @@ export class StationService {
     return 6378137.0 * 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(lat), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(lng), 2)))
   }
 
-  inside_rect(position: Utils.LatLng | Utils.RectBounds, rect: Utils.RectBounds): boolean {
-    if (Utils.isLatLng(position)) {
+  inside_rect(position: LatLng | RectBounds, rect: RectBounds): boolean {
+    if (isLatLng(position)) {
       return (
         position.lat >= rect.south &&
         position.lat <= rect.north &&
