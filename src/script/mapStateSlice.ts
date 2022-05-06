@@ -1,21 +1,8 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit"
-import { DialogType, isStationDialog, NavState, NavType, StationDialogNav } from "../components/MapNavState"
-import { appendLoadedStation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStation, requestShowStationPromise, setCurrentLocation, setHighAccuracyLocation, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions_"
-import { createEvent, createIdleEvent, PropsEvent } from "./Event"
-import { Station } from "./Station"
-import { CurrentLocation, LatLng } from "./Utils"
-
-export interface GlobalMapState {
-  radarK: number
-  watchCurrentLocation: boolean
-  showStationPin: boolean
-  isHighAccuracyLocation: boolean
-  currentLocation: CurrentLocation | null
-  currentPositionUpdate: PropsEvent<LatLng>
-  nav: NavState
-  mapFocusRequest: PropsEvent<LatLng>
-  stations: Station[]
-}
+import { createSlice } from "@reduxjs/toolkit"
+import { DialogType, isStationDialog, NavState, NavType } from "../components/MapNavState"
+import { appendLoadedStation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStationPromise, setCurrentLocation, setHighAccuracyLocation, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions_"
+import { createEvent, createIdleEvent } from "./Event"
+import { GlobalMapState } from "./mapState"
 
 const initUserSetting: GlobalMapState = {
   radarK: 18,
