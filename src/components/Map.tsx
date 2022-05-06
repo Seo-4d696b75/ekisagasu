@@ -110,8 +110,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   }
 
   useEffect(() => {
-    // componentDidUpdate
-    focus.observe("map", pos => {
+    handleIf(focus, pos => {
       const map = googleMapRef.current
       if (map) {
         map.panTo(pos)
@@ -120,13 +119,16 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
         }
       }
     })
-    currentLocationUpdate.observe("map", (pos) => {
-      console.log("useEffect: observe")
+  }, [focus])
+
+  useEffect(() => {
+    handleIf(currentPositionUpdate, pos => {
+      console.log("useEffect: location update")
       if (showCurrentPosition && nav.type === NavType.IDLE) {
-        moveToCurrentPosition(pos)
+        moveToCurrentPosition(new google.maps.LatLng(pos.lat, pos.lng))
       }
     })
-  })
+  }, [currentPositionUpdate])
 
   const setCenterCurrentPosition = (map: google.maps.Map) => {
     // no move animation
