@@ -3,7 +3,7 @@ import { Circle, GoogleAPI, GoogleApiWrapper, IMapProps, Map, Marker, Polygon, P
 import qs from "query-string"
 import { FC, useEffect, useMemo, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { useParams } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 import { CSSTransition } from "react-transition-group"
 import VoronoiWorker from "worker-loader!./../script/VoronoiWorker"; // eslint-disable-line import/no-webpack-loader-syntax
 import * as Rect from "../diagram/Rect"
@@ -265,7 +265,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     }
   }
 
-  const query = useParams<any>()
+  const location = useLocation()
 
   const onMapReady = async (props?: IMapProps, map?: google.maps.Map, event?: any) => {
     console.log("map ready", props)
