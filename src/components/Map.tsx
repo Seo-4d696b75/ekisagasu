@@ -220,7 +220,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     }
     setWorkerRunning(true)
     setHighVoronoi([])
-    dispatch(action.requestShowHighVoronoi(nav))
+    dispatch(action.requestShowHighVoronoi())
     worker.postMessage(JSON.stringify({
       type: 'start',
       container: container,
@@ -731,8 +731,8 @@ const LoadingContainer = (props: any) => (
 )
 
 export default GoogleApiWrapper({
-    apiKey: process.env.REACT_APP_API_KEY,
-    language: "ja",
-    LoadingContainer: LoadingContainer,
-  })(MapContainer)
+  apiKey: process.env.REACT_APP_API_KEY,
+  language: "ja",
+  LoadingContainer: LoadingContainer,
+})(MapContainer)
 

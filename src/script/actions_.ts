@@ -156,7 +156,7 @@ export const requestShowPolyline = createAction<{
   "map/requestShowPolyline"
 )
 
-export const requestShowHighVoronoi = createAction<StationDialogNav>(
+export const requestShowHighVoronoi = createAction<void>(
   "map/requestShowHighVoronoi"
 )
 

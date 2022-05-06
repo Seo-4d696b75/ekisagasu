@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
-import { DialogType, NavState, NavType, StationDialogNav } from "../components/MapNavState"
+import { DialogType, isStationDialog, NavState, NavType, StationDialogNav } from "../components/MapNavState"
 import { appendLoadedStation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStation, requestShowStationPromise, setCurrentLocation, setHighAccuracyLocation, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions_"
 import { createEvent, createIdleEvent, PropsEvent } from "./Event"
 import { Station } from "./Station"
@@ -101,11 +101,9 @@ export const userSettingSlice = createSlice({
         }
       })
       .addCase(requestShowHighVoronoi, (state, action) => {
-        let next: StationDialogNav = {
-          ...action.payload
+        if (isStationDialog(state.nav)) {
+          state.nav.data.showHighVoronoi = true
         }
-        next.data.showHighVoronoi = true
-        state.nav = next
       })
       .addCase(setNavStateIdle.fulfilled, (state, action) => {
         state.nav = action.payload
