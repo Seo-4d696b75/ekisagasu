@@ -17,6 +17,7 @@ import StationService from "../script/StationService"
 import { AppDispatch, RootState } from "../script/store_"
 import * as Utils from "../script/Utils"
 import { CurrentPosDialog } from "./CurrentPosDialog"
+import { useRefCallback } from "./Hooks"
 import { LineDialog } from "./LineDialog"
 import "./Map.css"
 import { CurrentPosDialogProps, DialogType, isInfoDialog, isStationDialog, LineDialogProps, NavState, NavType, SelectPosDialogProps, StationDialogProps } from "./MapNavState"
@@ -145,7 +146,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     })
   }
 
-  const showRadarVoronoi = (station: Station) => {
+  const showRadarVoronoi = useRefCallback((station: Station) => {
     if (workerRunning) {
       console.log("worker is running")
       return
@@ -227,9 +228,9 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
       k: radarK,
       center: center,
     }))
-  }
+  })
 
-  const showPolyline = (line: Line) => {
+  const showPolyline = useRefCallback((line: Line) => {
     const map = googleMapRef.current
     if (!line.detail || !map) return
     if (nav.type !== NavType.DIALOG_LINE) return
@@ -263,7 +264,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
       map.setZoom(props.zoom)
       console.log('zoom to', props, line)
     }
-  }
+  })
 
   const location = useLocation()
 
@@ -284,6 +285,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
 
       const s = await StationService.initialize()
       // parse query actions
+      const query = qs.parse(location.search)
       if (typeof query.line == 'string') {
         console.log('query: line', query.line)
         var line = s.get_line_by_id(query.line)
