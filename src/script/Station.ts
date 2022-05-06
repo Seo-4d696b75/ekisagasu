@@ -1,4 +1,4 @@
-import { LatLng } from "./Utils"
+import { LatLng } from "./location"
 
 export interface Station {
   code: number

@@ -1,6 +1,7 @@
 import { Line } from "../script/Line"
+import { LatLng } from "../script/location"
 import { Station } from "../script/Station"
-import * as Utils from "../script/Utils"
+import { PolylineProps } from "../script/Utils"
 
 export interface RadarStation {
   station: Station
@@ -28,7 +29,7 @@ interface StationDialogPayload {
 }
 
 interface PosDialogPayload extends StationDialogPayload {
-  position: Utils.LatLng
+  position: LatLng
   dist: number
 }
 
@@ -105,8 +106,8 @@ export type SelectPosDialogNav = NavStateBase<NavType.DIALOG_SELECT_POS, {
 export type LineDialogNav = NavStateBase<NavType.DIALOG_LINE, {
   dialog: LineDialogProps
   showPolyline: boolean
-  polylineList: Utils.PolylineProps[]
-  stationMakers: Utils.LatLng[]
+  polylineList: PolylineProps[]
+  stationMakers: LatLng[]
 }>
 
 export type IdleNav = NavStateBase<NavType.IDLE, {

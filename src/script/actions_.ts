@@ -7,6 +7,8 @@ import { RootState } from "./store_";
 import { Station } from "./Station";
 import { Line } from "./Line";
 import { StationSuggestion } from "../components/StationSearchBox";
+import { CurrentLocation, LatLng } from "./location";
+import { GlobalMapState, RootState } from "./mapState";
 
 export const setRadarK = createAsyncThunk(
   "map/setRadarK",

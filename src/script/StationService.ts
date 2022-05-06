@@ -2,9 +2,8 @@ import axios from "axios"
 import { StationKdTree } from "./KdTree"
 import { parseStation, Station, StationAPIResponse } from "./Station"
 import { Line, LineAPIResponse, LineDetailAPIResponse, parseLine, parseLineDetail } from "./Line"
-import * as Utils from "./Utils"
-import * as actions from "./actions_"
-import { store } from "./store_"
+import { isLatLng, LatLng } from "./location"
+import { RectBounds } from "./Utils"
 
 const TAG_SEGMENT_PREFIX = "station-segment:"
 
