@@ -62,7 +62,7 @@ export class StationService {
   /**
    * tagで指定した非同期タスクの実行を同期する.
    * 
-   * tagで識別される同種のタスクが同時に高々１つのみ実行されることを保証する(実行順序は保証しない)
+   * tagで識別される同種のタスクが並行して高々１つのみ実行されることを保証する(実行順序は保証しない)
    * この関数呼び出し時に以前に実行を開始した別の非同期処理がまだ完了してない場合はその完了を待ってから実行する
    * 
    * @param tag 同期するタスクの種類の識別子
@@ -87,6 +87,9 @@ export class StationService {
       this.tasks.set(tag, null)
       //console.log(`runSync(id:${id}) done:`, tag)
       return r
+    }).catch(e => {
+      this.tasks.set(tag, null)
+      throw e
     })
     this.tasks.set(tag, next)
     return await next
