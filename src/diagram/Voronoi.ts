@@ -32,9 +32,9 @@ const ERROR = Math.pow(2, -30);
  * Point + 付加情報 のラッパー  
  * 二つの二等分線の交点においてBisectorオブジェクトどうしの接続をモデル化
  */
-class Node implements Point {
+class Node<T extends Point> implements Point {
 
-	constructor(p: Point, a: Intersection, b: Intersection) {
+	constructor(p: Point, a: Intersection<T>, b: Intersection<T>) {
 		this.x = p.x;
 		this.y = p.y;
 		this._p1 = a;
@@ -58,16 +58,16 @@ class Node implements Point {
 	y: number
 
 	// 各二等分線上の交点
-	_p1: Intersection | null
-	_p2: Intersection | null
+	_p1: Intersection<T> | null
+	_p2: Intersection<T> | null
 
-	get p1(): Intersection {
+	get p1(): Intersection<T> {
 		if (this._p1) return this._p1
 		throw new VoronoiError("no intersection")
 	}
 
 
-	get p2(): Intersection {
+	get p2(): Intersection<T> {
 		if (this._p2) return this._p2
 		throw new VoronoiError("no intersection")
 	}
@@ -96,7 +96,7 @@ class Node implements Point {
 		}
 	}
 
-	calcNext(current: Intersection, other: Intersection, forward: boolean, step: StepDirection) {
+	calcNext(current: Intersection<T>, other: Intersection<T>, forward: boolean, step: StepDirection) {
 		if (this.onBoundary && this.index > 0) {
 			// 頂点がFrame境界線上（Vertexではない）でかつ
 			// この頂点が解決済みなら無視して同じ境界線上のお隣さんへ辿る
@@ -115,7 +115,7 @@ class Node implements Point {
 				 * Frame境界線のVertexに相当する場合は例外的に次数変化0の方向の頂点を返す
 	 * @param previous 
 	 */
-	nextDown(previous: Point): Node {
+	nextDown(previous: Point): Node<T> {
 		var target: any = null;
 		if (this.p1.isNeighbor(previous)) {
 			target = this.p2;
@@ -131,7 +131,7 @@ class Node implements Point {
 		}
 	}
 
-	nextUp(previous: Point): Node | null {
+	nextUp(previous: Point): Node<T> | null {
 		var t1: any = null;
 		var t2: any = null;
 		if (this.p1.isNeighbor(previous)) {
@@ -181,9 +181,9 @@ class Node implements Point {
  * 各二等分線上において他の線分との交点をモデル化
  * 交点によって分割され線分の次数変化を調べる
  */
-class Intersection implements Point {
+class Intersection<T extends Point> implements Point {
 
-	constructor(intersection: Point, b: Bisector, other?: Line, center?: Point) {
+	constructor(intersection: Point, b: Bisector<T>, other?: Line, center?: Point) {
 		this.line = b;
 		this.x = intersection.x;
 		this.y = intersection.y;
@@ -208,14 +208,14 @@ class Intersection implements Point {
 
 	x: number
 	y: number
-	line: Bisector
+	line: Bisector<T>
 	step: StepDirection
 
-	_previous: Intersection | null | undefined = undefined
-	_next: Intersection | null | undefined = undefined
+	_previous: Intersection<T> | null | undefined = undefined
+	_next: Intersection<T> | null | undefined = undefined
 	index: number = 0
 
-	_node: Node | null = null
+	_node: Node<T> | null = null
 
 	get hasPrevious(): boolean {
 		if (this._previous === undefined) {
@@ -224,7 +224,7 @@ class Intersection implements Point {
 		return this._previous !== null
 	}
 
-	get previous(): Intersection {
+	get previous(): Intersection<T> {
 		if (this._previous) return this._previous
 		if (this._previous === undefined) {
 			throw new VoronoiError("previous not init yet")
@@ -239,7 +239,7 @@ class Intersection implements Point {
 		return this._next !== null
 	}
 
-	get next(): Intersection {
+	get next(): Intersection<T> {
 		if (this._next) return this._next
 		if (this._next === undefined) {
 			throw new VoronoiError("next not init yet")
@@ -247,17 +247,17 @@ class Intersection implements Point {
 		throw new VoronoiError("no next")
 	}
 
-	get node(): Node {
+	get node(): Node<T> {
 		if (this._node) return this._node
 		throw new VoronoiError("no node")
 	}
 
-	set node(value: Node) {
+	set node(value: Node<T>) {
 		if (this._node) throw new VoronoiError("node already set")
 		this._node = value
 	}
 
-	insert(previous: Intersection | null, next: Intersection | null, index: number): void {
+	insert(previous: Intersection<T> | null, next: Intersection<T> | null, index: number): void {
 		this._previous = previous;
 		this._next = next;
 		if (this._previous) {
@@ -289,7 +289,7 @@ class Intersection implements Point {
 		return false;
 	}
 
-	neighbor(step: StepDirection): Intersection {
+	neighbor(step: StepDirection): Intersection<T> {
 		if (step === "zero" && this.step === "zero") {
 			if (this._previous) return this._previous;
 			if (this._next) return this._next;
@@ -316,9 +316,9 @@ class Intersection implements Point {
 /**
  * ボロノイ分割を構成する二等分線を表現
  */
-class Bisector {
+class Bisector<T extends Point> {
 
-	constructor(bisector: Line, p?: Point) {
+	constructor(bisector: Line, p?: T) {
 		this.line = bisector;
 		this.intersections = [];
 		if (p) {
@@ -331,9 +331,9 @@ class Bisector {
 	}
 
 	line: Line
-	intersections: Array<Intersection>
+	intersections: Array<Intersection<T>>
 	isBoundary: boolean
-	delaunayPoint: Point | null
+	delaunayPoint: T | null
 
 	solvedPointIndexFrom: number = Number.MAX_SAFE_INTEGER
 	solvedPointIndexTo: number = -1
@@ -350,7 +350,7 @@ class Bisector {
 		}
 	}
 
-	onIntersectionSolved(intersection: Intersection): void {
+	onIntersectionSolved(intersection: Intersection<T>): void {
 		var index = intersection.index;
 		this.solvedPointIndexFrom = Math.min(
 			this.solvedPointIndexFrom,
@@ -362,7 +362,7 @@ class Bisector {
 		);
 	}
 
-	addIntersection(intersection: Intersection): void {
+	addIntersection(intersection: Intersection<T>): void {
 		const size = this.intersections.length;
 		var index = this.addIntersectionAt(intersection, 0, size);
 		intersection.insert(
@@ -407,7 +407,7 @@ class Bisector {
 /** 
  * 母点集合において指定された点の隣接点を取得する
  */
-export type PointProvider = (p: Point) => Promise<Array<Point>>
+export type PointProvider<T extends Point> = (p: T) => Promise<Array<T>>
 
 /**
  * 各次数における計算結果のコールバック関数
@@ -419,20 +419,20 @@ export type Callback = (index: number, polygon: Array<Point>) => void
 /**
  * 高次ボロノイ分割を計算する
  */
-export class Voronoi {
+export class Voronoi<T extends Point> {
 
 	/**
 	 * 
 	 * @param {triangle} frame 
 	 * @param {(point)=>Promise<array>} provider 
 	 */
-	constructor(frame: Triangle, provider: PointProvider) {
+	constructor(frame: Triangle, provider: PointProvider<T>) {
 		this.container = frame;
 		this.provider = provider;
 	}
 
 	container: Triangle
-	provider: PointProvider
+	provider: PointProvider<T>
 	running: boolean = false
 
 	/**
@@ -444,7 +444,7 @@ export class Voronoi {
 	 * @param {(index: number,polygon: array)=>void} callback 各次数でのボロノイ領域（ポリゴン）が計算されるたびにコールバックする
 	 * @return 1..indexまでの次数の順に計算されたポリゴンを格納したリストのPromise
 	 */
-	async execute(level: number, center: Point, callback: Callback | null): Promise<Array<Array<Point>>> {
+	async execute(level: number, center: T, callback: Callback | null): Promise<Array<Array<Point>>> {
 		if (this.running) return Promise.reject("already running");
 		this.running = true;
 
@@ -480,11 +480,11 @@ export class Voronoi {
 	center: Point = point.ZERO
 	level: number = 0
 	targetLevel: number = 1
-	list: Array<Node> | null = null
+	list: Array<Node<T>> | null = null
 	time: number = 0
 	result: Array<Array<Point>> = []
 	callback: Callback | null = null
-	bisectors: Array<Bisector> = []
+	bisectors: Array<Bisector<T>> = []
 
 
 	requestedPoint: ObjectSet<Point> = new ObjectSet(point.equals, point.hashCode)
@@ -518,16 +518,16 @@ export class Voronoi {
 
 	}
 
-	private traverse(list: Array<Node> | null, tasks: Array<Promise<void>>) {
-		var next: Node | null = null
-		var previous: Node | null = null
+	private traverse(list: Array<Node<T>> | null, tasks: Array<Promise<void>>) {
+		var next: Node<T> | null = null
+		var previous: Node<T> | null = null
 		if (!list) {
 			var history = new ObjectSet(point.equals, point.hashCode);
 			var sample = this.bisectors[0];
 			next = sample.intersections[1].node;
 			previous = sample.intersections[0].node;
 			while (history.add(next)) {
-				var current: Node = next;
+				var current: Node<T> = next;
 				next = current.nextDown(previous);
 				previous = current;
 			}
@@ -559,7 +559,7 @@ export class Voronoi {
 		return list;
 	}
 
-	private requestExtension(target: Point | null, tasks: Array<Promise<void>>): void {
+	private requestExtension(target: T | null, tasks: Array<Promise<void>>): void {
 		if (target && this.requestedPoint.add(target)) {
 			var task = this.provider(target).then(neighbors => {
 				for (let p of neighbors) {
@@ -577,13 +577,13 @@ export class Voronoi {
 	 * @param {*} self Line 
 	 */
 	private addBoundary(self: Line): void {
-		var boundary = new Bisector(self);
+		var boundary = new Bisector<T>(self);
 		this.bisectors.forEach(preexist => {
 			var p = line.getIntersection(boundary.line, preexist.line);
 			if (!p) throw new VoronoiError("intersection not found")
-			var a = new Intersection(p, boundary);
-			var b = new Intersection(p, preexist);
-			var n = new Node(p, a, b);
+			var a = new Intersection<T>(p, boundary);
+			var b = new Intersection<T>(p, preexist);
+			var n = new Node<T>(p, a, b);
 			a.node = n;
 			b.node = n;
 			boundary.addIntersection(a);
@@ -592,7 +592,7 @@ export class Voronoi {
 		this.bisectors.push(boundary);
 	}
 
-	private addBisector(intersection: Point) {
+	private addBisector(intersection: T) {
 		var bisector = new Bisector(
 			line.getPerpendicularBisector(intersection, this.center),
 			intersection
@@ -600,8 +600,8 @@ export class Voronoi {
 		this.bisectors.forEach(preexist => {
 			var p = line.getIntersection(bisector.line, preexist.line);
 			if (p && triangle.containsPoint(this.container, p, ERROR)) {
-				var a = new Intersection(p, bisector, preexist.line, this.center);
-				var b = new Intersection(p, preexist, bisector.line, this.center);
+				var a = new Intersection<T>(p, bisector, preexist.line, this.center);
+				var b = new Intersection<T>(p, preexist, bisector.line, this.center);
 				var n = new Node(p, a, b);
 				a.node = n;
 				b.node = n;
