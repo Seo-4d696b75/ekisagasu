@@ -5,7 +5,7 @@ import img_voronoi from "../img/voronoi.png";
 import { Line } from "../script/Line";
 import { Station } from "../script/Station";
 import { StationDetails, StationRadar, StationTitle } from "./DialogSections";
-import { useRefCallback } from "./Hooks";
+import { useRefCallback } from "./hooks";
 import "./InfoDialog.css";
 import { StationDialogProps } from "./MapNavState";
 
@@ -23,9 +23,7 @@ export const StationDialog: FC<StationInfoProps> = ({ info, onClosed, onLineSele
   const station = info.props.station
 
   const showVoronoiCallbackRef = useRefCallback(() => {
-    if (onShowVoronoi) {
-      onShowVoronoi(station)
-    }
+    onShowVoronoi?.(station)
   })
 
   const onClosedRef = useRefCallback(onClosed)
@@ -50,7 +48,7 @@ export const StationDialog: FC<StationInfoProps> = ({ info, onClosed, onLineSele
           className="icon-action radar" />
       </div>
     )
-  }, [])
+  }, [onClosedRef, showVoronoiCallbackRef])
 
   return (
     <div className="info-dialog">
