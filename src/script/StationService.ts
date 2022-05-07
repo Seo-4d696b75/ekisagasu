@@ -1,8 +1,8 @@
 import axios from "axios"
-import { StationKdTree } from "./KdTree"
+import { StationKdTree, StationLeafNodeProps, StationNodeProps } from "./KdTree"
 import { parseStation, Station, StationAPIResponse } from "./station"
 import { Line, LineAPIResponse, LineDetailAPIResponse, parseLine, parseLineDetail } from "./line"
-import { isLatLng, LatLng } from "./location"
+import { LatLng } from "./location"
 import { RectBounds } from "./utils"
 
 const TAG_SEGMENT_PREFIX = "station-segment:"
@@ -97,7 +97,10 @@ export class StationService {
       this.stations_id.clear()
       this.lines_id.clear()
       this.prefecture.clear()
-      this.tree = await new StationKdTree(this).initialize("root")
+      this.tree = await new StationKdTree(
+        this.get_station_immediate.bind(this),
+        this.get_tree_segment.bind(this),
+      ).initialize("root")
       let lineRes = await axios.get<LineAPIResponse[]>(`${process.env.REACT_APP_DATA_BASE_URL}/line.json`)
       lineRes.data.forEach(d => {
         let line = parseLine(d)
@@ -122,6 +125,7 @@ export class StationService {
   release() {
     this.initialized = false
     this.tree?.release()
+    this.tree = null
     this.stations.clear()
     this.stations_id.clear()
     this.lines.clear()

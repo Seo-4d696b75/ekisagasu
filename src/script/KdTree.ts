@@ -53,7 +53,7 @@ class StationNode {
 			this.station = null;
 			//tree.unknown_region.push(this);
 		} else {
-			this.station = tree.service.get_station_immediate(this.code);
+			this.station = tree.stationProvider(this.code);
 			if (!this.station) {
 				console.error("station not found", this.code);
 				return;
@@ -102,7 +102,7 @@ class StationNode {
 			if (!this.tree) throw Error("no tree assigned for initializing")
 			if (!this.segmentName) throw Error("no segment-name not found")
 			const tree = this.tree
-			return tree.service.get_tree_segment(this.segment_name).then(data => {
+			return tree.treeSegmentProvider(this.segmentName).then(data => {
 				if (data.root !== this.code) {
 					return Promise.reject(`root mismatch. name:${this.segmentName}`);
 				} else {
@@ -133,17 +133,23 @@ export interface NearStation {
 	dist: number
 }
 
+export type StationProvider = (code: number) => Station
+export type TreeSegmentProvider = (name: string) => Promise<StationTreeSegmentProps>
+
 export class StationKdTree {
 
-	service: StationService
-	//unknown_region: Array<StationNode> = []
 	root: StationNode | null = null
 
-	constructor(service: any) {
-		this.service = service;
+  stationProvider: StationProvider
+  treeSegmentProvider: TreeSegmentProvider
+
+	constructor(stationProvider: StationProvider, treeSegmentProvider: TreeSegmentProvider) {
+		this.stationProvider = stationProvider
+    this.treeSegmentProvider = treeSegmentProvider
 	}
 
 	async initialize(root_name: string): Promise<StationKdTree> {
+		return this.treeSegmentProvider(root_name).then(data => {
 			var map = new Map<number, NodeProps>();
 			data.node_list.forEach(element => {
 				map.set(element.code, element);
