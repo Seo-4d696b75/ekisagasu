@@ -1,6 +1,6 @@
 import { CircularProgress } from "@material-ui/core"
 import axios from "axios"
-import { FC, useEffect, useMemo, useRef, useState } from "react"
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Autosuggest from 'react-autosuggest'
 import { handleIf, PropsEvent } from "../script/Event"
 import Service from "../script/StationService"
@@ -28,16 +28,17 @@ interface SuggestSection {
   list: StationSuggestion[]
 }
 
+const ignorePattern = /[ｂ-ｚ]+$/i // ローマ字入力中の値は無視したい
+
 const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusRequested }) => {
   const [value, setValue] = useState("")
   const [suggestions, setSuggestions] = useState<SuggestSection[]>([])
   const [loading, setLoading] = useState(false)
 
-  const ignorePattern = /[ｂ-ｚ]+$/i // ローマ字入力中の値は無視したい
   const inputRef = useRef<Autosuggest>(null)
   const lastRequestIdRef = useRef<NodeJS.Timeout | null>(null)
 
-  const onSuggestionsFetchRequested = (request: Autosuggest.SuggestionsFetchRequestedParams) => {
+  const onSuggestionsFetchRequested = useCallback((request: Autosuggest.SuggestionsFetchRequestedParams) => {
     const value = request.value
     if (value.length < 1) {
       return
@@ -72,15 +73,15 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
         setLoading(false)
       })
     }, 500)
-  }
+  }, [])
 
-  const onSuggestionsClearRequested = () => {
+  const onSuggestionsClearRequested = useCallback(() => {
     const lastRequestId = lastRequestIdRef.current
     if (lastRequestId) {
       clearTimeout(lastRequestId)
     }
     setSuggestions([])
-  }
+  }, [])
 
   useEffect(() => {
     handleIf(inputFocusRequested, () => {
@@ -92,7 +93,7 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
   }, [inputFocusRequested])
 
   const searchBox = useMemo(() => {
-    //console.log("render: search box")
+    console.log("render: search box")
     const inputProps: Autosuggest.InputProps<StationSuggestion> = {
       placeholder: '駅・路線を検索',
       value: value,
@@ -117,7 +118,7 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
         onSuggestionSelected={(_, data) => onSuggestionSelected(data.suggestion)}
         inputProps={inputProps}></Autosuggest>
     )
-  }, [suggestions, value])
+  }, [suggestions, value, onSuggestionSelected, onSuggestionsFetchRequested, onSuggestionsClearRequested])
 
   const loadingProgress = useMemo(() => {
     //console.log("render: loading")
