@@ -21,7 +21,7 @@ import { LineDialog } from "../LineDialog"
 import { CurrentPosDialogProps, DialogType, isInfoDialog, isStationDialog, LineDialogProps, NavState, NavType, SelectPosDialogProps, StationDialogProps } from "../MapNavState"
 import { CurrentPosIcon } from "../MapSections"
 import { StationDialog } from "../StationDialog"
-import { useServiceCallback } from "./hooks"
+import { useServiceCallback } from "./serviceHook"
 import "./Map.css"
 import { useHighVoronoi } from "./voronoiHook"
 
