@@ -2,13 +2,13 @@ import React, { FC, useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { CSSTransition } from "react-transition-group";
-import img_delete from "../img/ic_delete.png";
-import img_help from "../img/ic_help.png";
-import img_search from "../img/ic_search.png";
-import img_setting from "../img/ic_settings.png";
-import * as action from "../script/actions";
-import { createEvent, createIdleEvent } from "../script/event";
-import { RootState } from "../script/mapState";
+import img_delete from "../../img/ic_delete.png";
+import img_help from "../../img/ic_help.png";
+import img_search from "../../img/ic_search.png";
+import img_setting from "../../img/ic_settings.png";
+import * as action from "../../script/actions";
+import { createEvent, createIdleEvent } from "../../script/event";
+import { RootState } from "../../script/mapState";
 import "./Header.css";
 import StationSearchBox, { StationSuggestion } from "./StationSearchBox";
 
@@ -30,10 +30,10 @@ const Header: FC = () => {
   const [inputFocusRequest, setInputFocusRequest] = useState(createIdleEvent<void>())
 
   const onRadarKChanged = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("radar-k chnaged", e.target.value)
+    //console.log("radar-k changed", e.target.value)
     var k = parseInt(e.target.value)
     dispatch(action.setRadarK(k))
-  }, [dispatch]) // dispatch reference is stable, but redux dosen't know it
+  }, [dispatch]) // dispatch reference is stable, but redux doesn't know it
 
   const showStationItem = useCallback((item: StationSuggestion) => {
     dispatch(action.requestShowStationItem(item))

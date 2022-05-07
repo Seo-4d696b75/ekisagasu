@@ -1,6 +1,6 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { copyNavState, DialogType, IdleNav, LineDialogNav, LineDialogProps, NavState, NavType, RadarStation, StationDialogNav } from "../components/MapNavState";
-import { StationSuggestion } from "../components/StationSearchBox";
+import { StationSuggestion } from "../components/header/StationSearchBox";
 import { Line } from "./line";
 import { CurrentLocation, LatLng } from "./location";
 import { GlobalMapState, RootState } from "./mapState";
