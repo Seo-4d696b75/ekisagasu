@@ -346,16 +346,6 @@ export class StationService {
       return data
     })
   }
-
-  measure(pos1: LatLng, pos2: LatLng): number {
-    var lng1 = Math.PI * pos1.lng / 180
-    var lat1 = Math.PI * pos1.lat / 180
-    var lng2 = Math.PI * pos2.lng / 180
-    var lat2 = Math.PI * pos2.lat / 180
-    var lng = (lng1 - lng2) / 2
-    var lat = (lat1 - lat2) / 2
-    return 6378137.0 * 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(lat), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(lng), 2)))
-  }
 }
 
 const service = new StationService()

@@ -6,7 +6,7 @@ import { CurrentLocation, LatLng } from "./location";
 import { GlobalMapState, RootState } from "./mapState";
 import { Station } from "./station";
 import StationService from "./StationService";
-import { PolylineProps } from "./utils";
+import { measure, PolylineProps } from "./utils";
 
 export const setRadarK = createAsyncThunk(
   "map/setRadarK",
@@ -75,7 +75,7 @@ export const requestShowSelectedPosition = createAsyncThunk(
             radarList: makeRadarList(pos, mapState.radarK),
             prefecture: StationService.getPrefecture(station.prefecture),
             position: pos,
-            dist: StationService.measure(station.position, pos),
+            dist: measure(station.position, pos),
             lines: station.lines.map(code => StationService.getLine(code)),
           },
         },
@@ -216,7 +216,7 @@ function makeRadarList(pos: LatLng, k: number): RadarStation[] {
   return StationService.tree.getNearStations(k).map(s => {
     return {
       station: s,
-      dist: StationService.measure(s.position, pos),
+      dist: measure(s.position, pos),
       lines: s.lines.map(code => StationService.getLine(code).name).join(' '),
     }
   })
@@ -252,7 +252,7 @@ async function nextIdleNavStateWatchinLocation(pos: LatLng, k: number): Promise<
           radarList: list,
           prefecture: StationService.getPrefecture(station.prefecture),
           position: pos,
-          dist: StationService.measure(station.position, pos),
+          dist: measure(station.position, pos),
           lines: station.lines.map(code => StationService.getLine(code)),
         }
       },

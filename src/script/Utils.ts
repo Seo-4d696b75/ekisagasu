@@ -20,19 +20,19 @@ export interface PolylineProps {
 }
 
 export function getZoomProperty(bounds: RectBounds, width: number, height: number, min_zoom: number = 0, anchor: LatLng | null = null, margin: number = 50): ZoomProps {
-  var center = {
+  let center = {
     lat: (bounds.south + bounds.north) / 2,
     lng: (bounds.east + bounds.west) / 2
   };
-  var zoom = Math.floor(Math.log2(Math.min(
+  let zoom = Math.floor(Math.log2(Math.min(
     360 / (bounds.north - bounds.south) * width / 256 * Math.cos(center.lat * Math.PI / 180),
     360 / (bounds.east - bounds.west) * height / 256
   )));
   if (zoom < min_zoom) {
     zoom = min_zoom;
     if (anchor) {
-      var max_lng = 360 * (width - margin * 2) / 256 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, zoom);
-      var max_lat = 360 * (height - margin * 2) / 256 / Math.pow(2, zoom);
+      let max_lng = 360 * (width - margin * 2) / 256 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, zoom);
+      let max_lat = 360 * (height - margin * 2) / 256 / Math.pow(2, zoom);
       if (Math.abs(center.lng - anchor.lng) > max_lng / 2) {
         center.lng = anchor.lng + max_lng / 2 * (center.lng > anchor.lng ? 1 : -1);
       }
@@ -45,18 +45,18 @@ export function getZoomProperty(bounds: RectBounds, width: number, height: numbe
 }
 
 export function getBounds(list: Array<LatLng | Station>): RectBounds {
-  var points = list.map(s => {
+  let points = list.map(s => {
     if (isLatLng(s)) {
       return s;
     } else {
       return s.position;
     }
   });
-  var north = -90;
-  var south = 90;
-  var east = -180;
-  var west = 180;
-  for (var p of points) {
+  let north = -90;
+  let south = 90;
+  let east = -180;
+  let west = 180;
+  for (let p of points) {
     north = Math.max(north, p.lat);
     south = Math.min(south, p.lat);
     east = Math.max(east, p.lng);
@@ -90,4 +90,20 @@ export function isInsideRect(position: LatLng | RectBounds, rect: RectBounds): b
       && position.west >= rect.west
     )
   }
+}
+
+/**
+ * 地球を真球と仮定して大円距離を測定する
+ * @param pos1 
+ * @param pos2 
+ * @returns 単位 meter
+ */
+export function measure(pos1: LatLng, pos2: LatLng): number {
+  let lng1 = Math.PI * pos1.lng / 180
+  let lat1 = Math.PI * pos1.lat / 180
+  let lng2 = Math.PI * pos2.lng / 180
+  let lat2 = Math.PI * pos2.lat / 180
+  let lng = (lng1 - lng2) / 2
+  let lat = (lat1 - lat2) / 2
+  return 6378137.0 * 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(lat), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(lng), 2)))
 }
