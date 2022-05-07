@@ -1,6 +1,6 @@
 
 /**
- * Serializable location data similer with GeoLocationPosition
+ * Serializable location data similar with GeoLocationPosition
  */
  export interface CurrentLocation {
   position: LatLng,

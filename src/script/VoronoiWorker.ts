@@ -1,4 +1,4 @@
-import { Voronoi } from "../diagram/Voronoi"
+import { Voronoi } from "../diagram/voronoi"
 import { Point } from "../diagram/types"
 import { Station } from "./station"
 
@@ -14,8 +14,8 @@ const state: WorkerState = {
   promise: new Map(),
 }
 
-ctx.addEventListener('message', messaage => {
-  const data = JSON.parse(messaage.data)
+ctx.addEventListener('message', message => {
+  const data = JSON.parse(message.data)
   if (data.type === 'start') {
     const container = data.container
     const provider = (point: Station & Point) => {
