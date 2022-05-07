@@ -7,7 +7,7 @@ import { selectMapState } from "../../script/mapState"
 import { Station } from "../../script/Station"
 import StationService from "../../script/StationService"
 import { AppDispatch } from "../../script/store"
-import { get_bounds, get_zoom_property, PolylineProps, RectBounds } from "../../script/Utils"
+import { getBounds, getZoomProperty, PolylineProps, RectBounds } from "../../script/utils"
 import { useRefCallback } from "../hooks"
 import { isStationDialog, NavType } from "../MapNavState"
 import { useHighVoronoi } from "./voronoiHook"
@@ -79,8 +79,8 @@ export const useMapOperator = (
       const mapElement = mapElementRef.current
       if (map && mapElement) {
         var rect = mapElement.getBoundingClientRect()
-        var bounds = get_bounds(list[radarK - 1])
-        var props = get_zoom_property(bounds, rect.width, rect.height, ZOOM_TH_VORONOI, station.position, 100)
+        var bounds = getBounds(list[radarK - 1])
+        var props = getZoomProperty(bounds, rect.width, rect.height, ZOOM_TH_VORONOI, station.position, 100)
         map.panTo(props.center)
         map.setZoom(props.zoom)
       }
@@ -109,7 +109,7 @@ export const useMapOperator = (
       bounds = line.detail
     } else {
       let stations = line.detail.stations
-      let data = get_bounds(line.detail.stations)
+      let data = getBounds(line.detail.stations)
       polyline = [{
         points: stations.map(s => s.position),
         start: stations[0].name,
@@ -125,7 +125,7 @@ export const useMapOperator = (
     const mapElement = mapElementRef.current
     if (mapElement) {
       var rect = mapElement.getBoundingClientRect()
-      var props = get_zoom_property(bounds, rect.width, rect.height)
+      var props = getZoomProperty(bounds, rect.width, rect.height)
       map.panTo(props.center)
       map.setZoom(props.zoom)
       console.log('zoom to', props, line)

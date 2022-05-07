@@ -3,7 +3,7 @@ import { StationKdTree } from "./KdTree"
 import { parseStation, Station, StationAPIResponse } from "./Station"
 import { Line, LineAPIResponse, LineDetailAPIResponse, parseLine, parseLineDetail } from "./Line"
 import { isLatLng, LatLng } from "./location"
-import { RectBounds } from "./Utils"
+import { RectBounds } from "./utils"
 
 const TAG_SEGMENT_PREFIX = "station-segment:"
 

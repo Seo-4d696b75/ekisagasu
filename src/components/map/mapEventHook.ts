@@ -10,7 +10,7 @@ import { selectMapState } from "../../script/mapState"
 import { Station } from "../../script/Station"
 import StationService from "../../script/StationService"
 import { AppDispatch } from "../../script/store"
-import { parseQueryBoolean } from "../../script/Utils"
+import { parseQueryBoolean } from "../../script/utils"
 import { useRefCallback } from "../hooks"
 import { isStationDialog, NavType } from "../MapNavState"
 

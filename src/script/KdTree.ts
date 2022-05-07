@@ -1,4 +1,4 @@
-import { RectBounds } from "./Utils"
+import { RectBounds } from "./utils"
 import { Station } from "./Station"
 import { StationService } from "./StationService"
 import { LatLng } from "./location"

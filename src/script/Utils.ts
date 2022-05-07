@@ -19,7 +19,7 @@ export interface PolylineProps {
   end: string
 }
 
-export function get_zoom_property(bounds: RectBounds, width: number, height: number, min_zoom: number = 0, anchor: LatLng | null = null, margin: number = 50): ZoomProps {
+export function getZoomProperty(bounds: RectBounds, width: number, height: number, min_zoom: number = 0, anchor: LatLng | null = null, margin: number = 50): ZoomProps {
   var center = {
     lat: (bounds.south + bounds.north) / 2,
     lng: (bounds.east + bounds.west) / 2
@@ -44,7 +44,7 @@ export function get_zoom_property(bounds: RectBounds, width: number, height: num
   return { center: center, zoom: zoom };
 }
 
-export function get_bounds(list: Array<LatLng | Station>): RectBounds {
+export function getBounds(list: Array<LatLng | Station>): RectBounds {
   var points = list.map(s => {
     if (isLatLng(s)) {
       return s;
@@ -68,24 +68,6 @@ export function get_bounds(list: Array<LatLng | Station>): RectBounds {
     east: east,
     west: west,
   };
-}
-
-export function parse_polyline(data: any): PolylineProps {
-  const geo = data['geometry']
-  const props = data['properties']
-  var start = props['start']
-  var end = props['end']
-  var points = geo['coordinates'].map(e => {
-    return {
-      lat: e[1],
-      lng: e[0]
-    }
-  })
-  return {
-    start: start,
-    end: end,
-    points: points,
-  }
 }
 
 export function parseQueryBoolean(str: string): boolean {

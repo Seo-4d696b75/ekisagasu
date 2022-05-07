@@ -6,7 +6,7 @@ import { CurrentLocation, LatLng } from "./location";
 import { GlobalMapState, RootState } from "./mapState";
 import { Station } from "./Station";
 import StationService from "./StationService";
-import { PolylineProps } from "./Utils";
+import { PolylineProps } from "./utils";
 
 export const setRadarK = createAsyncThunk(
   "map/setRadarK",

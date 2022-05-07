@@ -1,5 +1,5 @@
 import { parseStation, Station, StationAPIResponse } from "./Station"
-import { PolylineProps } from "./Utils"
+import { PolylineProps } from "./utils"
 
 export interface Line {
 
