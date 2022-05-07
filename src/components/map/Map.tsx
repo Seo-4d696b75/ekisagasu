@@ -10,12 +10,13 @@ import StationService from "../../script/StationService"
 import { CurrentPosDialog } from "../CurrentPosDialog"
 import { useEventEffect } from "../hooks"
 import { LineDialog } from "../LineDialog"
-import { CurrentPosDialogProps, DialogType, isInfoDialog, isStationDialog, LineDialogProps, NavState, NavType, SelectPosDialogProps, StationDialogProps } from "../MapNavState"
-import { CurrentPosIcon } from "../MapSections"
+import { DialogType, isInfoDialog, isStationDialog, NavType } from "../MapNavState"
 import { StationDialog } from "../StationDialog"
+import { useCurrentPosDialog, useInfoDialog } from "./dialogHook"
 import "./Map.css"
 import { useMapCallback } from "./mapEventHook"
 import { useMapOperator } from "./mapHook"
+import { CurrentPosIcon } from "./PositionIcon"
 import { useServiceCallback } from "./serviceHook"
 
 const VORONOI_COLOR = [
@@ -29,6 +30,10 @@ interface MapProps {
 }
 
 const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
+
+  /* ===============================
+   get state variables and callbacks
+  ================================ */
 
   const {
     radarK,
@@ -48,7 +53,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
 
   // callbacks registered to StationService
   const {
-    onGeolocationPositinoChanged,
+    onGeolocationPositionChanged,
     onStationLoaded,
   } = useServiceCallback()
 
@@ -90,7 +95,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
 
   useEffect(() => {
     // componentDidMount
-    StationService.onGeolocationPositionChangedCallback = onGeolocationPositinoChanged
+    StationService.onGeolocationPositionChangedCallback = onGeolocationPositionChanged
     StationService.onStationLoadedCallback = onStationLoaded
     StationService.initialize()
     const onScreenResized = () => {
@@ -106,7 +111,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
       window.removeEventListener("resize", onScreenResized)
       googleMapRef.current = null
     }
-  }, [onGeolocationPositinoChanged, onStationLoaded])
+  }, [onGeolocationPositionChanged, onStationLoaded])
 
   useEventEffect(focus, pos => {
     const map = googleMapRef.current
@@ -247,7 +252,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
 
 
   const showVoronoi = !hideVoronoi && !(isStationDialog(nav) && nav.data.showHighVoronoi)
-  const voronoiPolygones = useMemo(() => {
+  const voronoiPolygons = useMemo(() => {
     if (showVoronoi) {
       console.log("render: map voronoi")
       return voronoi.map((s, i) => (
@@ -281,9 +286,9 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   }, [showStationMarker, voronoi])
 
   const showHighVoronoi = isStationDialog(nav) && nav.data.showHighVoronoi
-  const highVoronoiPolygones = useMemo(() => {
+  const highVoronoiPolygons = useMemo(() => {
     if (showHighVoronoi) {
-      console.log("render: map high vorornoi")
+      console.log("render: map high voronoi")
       return highVoronoi.map((points, i) => (
         <Polygon
           key={i}
@@ -398,9 +403,9 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
           {selectedPosMarker}
           {lineMarkers}
           {linePolylines}
-          {voronoiPolygones}
+          {voronoiPolygons}
           {stationMarkers}
-          {highVoronoiPolygones}
+          {highVoronoiPolygons}
         </Map>
 
         {InfoDialog}
@@ -409,25 +414,6 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
       </div>
     </div>
   )
-}
-
-type InfoDialogProps = StationDialogProps | SelectPosDialogProps | LineDialogProps
-
-function useInfoDialog(nav: NavState): InfoDialogProps | undefined {
-  const dialogPropsRef = useRef<InfoDialogProps>()
-  if (isInfoDialog(nav)) {
-    dialogPropsRef.current = nav.data.dialog
-  }
-  return dialogPropsRef.current
-}
-
-function useCurrentPosDialog(nav: NavState): CurrentPosDialogProps | undefined {
-  const ref = useRef<CurrentPosDialogProps>()
-  if (nav.type === NavType.IDLE && nav.data.dialog) {
-    ref.current = nav.data.dialog
-  }
-  if (isInfoDialog(nav)) return undefined
-  return ref.current
 }
 
 const LoadingContainer = (props: any) => (

@@ -11,7 +11,7 @@ import { AppDispatch } from "../../script/store"
 export const useServiceCallback = () => {
   const dispatch = useDispatch<AppDispatch>()
 
-  const onGeolocationPositinoChanged = useCallback((pos: GeolocationPosition) => {
+  const onGeolocationPositionChanged = useCallback((pos: GeolocationPosition) => {
     dispatch(action.setCurrentLocation(pos))
   }, [dispatch])
 
@@ -20,7 +20,7 @@ export const useServiceCallback = () => {
   }, [dispatch])
 
   return {
-    onGeolocationPositinoChanged,
+    onGeolocationPositionChanged,
     onStationLoaded,
   }
 }
