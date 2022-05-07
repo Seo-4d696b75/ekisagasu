@@ -5,7 +5,7 @@ import img_line from "../img/ic_line.png";
 import img_station from "../img/station.png";
 import { Line } from "../script/Line";
 import { Station } from "../script/Station";
-import { useRefCallback } from "./Hooks";
+import { useRefCallback } from "./hooks";
 import "./InfoDialog.css";
 import { LineDialogProps } from "./MapNavState";
 
@@ -58,7 +58,7 @@ export const LineDialog: FC<LineInfoProps> = ({ info, onClosed, onStationSelecte
             src={img_delete}
             alt="close dialog"
             className="icon-action"
-            onClick={()=>onClosedRef()} />
+            onClick={() => onClosedRef()} />
           <img
             src={img_line}
             alt="show polyline"
@@ -67,9 +67,9 @@ export const LineDialog: FC<LineInfoProps> = ({ info, onClosed, onStationSelecte
         </div>
       </div>
     )
-  }, [line])
+  }, [line, onClosedRef, showPolylineRef])
 
-  const onStationSelectedRef = useRefCallback((s:Station) => onStationSelected(s))
+  const onStationSelectedRef = useRefCallback((s: Station) => onStationSelected(s))
 
   const stationListSection = useMemo(() => {
     console.log("render: station list")
@@ -109,7 +109,7 @@ export const LineDialog: FC<LineInfoProps> = ({ info, onClosed, onStationSelecte
         </div>
       </div>
     )
-  }, [lineDetails])
+  }, [lineDetails, onStationSelectedRef])
 
   return (
     <div className="info-dialog">
