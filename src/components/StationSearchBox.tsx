@@ -147,7 +147,7 @@ const renderSuggestion = (suggestion: StationSuggestion, param: Autosuggest.Rend
   return (
     <div>
       {suggestion.prefecture ? (
-        <span className="suggestion-prefecture">{Service.get_prefecture(suggestion.prefecture)}</span>
+        <span className="suggestion-prefecture">{Service.getPrefecture(suggestion.prefecture)}</span>
       ) : null}
       {suggestion.name}
     </div>

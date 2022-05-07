@@ -114,7 +114,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       const query = qs.parse(location.search)
       if (typeof query.line == 'string') {
         console.log('query: line', query.line)
-        var line = s.get_line_by_id(query.line)
+        var line = s.getLineById(query.line)
         if (line) {
           try {
             let result = await dispatch(action.requestShowLine(line)).unwrap()
@@ -129,7 +129,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
         console.log('query: station', query.station)
         try {
           let result = await dispatch(action.requestShowStationPromise(
-            s.get_station_by_id(query.station)
+            s.getStationById(query.station)
           )).unwrap()
           if (typeof query.voronoi == 'string') {
             const str = query.voronoi.toLowerCase().trim()

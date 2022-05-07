@@ -24,7 +24,7 @@ export const setWatchCurrentLocation = createAsyncThunk(
   "map/setWatchCurrentLocation",
   async (watch: boolean, thunkAPI) => {
     let { mapState } = thunkAPI.getState() as RootState
-    StationService.watch_current_position(watch)
+    StationService.setWatchCurrentPosition(watch)
     return {
       watch: watch,
       nav: (mapState.nav.type === NavType.IDLE && mapState.currentLocation) ?
@@ -41,7 +41,7 @@ export const setShowStationPin = createAction<boolean>(
 export const setHighAccuracyLocation = createAsyncThunk(
   "map/setHighAccuracyLocation",
   async (high: boolean) => {
-    StationService.set_position_accuracy(high)
+    StationService.setPositionHighAccuracy(high)
     return high
   }
 )
@@ -63,7 +63,7 @@ export const requestShowSelectedPosition = createAsyncThunk(
   "map/requestShowPosition",
   async (pos: LatLng, thunkAPI) => {
     const { mapState } = thunkAPI.getState() as RootState
-    let station = await StationService.update_location(pos, mapState.radarK, 0)
+    let station = await StationService.updateLocation(pos, mapState.radarK, 0)
     if (!station) throw Error("fail to find any station near requested position")
     let next: NavState = {
       type: NavType.DIALOG_SELECT_POS,
@@ -73,10 +73,10 @@ export const requestShowSelectedPosition = createAsyncThunk(
           props: {
             station: station,
             radarList: makeRadarList(pos, mapState.radarK),
-            prefecture: StationService.get_prefecture(station.prefecture),
+            prefecture: StationService.getPrefecture(station.prefecture),
             position: pos,
             dist: StationService.measure(station.position, pos),
-            lines: station.lines.map(code => StationService.get_line(code)),
+            lines: station.lines.map(code => StationService.getLine(code)),
           },
         },
         showHighVoronoi: false,
@@ -98,7 +98,7 @@ export const requestShowStationPromise = createAsyncThunk(
   async (stationProvider: Promise<Station>, thunkAPI) => {
     let s = await stationProvider
     const { mapState } = thunkAPI.getState() as RootState
-    await StationService.update_location(s.position, mapState.radarK, 0)
+    await StationService.updateLocation(s.position, mapState.radarK, 0)
     let next: NavState = {
       type: NavType.DIALOG_STATION_POS,
       data: {
@@ -107,8 +107,8 @@ export const requestShowStationPromise = createAsyncThunk(
           props: {
             station: s,
             radarList: makeRadarList(s.position, mapState.radarK),
-            prefecture: StationService.get_prefecture(s.prefecture),
-            lines: s.lines.map(code => StationService.get_line(code)),
+            prefecture: StationService.getPrefecture(s.prefecture),
+            lines: s.lines.map(code => StationService.getLine(code)),
           }
         },
         showHighVoronoi: false,
@@ -126,7 +126,7 @@ export const requestShowStationPromise = createAsyncThunk(
 export const requestShowLine = createAsyncThunk(
   "map/requestShowLine",
   async (line: Line) => {
-    let l = await StationService.get_line_detail(line.code)
+    let l = await StationService.getLineDetail(line.code)
     let next: LineDialogNav = {
       type: NavType.DIALOG_LINE,
       data: {
@@ -163,10 +163,10 @@ export const requestShowHighVoronoi = createAction<void>(
 export const requestShowStationItem = (item: StationSuggestion) => {
   switch (item.type) {
     case "station": {
-      return requestShowStationPromise(StationService.get_station(item.code))
+      return requestShowStationPromise(StationService.getStation(item.code))
     }
     case "line": {
-      let line = StationService.get_line(item.code)
+      let line = StationService.getLine(item.code)
       return requestShowLine(line)
     }
   }
@@ -193,7 +193,7 @@ async function checkRadarK(k: number, state: GlobalMapState): Promise<NavState |
     case NavType.DIALOG_STATION_POS:
     case NavType.DIALOG_SELECT_POS: {
       let pos = current.data.dialog.props.station.position
-      await StationService.update_location(pos, k)
+      await StationService.updateLocation(pos, k)
       let list = makeRadarList(pos, k)
       let next = copyNavState(current) as StationDialogNav
       next.data.dialog.props.radarList = list
@@ -217,7 +217,7 @@ function makeRadarList(pos: LatLng, k: number): RadarStation[] {
     return {
       station: s,
       dist: StationService.measure(s.position, pos),
-      lines: s.lines.map(code => StationService.get_line(code).name).join(' '),
+      lines: s.lines.map(code => StationService.getLine(code).name).join(' '),
     }
   })
 }
@@ -239,7 +239,7 @@ async function nextIdleNavState(state: GlobalMapState): Promise<IdleNav> {
 }
 
 async function nextIdleNavStateWatchinLocation(pos: LatLng, k: number): Promise<IdleNav> {
-  const station = await StationService.update_location(pos, k)
+  const station = await StationService.updateLocation(pos, k)
   if (!station) throw Error("fail to update idle state")
   const list = makeRadarList(pos, k)
   return {
@@ -250,10 +250,10 @@ async function nextIdleNavStateWatchinLocation(pos: LatLng, k: number): Promise<
         props: {
           station: station,
           radarList: list,
-          prefecture: StationService.get_prefecture(station.prefecture),
+          prefecture: StationService.getPrefecture(station.prefecture),
           position: pos,
           dist: StationService.measure(station.position, pos),
-          lines: station.lines.map(code => StationService.get_line(code)),
+          lines: station.lines.map(code => StationService.getLine(code)),
         }
       },
     },

@@ -1,8 +1,8 @@
 import axios from "axios"
 import { StationKdTree, StationLeafNodeProps, StationNodeProps } from "./kdTree"
-import { parseStation, Station, StationAPIResponse } from "./station"
 import { Line, LineAPIResponse, LineDetailAPIResponse, parseLine, parseLineDetail } from "./line"
 import { LatLng } from "./location"
+import { parseStation, Station, StationAPIResponse } from "./station"
 import { RectBounds } from "./utils"
 
 const TAG_SEGMENT_PREFIX = "station-segment:"
@@ -22,20 +22,25 @@ interface StationTreeSegmentResponse {
   node_list: (StationNodeResponse | StationLeafNodeResponse)[]
 }
 
+/**
+ * 内部状態を持つデータ（UIに依存しない）を保持します
+ * 
+ * Reduxでの管理が難しいserialize不可なデータ構造を持ちます
+ */
 export class StationService {
 
   initialized = false
-  position_options: PositionOptions = {
+  positionOptions: PositionOptions = {
     timeout: 5000,
     maximumAge: 100,
     enableHighAccuracy: false,
   }
-  navigator_id: number | null = null
+  navigatorId: number | null = null
 
   stations: Map<number, Station> = new Map()
-  stations_id: Map<string, Station> = new Map()
+  stationsId: Map<string, Station> = new Map()
   lines: Map<number, Line> = new Map()
-  lines_id: Map<string, Line> = new Map()
+  linesId: Map<string, Line> = new Map()
   prefecture: Map<number, string> = new Map()
 
   tree: StationKdTree | null = null
@@ -49,7 +54,7 @@ export class StationService {
    */
   tasks: Map<string, Promise<any> | null> = new Map()
 
-  task_id: number = 0
+  taskId: number = 0
 
   /**
    * tagで指定した非同期タスクの実行を同期する.
@@ -64,7 +69,7 @@ export class StationService {
    * @returns task の実行結果
    */
   async runSync<T>(tag: string, task: () => Promise<T>): Promise<T> {
-    this.task_id += 1
+    this.taskId += 1
     while (true) {
       const running = this.tasks.get(tag)
       if (running) {
@@ -94,18 +99,18 @@ export class StationService {
       // clear collections
       this.stations.clear()
       this.lines.clear()
-      this.stations_id.clear()
-      this.lines_id.clear()
+      this.stationsId.clear()
+      this.linesId.clear()
       this.prefecture.clear()
       this.tree = await new StationKdTree(
-        this.get_station_immediate.bind(this),
-        this.get_tree_segment.bind(this),
+        this.getStationImmediate.bind(this),
+        this.getTreeSegment.bind(this),
       ).initialize("root")
       let lineRes = await axios.get<LineAPIResponse[]>(`${process.env.REACT_APP_DATA_BASE_URL}/line.json`)
       lineRes.data.forEach(d => {
         let line = parseLine(d)
         this.lines.set(line.code, line)
-        this.lines_id.set(line.id, line)
+        this.linesId.set(line.id, line)
       })
 
       let prefectureRes = await axios.get<string>(process.env.REACT_APP_PREFECTURE_URL)
@@ -127,57 +132,57 @@ export class StationService {
     this.tree?.release()
     this.tree = null
     this.stations.clear()
-    this.stations_id.clear()
+    this.stationsId.clear()
     this.lines.clear()
-    this.lines_id.clear()
+    this.linesId.clear()
     this.tasks.clear()
-    this.watch_current_position(false)
+    this.setWatchCurrentPosition(false)
     this.onGeolocationPositionChangedCallback = undefined
     this.onStationLoadedCallback = undefined
     console.log('service released')
   }
 
-  set_position_accuracy(value: boolean) {
+  setPositionHighAccuracy(value: boolean) {
     console.log("position accuracy changed", value)
-    this.position_options.enableHighAccuracy = value
-    if (this.navigator_id) {
-      this.watch_current_position(false)
-      this.watch_current_position(true)
+    this.positionOptions.enableHighAccuracy = value
+    if (this.navigatorId) {
+      this.setWatchCurrentPosition(false)
+      this.setWatchCurrentPosition(true)
     }
   }
 
   onGeolocationPositionChangedCallback: ((pos: GeolocationPosition) => void) | undefined = undefined
 
-  watch_current_position(enable: boolean) {
+  setWatchCurrentPosition(enable: boolean) {
     if (enable) {
       if (navigator.geolocation) {
-        if (this.navigator_id) {
+        if (this.navigatorId) {
           console.log("already set")
           return
         }
-        this.navigator_id = navigator.geolocation.watchPosition(
+        this.navigatorId = navigator.geolocation.watchPosition(
           (pos) => {
             this.onGeolocationPositionChangedCallback?.(pos)
           },
           (err) => {
             console.log(err)
           },
-          this.position_options
+          this.positionOptions
         )
-        console.log("start watching position", this.position_options)
+        console.log("start watching position", this.positionOptions)
       } else {
         console.log("this device does not support Geolocation")
       }
     } else {
-      if (this.navigator_id) {
-        navigator.geolocation.clearWatch(this.navigator_id)
-        this.navigator_id = null
+      if (this.navigatorId) {
+        navigator.geolocation.clearWatch(this.navigatorId)
+        this.navigatorId = null
         console.log("stop watching position")
       }
     }
   }
 
-  get_current_position(): Promise<GeolocationPosition> {
+  getCurrentPosition(): Promise<GeolocationPosition> {
     if (navigator.geolocation) {
       return new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(
@@ -187,7 +192,7 @@ export class StationService {
           (err) => {
             reject(err)
           },
-          this.position_options
+          this.positionOptions
         )
       })
     } else {
@@ -195,7 +200,7 @@ export class StationService {
     }
   }
 
-  async update_location(position: LatLng, k: number, r: number = 0): Promise<Station | null> {
+  async updateLocation(position: LatLng, k: number, r: number = 0): Promise<Station | null> {
     if (!k || k <= 0) k = 1
     if (!r || r < 0) r = 0
     /* kd-tree のNodeデータは探索中に必要になって初めて非同期でロードされるため、
@@ -211,7 +216,7 @@ export class StationService {
     })
   }
 
-  async update_rect(rect: RectBounds, max: number = Number.MAX_SAFE_INTEGER): Promise<Station[]> {
+  async updateRect(rect: RectBounds, max: number = Number.MAX_SAFE_INTEGER): Promise<Station[]> {
     if (max < 1) max = 1
     return await this.runSync("update_location", async () => {
       if (this.tree) {
@@ -223,52 +228,52 @@ export class StationService {
 
   }
 
-  get_station_immediate(code: number): Station {
+  getStationImmediate(code: number): Station {
     return this.stations.get(code) as Station
   }
 
-  async get_station_by_id(id: string): Promise<Station> {
+  async getStationById(id: string): Promise<Station> {
     if (id.match(/^[0-9a-f]{6}$/)) {
-      var s = this.stations_id.get(id)
+      let s = this.stationsId.get(id)
       if (s) return s
-      const res = await axios.get(`${process.env.REACT_APP_STATION_API_URL}/station?id=${id}`)
-      var pos = {
+      const res = await axios.get<StationAPIResponse>(`${process.env.REACT_APP_STATION_API_URL}/station?id=${id}`)
+      let pos = {
         lat: res.data.lat,
         lng: res.data.lng,
       }
       // this 'update' operation loads station data as a segment
-      await this.update_location(pos, 1)
-      return this.stations_id.get(id) as Station
+      await this.updateLocation(pos, 1)
+      return this.stationsId.get(id) as Station
     }
     const code = parseInt(id)
     if (!isNaN(code)) {
-      return await this.get_station(code)
+      return await this.getStation(code)
     }
     throw Error("invalid station arg, not id nor code.")
   }
 
-  async get_station_or_null(code: number): Promise<Station | undefined> {
+  async getStationOrNull(code: number): Promise<Station | undefined> {
     var s = this.stations.get(code)
     if (s) return s
     // step 1: get lat/lng of the target station
     // step 2: update neighbor stations
     try {
-      const res = await axios.get(`${process.env.REACT_APP_STATION_API_URL}/station?code=${code}`)
+      const res = await axios.get<StationAPIResponse>(`${process.env.REACT_APP_STATION_API_URL}/station?code=${code}`)
       var pos = {
         lat: res.data.lat,
         lng: res.data.lng,
       }
       // this 'update' operation loads station data as a segment
-      await this.update_location(pos, 1)
-      return this.get_station_immediate(code)
+      await this.updateLocation(pos, 1)
+      return this.getStationImmediate(code)
     } catch (e) {
       console.warn("api error. station code:", code, e)
       return undefined
     }
   }
 
-  async get_station(code: number): Promise<Station> {
-    var s = await this.get_station_or_null(code)
+  async getStation(code: number): Promise<Station> {
+    var s = await this.getStationOrNull(code)
     if (s) {
       return s
     } else {
@@ -276,27 +281,27 @@ export class StationService {
     }
   }
 
-  get_line(code: number): Line {
+  getLine(code: number): Line {
     return this.lines.get(code) as Line
   }
 
-  get_line_or_null(code: number): Line | undefined {
+  getLineOrNull(code: number): Line | undefined {
     return this.lines.get(code)
   }
 
-  get_line_by_id(id: string): Line | undefined {
+  getLineById(id: string): Line | undefined {
     if (id.match(/^[0-9a-f]{6}$/)) {
-      var line = this.lines_id.get(id)
+      var line = this.linesId.get(id)
       if (line) return line
     }
     const code = parseInt(id)
     if (!isNaN(code)) {
-      return this.get_line_or_null(code)
+      return this.getLineOrNull(code)
     }
     return undefined
   }
 
-  async get_line_detail(code: number): Promise<Line> {
+  async getLineDetail(code: number): Promise<Line> {
     const line = this.lines.get(code)
     if (!line) {
       throw Error(`line not found id:${code}`)
@@ -316,13 +321,13 @@ export class StationService {
     })
   }
 
-  get_prefecture(code: number): string {
+  getPrefecture(code: number): string {
     return this.prefecture.get(code) as string
   }
 
   onStationLoadedCallback: ((list: Station[]) => void) | undefined = undefined
 
-  get_tree_segment(name: string): Promise<StationTreeSegmentResponse> {
+  getTreeSegment(name: string): Promise<StationTreeSegmentResponse> {
     const tag = `${TAG_SEGMENT_PREFIX}${name}`
     // be sure to avoid loading the same segment
     return this.runSync(tag, async () => {
@@ -334,7 +339,7 @@ export class StationService {
       }).filter((e): e is Station => e !== null)
       list.forEach(s => {
         this.stations.set(s.code, s)
-        this.stations_id.set(s.id, s)
+        this.stationsId.set(s.id, s)
       })
       this.onStationLoadedCallback?.(list)
       this.tasks.set(tag, null)

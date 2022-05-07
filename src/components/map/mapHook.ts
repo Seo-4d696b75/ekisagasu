@@ -58,7 +58,7 @@ export const useMapOperator = (
 
   const setCenterCurrentPosition = (map: google.maps.Map) => {
     // no move animation
-    StationService.get_current_position().then(pos => {
+    StationService.getCurrentPosition().then(pos => {
       let latlng = {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude
@@ -148,7 +148,7 @@ export const useMapOperator = (
         west: sw.lng() - margin,
         east: ne.lng() + margin,
       }
-      StationService.update_rect(rect, VORONOI_SIZE_TH)
+      StationService.updateRect(rect, VORONOI_SIZE_TH)
     }
   }
 
@@ -167,7 +167,7 @@ export const useMapOperator = (
   const focusAtNearestStation = (pos: LatLng) => {
     if (!StationService.initialized) return
     if (isStationDialog(nav) && nav.data.showHighVoronoi) return
-    StationService.update_location(pos, radarK, 0).then(s => {
+    StationService.updateLocation(pos, radarK, 0).then(s => {
       console.log("update location", s)
       if (s) dispatch(action.requestShowStation(s))
     })
@@ -181,7 +181,7 @@ export const useMapOperator = (
       }
     } else {
       closeDialog()
-      StationService.get_current_position().then(pos => {
+      StationService.getCurrentPosition().then(pos => {
         moveToCurrentPosition(new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude))
       })
     }
