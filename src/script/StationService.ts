@@ -1,7 +1,7 @@
 import axios from "axios"
 import { StationKdTree } from "./KdTree"
-import { parseStation, Station, StationAPIResponse } from "./Station"
-import { Line, LineAPIResponse, LineDetailAPIResponse, parseLine, parseLineDetail } from "./Line"
+import { parseStation, Station, StationAPIResponse } from "./station"
+import { Line, LineAPIResponse, LineDetailAPIResponse, parseLine, parseLineDetail } from "./line"
 import { isLatLng, LatLng } from "./location"
 import { RectBounds } from "./utils"
 

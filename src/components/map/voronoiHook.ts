@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import VoronoiWorker from "worker-loader!./../../script/VoronoiWorker"; // eslint-disable-line import/no-webpack-loader-syntax
 import * as Rect from "../../diagram/Rect";
 import { LatLng } from "../../script/location";
-import { Station } from "../../script/Station";
+import { Station } from "../../script/station";
 import StationService from "../../script/StationService";
 
 export interface HighVoronoiCallback {

@@ -1,5 +1,5 @@
 import { RectBounds } from "./utils"
-import { Station } from "./Station"
+import { Station } from "./station"
 import { StationService } from "./StationService"
 import { LatLng } from "./location"
 

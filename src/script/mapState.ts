@@ -1,6 +1,6 @@
 import { NavState } from "../components/MapNavState"
 import { PropsEvent } from "./event"
-import { Station } from "./Station"
+import { Station } from "./station"
 import { CurrentLocation, LatLng } from "./location"
 
 export interface GlobalMapState {

@@ -1,16 +1,16 @@
-import { parseStation, Station, StationAPIResponse } from "./Station"
+import { parseStation, Station, StationAPIResponse } from "./station"
 import { PolylineProps } from "./utils"
 
 export interface Line {
 
-	id: string
-	code: number
-	name: string
-	nameKana: string
-	stationSize: number
-	color: string
+  id: string
+  code: number
+  name: string
+  nameKana: string
+  stationSize: number
+  color: string
 
-	detail?: LineDetail
+  detail?: LineDetail
 }
 
 export interface LineDetail {
@@ -23,12 +23,12 @@ export interface LineDetail {
 }
 
 export interface LineAPIResponse {
-	id: string
-	code: number
-	name: string
-	name_kana: string
-	station_size: number
-	color?: string
+  id: string
+  code: number
+  name: string
+  name_kana: string
+  station_size: number
+  color?: string
 }
 
 export interface LineDetailAPIResponse extends LineAPIResponse {
@@ -57,13 +57,13 @@ export interface LineDetailAPIResponse extends LineAPIResponse {
 
 export function parseLine(data: LineAPIResponse): Line {
   return {
-	  id: data['id'],
-		code: data['code'],
-		name: data['name'],
-		nameKana: data['name_kana'],
-		stationSize: data['station_size'],
+    id: data['id'],
+    code: data['code'],
+    name: data['name'],
+    nameKana: data['name_kana'],
+    stationSize: data['station_size'],
     color: data['color'] ?? '#CCCCCC',
-	}
+  }
 }
 
 export function parseLineDetail(data: LineDetailAPIResponse): LineDetail {
@@ -71,7 +71,7 @@ export function parseLineDetail(data: LineDetailAPIResponse): LineDetail {
   return {
     stations: data.station_list.map(e => parseStation(e)),
     polylines: collection?.features?.map(e => {
-      let points = e.geometry.coordinates.map(p => ({lat: p[1], lng: p[0]}))
+      let points = e.geometry.coordinates.map(p => ({ lat: p[1], lng: p[0] }))
       return {
         points: points,
         start: e.properties.start,

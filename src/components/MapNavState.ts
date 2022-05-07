@@ -1,6 +1,6 @@
-import { Line } from "../script/Line"
+import { Line } from "../script/line"
 import { LatLng } from "../script/location"
-import { Station } from "../script/Station"
+import { Station } from "../script/station"
 import { PolylineProps } from "../script/utils"
 
 export interface RadarStation {
