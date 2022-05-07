@@ -1,35 +1,19 @@
-import React, { FC, useMemo, useState } from "react";
-import { connect, useDispatch, useSelector } from "react-redux";
+import React, { FC, useCallback, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { CSSTransition } from "react-transition-group";
 import img_delete from "../img/ic_delete.png";
 import img_help from "../img/ic_help.png";
 import img_search from "../img/ic_search.png";
 import img_setting from "../img/ic_settings.png";
+import * as action from "../script/actions_";
 import { createEvent, createIdleEvent } from "../script/Event";
-import { GlobalState } from "../script/Reducer";
-import { RootState } from "../script/store_";
+import { RootState } from "../script/mapState";
 import "./Header.css";
 import StationSearchBox, { StationSuggestion } from "./StationSearchBox";
-import * as action from "../script/actions_";
 
-interface HeaderProps {
-  radarK: number
-  showPosition: boolean
-  showStationPin: boolean
-  highAccuracy: boolean
-
-}
-
-function mapGlobalState2Props(state: GlobalState): HeaderProps {
-  return {
-    radarK: state.radar_k,
-    showPosition: state.watch_position,
-    showStationPin: state.show_station_pin,
-    highAccuracy: state.high_accuracy,
-
-  }
-}
+const radarMin = process.env.REACT_APP_RADAR_MIN
+const radarMax = process.env.REACT_APP_RADAR_MAX
 
 const Header: FC = () => {
   const {
@@ -38,25 +22,23 @@ const Header: FC = () => {
     showStationPin,
     isHighAccuracyLocation,
   } = useSelector((state: RootState) => state.mapState)
+
   const dispatch = useDispatch()
 
   const [showSetting, setShowSetting] = useState(false)
   const [showSearchBox, setShowSearchBox] = useState(false)
   const [inputFocusRequest, setInputFocusRequest] = useState(createIdleEvent<void>())
 
-  const onRadarKChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onRadarKChanged = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     console.log("radar-k chnaged", e.target.value)
     var k = parseInt(e.target.value)
     dispatch(action.setRadarK(k))
-  }
+  }, [dispatch]) // dispatch reference is stable, but redux dosen't know it
 
-  const showStationItem = (item: StationSuggestion) => {
+  const showStationItem = useCallback((item: StationSuggestion) => {
     dispatch(action.requestShowStationItem(item))
     setShowSearchBox(false)
-  }
-
-  const radar_min = process.env.REACT_APP_RADAR_MIN
-  const radar_max = process.env.REACT_APP_RADAR_MAX
+  }, [dispatch])
 
   const searchBoxSection = useMemo(() => {
     //console.log("render: search box")
@@ -73,7 +55,7 @@ const Header: FC = () => {
         </div>
       </CSSTransition>
     )
-  }, [showSearchBox, inputFocusRequest])
+  }, [showSearchBox, inputFocusRequest, showStationItem])
 
   const actionButtonSection = useMemo(() => (
     <div className="Action-container">
@@ -99,27 +81,27 @@ const Header: FC = () => {
     <>
       <div className="Setting-title radar"> レーダ検知数 &nbsp;<strong>{radarK}</strong></div>
       <div className="Setting-slider radar">
-        <span>{radar_min}</span>
+        <span>{radarMin}</span>
         <input
           type="range"
-          min={radar_min}
-          max={radar_max}
+          min={radarMin}
+          max={radarMax}
           value={radarK}
           step="1"
           name="radar"
           onChange={onRadarKChanged}
           list="radar-list">
-        </input><span>{radar_max}</span>
+        </input><span>{radarMax}</span>
         <datalist id="radar-list">
-          <option value={radar_min} label={radar_min.toString()}></option>
-          {[...Array(radar_max).keys()].slice(radar_min + 1).map(v => (
+          <option value={radarMin} label={radarMin.toString()}></option>
+          {[...Array(radarMax).keys()].slice(radarMin + 1).map(v => (
             <option value={v}></option>
           ))}
-          <option value={radar_max} label={radar_max.toString()}></option>
+          <option value={radarMax} label={radarMax.toString()}></option>
         </datalist>
       </div>
     </>
-  ), [radarK])
+  ), [radarK, onRadarKChanged])
 
   const settingPositionSection = useMemo(() => (
     <div className="switch-container">
@@ -133,7 +115,7 @@ const Header: FC = () => {
         <label htmlFor="toggle-position" className="toggle-label" />
       </div>
     </div>
-  ), [watchCurrentLocation])
+  ), [watchCurrentLocation, dispatch])
 
   const settingAccuracySection = useMemo(() => (
     <div className="switch-container">
@@ -147,7 +129,7 @@ const Header: FC = () => {
         <label htmlFor="toggle-accuracy" className="toggle-label" />
       </div>
     </div>
-  ), [isHighAccuracyLocation])
+  ), [isHighAccuracyLocation, dispatch])
 
   const settingStationPinSection = useMemo(() => (
     <div className="switch-container">
@@ -161,7 +143,7 @@ const Header: FC = () => {
         <label htmlFor="toggle-pin" className="toggle-label" />
       </div>
     </div>
-  ), [showStationPin])
+  ), [showStationPin, dispatch])
 
   return (
     <div className='Map-header'>
@@ -192,4 +174,4 @@ const Header: FC = () => {
   )
 }
 
-export default connect(mapGlobalState2Props)(Header)
+export default Header
