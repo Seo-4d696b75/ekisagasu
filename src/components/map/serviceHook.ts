@@ -1,8 +1,8 @@
 import { useCallback } from "react"
 import { useDispatch } from "react-redux"
-import * as action from "../../script/actions_"
+import * as action from "../../script/actions"
 import { Station } from "../../script/Station"
-import { AppDispatch } from "../../script/store_"
+import { AppDispatch } from "../../script/store"
 
 /**
  * serviceに登録するコールバック関数を取得する

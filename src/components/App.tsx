@@ -5,7 +5,7 @@ import Map from './map/Map'
 import Help from './Help'
 import { HashRouter, Route } from 'react-router-dom';
 import { Provider } from "react-redux"
-import { store } from "../script/store_"
+import { store } from "../script/store"
 
 export default class APP extends React.Component {
 

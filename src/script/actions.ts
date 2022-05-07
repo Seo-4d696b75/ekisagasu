@@ -1,14 +1,12 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { copyNavState, DialogType, IdleNav, LineDialogNav, LineDialogProps, NavState, NavType, RadarStation, StationDialogNav } from "../components/MapNavState";
-import { CurrentLocation, LatLng, PolylineProps } from "./Utils";
-import StationService from "./StationService"
-import { GlobalMapState } from "./mapStateSlice";
-import { RootState } from "./store_";
-import { Station } from "./Station";
-import { Line } from "./Line";
 import { StationSuggestion } from "../components/StationSearchBox";
+import { Line } from "./Line";
 import { CurrentLocation, LatLng } from "./location";
 import { GlobalMapState, RootState } from "./mapState";
+import { Station } from "./Station";
+import StationService from "./StationService";
+import { PolylineProps } from "./Utils";
 
 export const setRadarK = createAsyncThunk(
   "map/setRadarK",
@@ -190,12 +188,6 @@ export const appendLoadedStation = createAction<Station[]>(
  * k値が変化したときに必要なら新しいMapNavStateを生成する
  */
 async function checkRadarK(k: number, state: GlobalMapState): Promise<NavState | null> {
-  const checker = async (pos: LatLng): Promise<Array<RadarStation>> => {
-    // have to update rakar list, which depneds on radar-k
-    // If radar-k incremented
-    await StationService.update_location(pos, k, 0)
-    return makeRadarList(pos, k)
-  }
   const current = state.nav
   switch (current.type) {
     case NavType.DIALOG_STATION_POS:

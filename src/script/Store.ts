@@ -1,5 +1,10 @@
-import { createStore, applyMiddleware } from "redux"
-import reducer, { GlobalAction, GlobalState } from "./Reducer"
-import thunk, { ThunkMiddleware } from "redux-thunk"
+import {configureStore} from "@reduxjs/toolkit"
+import mapStateReducer from "./mapStateSlice"
 
-export const store = createStore(reducer, applyMiddleware(thunk as ThunkMiddleware<GlobalState, GlobalAction, undefined>))
+export const store = configureStore({
+  reducer: {
+    mapState: mapStateReducer,
+  },
+})
+
+export type AppDispatch = typeof store.dispatch

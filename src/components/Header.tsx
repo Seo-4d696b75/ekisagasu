@@ -6,7 +6,7 @@ import img_delete from "../img/ic_delete.png";
 import img_help from "../img/ic_help.png";
 import img_search from "../img/ic_search.png";
 import img_setting from "../img/ic_settings.png";
-import * as action from "../script/actions_";
+import * as action from "../script/actions";
 import { createEvent, createIdleEvent } from "../script/Event";
 import { RootState } from "../script/mapState";
 import "./Header.css";
