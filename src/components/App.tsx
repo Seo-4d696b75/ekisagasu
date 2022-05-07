@@ -1,7 +1,7 @@
 import React from 'react';
 import './App.css';
 import Header from './Header'
-import Map from './Map'
+import Map from './map/Map'
 import Help from './Help'
 import { HashRouter, Route } from 'react-router-dom';
 import { Provider } from "react-redux"
