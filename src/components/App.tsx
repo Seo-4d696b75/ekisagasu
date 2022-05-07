@@ -4,7 +4,7 @@ import { HashRouter, Route } from 'react-router-dom';
 import { store } from "../script/store";
 import './App.css';
 import Header from './header/Header';
-import Help from './Help';
+import Help from './help/Help';
 import Map from './map/Map';
 
 const APP: FC = () => {
