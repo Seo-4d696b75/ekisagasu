@@ -17,7 +17,8 @@ export interface StationAPIResponse {
   code: number
   id: string
   name: string
-  position: LatLng
+  lat: number
+  lng: number
   name_kana: string
   prefecture: number
   lines: number[]
@@ -37,16 +38,16 @@ export interface StationAPIResponse {
 export function parseStation(data: StationAPIResponse): Station {
 
   let voronoiList: LatLng[] = []
-  const voronoi = data['voronoi']
-  const geo = voronoi['geometry']
-  switch (geo['type']) {
+  const voronoi = data.voronoi
+  const geo = voronoi.geometry
+  switch (geo.type) {
     case 'Polygon':
-      voronoiList = geo["coordinates"][0].map(e => {
+      voronoiList = geo.coordinates[0].map(e => {
         return { lat: e[1], lng: e[0] }
       })
       break
     case 'LineString':
-      voronoiList = geo["coordinates"].map(e => {
+      voronoiList = geo.coordinates.map(e => {
         return { lat: e[1], lng: e[0] }
       })
       break
@@ -55,17 +56,17 @@ export function parseStation(data: StationAPIResponse): Station {
   }
 
   return {
-    code: data['code'],
-    id: data['id'],
-    name: data['name'],
+    code: data.code,
+    id: data.id,
+    name: data.name,
     position: {
-      lat: data['lat'],
-      lng: data['lng']
+      lat: data.lat,
+      lng: data.lng,
     },
-    nameKana: data['name_kana'],
-    prefecture: data['prefecture'],
-    lines: data['lines'],
-    next: data['next'],
+    nameKana: data.name_kana,
+    prefecture: data.prefecture,
+    lines: data.lines,
+    next: data.next,
     voronoiPolygon: voronoiList,
   }
 }

@@ -57,12 +57,12 @@ export interface LineDetailAPIResponse extends LineAPIResponse {
 
 export function parseLine(data: LineAPIResponse): Line {
   return {
-    id: data['id'],
-    code: data['code'],
-    name: data['name'],
-    nameKana: data['name_kana'],
-    stationSize: data['station_size'],
-    color: data['color'] ?? '#CCCCCC',
+    id: data.id,
+    code: data.code,
+    name: data.name,
+    nameKana: data.name_kana,
+    stationSize: data.station_size,
+    color: data.color ?? '#CCCCCC',
   }
 }
 
