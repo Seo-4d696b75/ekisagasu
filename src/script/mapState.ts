@@ -18,3 +18,5 @@ export interface GlobalMapState {
 export interface RootState {
   mapState: GlobalMapState
 }
+
+export const selectMapState = (state: RootState) => state.mapState
