@@ -7,7 +7,7 @@ import { Station } from "../../script/station";
 import { StationDetails, StationRadar, StationTitle } from "./DialogSections";
 import { useRefCallback } from "../hooks";
 import "./InfoDialog.css";
-import { StationDialogProps } from "../MapNavState";
+import { StationDialogProps } from "../navState";
 
 interface StationInfoProps {
   info: StationDialogProps

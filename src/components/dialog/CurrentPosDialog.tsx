@@ -7,7 +7,7 @@ import { Line } from "../../script/line";
 import { Station } from "../../script/station";
 import { StationDetails, StationRadar, StationTitle } from "./DialogSections";
 import "./InfoDialog.css";
-import { CurrentPosDialogProps } from "../MapNavState";
+import { CurrentPosDialogProps } from "../navState";
 
 interface CurrentPosInfoProps {
   info: CurrentPosDialogProps

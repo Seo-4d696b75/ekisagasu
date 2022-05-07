@@ -8,7 +8,7 @@ import { Station } from "../../script/station"
 import StationService from "../../script/StationService"
 import { AppDispatch } from "../../script/store"
 import { getBounds, getZoomProperty, PolylineProps, RectBounds } from "../../script/utils"
-import { isStationDialog, NavType } from "../MapNavState"
+import { isStationDialog, NavType } from "../navState"
 import { useHighVoronoi } from "./voronoiHook"
 
 const ZOOM_TH_VORONOI = 10

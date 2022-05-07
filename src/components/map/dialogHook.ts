@@ -1,5 +1,5 @@
 import { useRef } from "react"
-import { CurrentPosDialogProps, isInfoDialog, LineDialogProps, NavState, NavType, SelectPosDialogProps, StationDialogProps } from "../MapNavState"
+import { CurrentPosDialogProps, isInfoDialog, LineDialogProps, NavState, NavType, SelectPosDialogProps, StationDialogProps } from "../navState"
 
 export type InfoDialogProps = StationDialogProps | SelectPosDialogProps | LineDialogProps
 

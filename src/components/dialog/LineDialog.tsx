@@ -7,7 +7,7 @@ import { Line } from "../../script/line";
 import { Station } from "../../script/station";
 import { useRefCallback } from "../hooks";
 import "./InfoDialog.css";
-import { LineDialogProps } from "../MapNavState";
+import { LineDialogProps } from "../navState";
 
 export interface LineInfoProps {
   info: LineDialogProps

@@ -9,7 +9,7 @@ import { Line } from "../../script/line"
 import { Station } from "../../script/station"
 import { useRefCallback } from "../hooks"
 import "./InfoDialog.css"
-import { DialogType, StationDialogProps } from "../MapNavState"
+import { DialogType, StationDialogProps } from "../navState"
 
 function formatDistance(dist: number): string {
   if (dist < 1000.0) {

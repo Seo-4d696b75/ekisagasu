@@ -12,7 +12,7 @@ import StationService from "../../script/StationService"
 import { AppDispatch } from "../../script/store"
 import { parseQueryBoolean } from "../../script/utils"
 import { useRefCallback } from "../hooks"
-import { isStationDialog, NavType } from "../MapNavState"
+import { isStationDialog, NavType } from "../navState"
 
 function getUIEvent(clickEvent: any): UIEvent {
   // googlemap onClick などのコールバック関数に渡させるイベントオブジェクトの中にあるUIEventを抽出

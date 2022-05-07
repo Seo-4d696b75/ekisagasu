@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit"
-import { DialogType, isStationDialog, NavState, NavType } from "../components/MapNavState"
+import { DialogType, isStationDialog, NavState, NavType } from "../components/navState"
 import { appendLoadedStation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStationPromise, setCurrentLocation, setHighAccuracyLocation, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions"
 import { createEvent, createIdleEvent } from "./event"
 import { GlobalMapState } from "./mapState"

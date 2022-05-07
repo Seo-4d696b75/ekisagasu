@@ -1,4 +1,4 @@
-import { NavState } from "../components/MapNavState"
+import { NavState } from "../components/navState"
 import { PropsEvent } from "./event"
 import { Station } from "./station"
 import { CurrentLocation, LatLng } from "./location"
