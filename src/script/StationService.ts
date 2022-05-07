@@ -354,25 +354,6 @@ export class StationService {
     var lat = (lat1 - lat2) / 2
     return 6378137.0 * 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(lat), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(lng), 2)))
   }
-
-  inside_rect(position: LatLng | RectBounds, rect: RectBounds): boolean {
-    if (isLatLng(position)) {
-      return (
-        position.lat >= rect.south &&
-        position.lat <= rect.north &&
-        position.lng >= rect.west &&
-        position.lng <= rect.east
-      )
-    } else {
-      return (
-        position.south >= rect.south
-        && position.north <= rect.north
-        && position.east <= rect.east
-        && position.west >= rect.west
-      )
-    }
-  }
-
 }
 
 const service = new StationService()

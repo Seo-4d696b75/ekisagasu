@@ -1,4 +1,4 @@
-import { RectBounds } from "./utils"
+import { isInsideRect, RectBounds } from "./utils"
 import { Station } from "./station"
 import { StationService } from "./StationService"
 import { LatLng } from "./location"
@@ -35,7 +35,7 @@ class StationNode {
 				console.error("station not found", this.code);
 				return;
 			}
-			if (!tree.service.inside_rect(this.station.position, this.region)) {
+			if (!isInsideRect(this.station.position, this.region)) {
 				console.error("station pos out of bouuds", this.station, this.region);
 				return;
 			}
@@ -265,7 +265,7 @@ export class StationKdTree {
 			if (max && dst.length >= max) {
 				return;
 			}
-			if (this.service.inside_rect(station.position, rect)) {
+			if (isInsideRect(station.position, rect)) {
 				dst.push(station);
 			}
 			var tasks: Array<Promise<any>> = [];
