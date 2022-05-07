@@ -14,6 +14,10 @@ export interface StationLeafNodeProps {
   segment: string
 }
 
+/**
+ * 探索木の部分木のデータ構造
+ * [@see api docs](https://station-service.herokuapp.com/api/docs)
+ */
 export interface StationTreeSegmentProps {
   name: string
   root: number
@@ -26,6 +30,14 @@ function isLeafNode(node: NodeProps): node is StationLeafNodeProps {
   return node.segment !== undefined
 }
 
+/**
+ * 探索木の頂点
+ * 
+ * 各頂点がひとつのデータ点（駅とその座標）を保持する
+ * ただし、分割された部分木で初期化されるため、
+ * - 有効なデータを持つ頂点：即座に計算
+ * - まだデータがない頂点：on-demandでデータを非同期にロードしてから計算
+ */
 class StationNode {
 
   depth: number
@@ -58,14 +70,14 @@ class StationNode {
         return
       }
       if (!isInsideRect(this.station.position, this.region)) {
-        console.error("station pos out of bouuds", this.station, this.region)
+        console.error("station pos out of bounds", this.station, this.region)
         return
       }
       const x = (this.depth % 2 === 0)
       if (data.left) {
-        var left = dataMap.get(data.left)
+        const left = dataMap.get(data.left)
         if (!left) throw Error(`node not found ${data.left}`)
-        var leftRegion = {
+        const leftRegion = {
           north: x ? this.region.north : this.station.position.lat,
           south: this.region.south,
           east: x ? this.station.position.lng : this.region.east,
@@ -74,9 +86,9 @@ class StationNode {
         this.left = new StationNode(this.depth + 1, left, tree, dataMap, leftRegion)
       }
       if (data.right) {
-        var right = dataMap.get(data.right)
+        const right = dataMap.get(data.right)
         if (!right) throw Error(`node not found ${data.right}`)
-        var rightRegion = {
+        const rightRegion = {
           north: this.region.north,
           south: x ? this.region.south : this.station.position.lat,
           east: this.region.east,
@@ -105,7 +117,7 @@ class StationNode {
         if (data.root !== this.code) {
           return Promise.reject(`root mismatch. name:${this.segmentName}`)
         } else {
-          var map = new Map<number, NodeProps>()
+          const map = new Map<number, NodeProps>()
           data.node_list.forEach(element => {
             map.set(element.code, element)
           })
@@ -127,14 +139,26 @@ class StationNode {
 
 }
 
+/**
+ * 最近某探索の結果
+ */
 export interface NearStation {
   station: Station
+  /**
+   * 探索点からの距離[m]
+   */
   dist: number
 }
 
 export type StationProvider = (code: number) => Station
 export type TreeSegmentProvider = (name: string) => Promise<StationTreeSegmentProps>
 
+/**
+ * 駅座標に基づく最近某探索を高速に行うためのkd-treeデータ構造
+ * 
+ * **注意** 緯度・経度の値に基づく仮想的な直交座標系で計算されるユークリッド距離で大小を比較するため、
+ * 実際の測地的距離（大円距離）の大小比較とは異なる結果となる
+ */
 export class StationKdTree {
 
   root: StationNode | null = null
@@ -149,11 +173,11 @@ export class StationKdTree {
 
   async initialize(root_name: string): Promise<StationKdTree> {
     return this.treeSegmentProvider(root_name).then(data => {
-      var map = new Map<number, NodeProps>()
+      const map = new Map<number, NodeProps>()
       data.node_list.forEach(element => {
         map.set(element.code, element)
       })
-      var region = {
+      let region = {
         north: 90,
         south: -90,
         east: 180,
@@ -231,8 +255,8 @@ export class StationKdTree {
   }
 
   measure(p1: LatLng, p2: LatLng): number {
-    var lat = p1.lat - p2.lat
-    var lng = p1.lng - p2.lng
+    let lat = p1.lat - p2.lat
+    let lng = p1.lng - p2.lng
     return Math.sqrt(lat * lat + lng * lng)
   }
 
@@ -244,8 +268,8 @@ export class StationKdTree {
 
     const s = await node.get()
     const d = this.measure(position, s.position)
-    var index = -1
-    var size = this.searchList.length
+    let index = -1
+    let size = this.searchList.length
     if (size > 0 && d < this.searchList[size - 1].dist) {
       index = size - 1
       while (index > 0) {
@@ -256,7 +280,7 @@ export class StationKdTree {
       index = 0
     }
     if (index >= 0) {
-      var e = {
+      let e = {
         dist: d,
         station: s
       }
@@ -265,19 +289,19 @@ export class StationKdTree {
         this.searchList.pop()
       }
     }
-    var x = (node.depth % 2 === 0)
+    let x = (node.depth % 2 === 0)
     div.value = (x ? position.lng : position.lat)
     div.threshold = (x ? s.position.lng : s.position.lat)
 
-    var next = (div.value < div.threshold) ? node.left : node.right
+    let next = (div.value < div.threshold) ? node.left : node.right
     if (next) {
       await this.search(next, position, k, r)
     }
 
-    var value = div.value
-    var th = div.threshold
+    let value = div.value
+    let th = div.threshold
     next = (value < th) ? node.right : node.left
-    var list = this.searchList
+    let list = this.searchList
     if (next && Math.abs(value - th) < Math.max(list[list.length - 1].dist, r)) {
       await this.search(next, position, k, r)
     }
