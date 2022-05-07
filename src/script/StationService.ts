@@ -7,16 +7,9 @@ import { RectBounds } from "./utils"
 
 const TAG_SEGMENT_PREFIX = "station-segment:"
 
-interface StationNodeResponse extends StationAPIResponse {
-  left?: number
-  right?: number
-  segment: undefined
-}
+type StationNodeResponse = StationAPIResponse & StationNodeProps
 
-interface StationLeafNodeResponse {
-  code: number
-  segment: string
-}
+type StationLeafNodeResponse = StationLeafNodeProps
 
 function isStationLeafNode(node: StationNodeResponse | StationLeafNodeResponse): node is StationLeafNodeResponse {
   return node.segment !== undefined
