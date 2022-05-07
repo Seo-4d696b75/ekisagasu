@@ -7,7 +7,7 @@ import img_radar from "../img/radar.png"
 import img_station from "../img/station.png"
 import { Line } from "../script/Line"
 import { Station } from "../script/Station"
-import { useRefCallback } from "./Hooks"
+import { useRefCallback } from "./hooks"
 import "./InfoDialog.css"
 import { DialogType, StationDialogProps } from "./MapNavState"
 
@@ -57,7 +57,8 @@ export const StationDetails: FC<StationDetailProps> = ({ info, onLineSelected })
         })}
       </tbody>
     </table>
-  ), [lines])
+  ), [lines, onLineSelectedRef])
+
   const detail = useMemo(() => {
     console.log("render: station details")
     return (
@@ -107,6 +108,7 @@ export const StationDetails: FC<StationDetailProps> = ({ info, onLineSelected })
       </>
     )
   }, [info, station])
+
   return (
     <div className={`container-main station-detail ${info.type === DialogType.SELECT_POSITION ? 'position' : ''}`}>
       {detail}
@@ -164,7 +166,7 @@ export const StationRadar: FC<StationRadarProps> = ({ info, show, onStationSelec
         </div>
       </div>
     )
-  }, [radarList])
+  }, [radarList, onStationSelectedRef, onCloseRef])
 
   return (
     <div className={`container-main radar ${info.type === DialogType.STATION ? "" : "position"}`}>

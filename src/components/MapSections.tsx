@@ -1,6 +1,6 @@
 import { FC } from "react";
 import ic_mylocation from "../img/ic_mylocation.png";
-import { useRefCallback } from "./Hooks";
+import { useRefCallback } from "./hooks";
 
 export const CurrentPosIcon: FC<{onClick: () => void}> = ({onClick}) => {
 
