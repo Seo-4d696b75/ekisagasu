@@ -1,4 +1,4 @@
-import * as point from "./Point"
+import * as point from "./point"
 import { Point, Circle, DiagramError } from "./types"
 
 export class CircleError extends DiagramError { }

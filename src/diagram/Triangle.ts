@@ -1,7 +1,7 @@
-import * as line from "./Line";
-import * as point from "./Point";
-import * as edge from "./Edge";
-import * as circle from "./Circle";
+import * as line from "./line";
+import * as point from "./point";
+import * as edge from "./edge";
+import * as circle from "./circle";
 import { Point, Line, Edge, Triangle, Circle, DiagramError } from "./types"
 
 class TriangleInitError extends DiagramError { }

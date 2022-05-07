@@ -1,5 +1,5 @@
-import * as line from "./Line";
-import * as point from "./Point";
+import * as line from "./line";
+import * as point from "./point";
 import { Point, Line, Edge, DiagramError } from "./types"
 
 export function toString(e: Edge) {
@@ -53,7 +53,7 @@ export function hashCode(edge: Edge): number {
   return hash & hash;
 }
 
-export function getMiddlepoint(edge: Edge): Point {
+export function getMiddlePoint(edge: Edge): Point {
   return {
     x: (edge.a.x + edge.b.x) / 2,
     y: (edge.a.y + edge.b.y) / 2,

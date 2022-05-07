@@ -1,12 +1,12 @@
 import { ObjectSet, ObjectMap } from "./utils"
 import { Point, Edge, Line, Circle, Triangle, Rect, DiagramError } from "./types"
-import * as point from "./Point"
-import * as edge from "./Edge";
-import * as triangle from "./Triangle"
-import * as line from "./Line"
-import * as circle from "./Circle"
-import * as rect from "./Rect"
-import { Builder as PolygonBuilder } from "./Polygon";
+import * as point from "./point"
+import * as edge from "./edge";
+import * as triangle from "./triangle"
+import * as line from "./line"
+import * as circle from "./circle"
+import * as rect from "./rect"
+import { Builder as PolygonBuilder } from "./polygon";
 
 
 class TrianglePair {
@@ -139,7 +139,7 @@ export class Delaunay {
     }
     const builder = new PolygonBuilder();
     this.triangles = this.triangles.removeIf(element => this.isOutSide(element, container, builder));
-    if (!builder.closed) throw new Error("fail to calcuate frame");
+    if (!builder.closed) throw new Error("fail to calculate frame");
     var list = builder.build();
     if (!list) throw new DiagramError("fail to build polyline of out-line")
     this.normalizeDirection(list);
@@ -177,7 +177,7 @@ export class Delaunay {
     console.log(`time: ${performance.now() - time}ms`);
   }
 
-  isOutSide(next: Triangle, container: Triangle, builer: PolygonBuilder): boolean {
+  isOutSide(next: Triangle, container: Triangle, builder: PolygonBuilder): boolean {
     var a = triangle.isVertex(next, container.a);
     var b = triangle.isVertex(next, container.b);
     var c = triangle.isVertex(next, container.c);
@@ -186,9 +186,9 @@ export class Delaunay {
     if (b) cnt++;
     if (c) cnt++;
     if (cnt === 1) {
-      if (a) builer.append(triangle.getOppositeSide(next, container.a));
-      if (b) builer.append(triangle.getOppositeSide(next, container.b));
-      if (c) builer.append(triangle.getOppositeSide(next, container.c));
+      if (a) builder.append(triangle.getOppositeSide(next, container.a));
+      if (b) builder.append(triangle.getOppositeSide(next, container.b));
+      if (c) builder.append(triangle.getOppositeSide(next, container.c));
       return true;
     } else if (cnt === 2) {
       return true;

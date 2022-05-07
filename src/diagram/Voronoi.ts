@@ -1,7 +1,7 @@
 import { Point, Line, Edge, Triangle, DiagramError } from "./types"
-import * as point from "./Point";
-import * as line from "./Line";
-import * as triangle from "./Triangle";
+import * as point from "./point";
+import * as line from "./line";
+import * as triangle from "./triangle";
 import { ObjectSet } from "./utils";
 
 class VoronoiError extends DiagramError {

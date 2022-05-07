@@ -1,7 +1,7 @@
 import { Point, Edge, DiagramError } from "./types"
-import * as point from "./Point"
+import * as point from "./point"
 import { ObjectSet } from "./utils"
-import * as edge from "./Edge"
+import * as edge from "./edge"
 
 class EdgeGroup {
 

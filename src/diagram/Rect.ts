@@ -1,6 +1,6 @@
 import { Rect, DiagramError, Triangle } from "./types"
-import * as point from "./Point"
-import * as triangle from "./Triangle"
+import * as point from "./point"
+import * as triangle from "./triangle"
 
 class RectInitError extends DiagramError { }
 
@@ -14,7 +14,7 @@ export function init(left: number, top: number, right: number, bottom: number): 
       bottom: bottom,
     }
   }
-  throw new RectInitError("invalide args")
+  throw new RectInitError("invalid args")
 }
 
 export function getContainer(rect: Rect): Triangle {

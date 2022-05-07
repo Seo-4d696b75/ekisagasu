@@ -1,5 +1,5 @@
-import * as point from "./Point"
-import * as edge from "./Edge"
+import * as point from "./point"
+import * as edge from "./edge"
 import { Point, Line, Edge, DiagramError } from "./types"
 
 class LineInitError extends DiagramError { }
@@ -23,7 +23,7 @@ export function isLine(p: any): p is Line {
 }
 
 /**
- * Gets an instance of a new line. Pairs of argments are; 
+ * Gets an instance of a new line. Pairs of arguments are; 
  * (1) a, b, c: number => a line defined by equation: ax + by + c = 0
  * (2) a, b: Point => a line which goes through the both points
  * @param a 
