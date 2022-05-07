@@ -1,13 +1,13 @@
 import React, { FC, useMemo, useState } from "react";
 import { CSSTransition } from "react-transition-group";
-import img_delete from "../img/ic_delete.png";
-import img_line from "../img/ic_line.png";
-import img_station from "../img/station.png";
-import { Line } from "../script/line";
-import { Station } from "../script/station";
-import { useRefCallback } from "./hooks";
+import img_delete from "../../img/ic_delete.png";
+import img_line from "../../img/ic_line.png";
+import img_station from "../../img/station.png";
+import { Line } from "../../script/line";
+import { Station } from "../../script/station";
+import { useRefCallback } from "../hooks";
 import "./InfoDialog.css";
-import { LineDialogProps } from "./MapNavState";
+import { LineDialogProps } from "../MapNavState";
 
 export interface LineInfoProps {
   info: LineDialogProps

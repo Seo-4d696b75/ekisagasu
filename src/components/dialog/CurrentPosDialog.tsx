@@ -1,13 +1,13 @@
 import { FC, useMemo, useState } from "react";
 import { CSSTransition } from "react-transition-group";
-import img_above from "../img/ic_above.png";
-import img_delete from "../img/ic_delete.png";
-import img_radar from "../img/radar.png";
-import { Line } from "../script/line";
-import { Station } from "../script/station";
+import img_above from "../../img/ic_above.png";
+import img_delete from "../../img/ic_delete.png";
+import img_radar from "../../img/radar.png";
+import { Line } from "../../script/line";
+import { Station } from "../../script/station";
 import { StationDetails, StationRadar, StationTitle } from "./DialogSections";
 import "./InfoDialog.css";
-import { CurrentPosDialogProps } from "./MapNavState";
+import { CurrentPosDialogProps } from "../MapNavState";
 
 interface CurrentPosInfoProps {
   info: CurrentPosDialogProps
