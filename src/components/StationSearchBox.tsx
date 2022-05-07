@@ -2,7 +2,7 @@ import { CircularProgress } from "@material-ui/core"
 import axios from "axios"
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Autosuggest from 'react-autosuggest'
-import { handleIf, PropsEvent } from "../script/Event"
+import { handleIf, PropsEvent } from "../script/event"
 import Service from "../script/StationService"
 import "./StationSearchBox.css"
 

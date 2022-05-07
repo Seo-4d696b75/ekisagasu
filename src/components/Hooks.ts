@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { handleIf, PropsEvent } from "../script/Event";
+import { handleIf, PropsEvent } from "../script/event";
 
 /**
  * コールバック関数をrefでメモ化します
