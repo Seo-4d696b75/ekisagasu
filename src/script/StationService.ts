@@ -63,7 +63,7 @@ export class StationService {
    * この関数呼び出し時に以前に実行を開始した別の非同期処理がまだ完了してない場合はその完了を待ってから実行する
    * 
    * @param tag 同期するタスクの種類の識別子
-   * @param task 同期したいタスク asynな関数・λ式を利用する.引数はこの関数の呼び出し時の状況に応じて,  
+   * @param task 同期したいタスク asyncな関数・λ式を利用する.引数はこの関数の呼び出し時の状況に応じて,  
    *             - 該当する実行中の別タスクが存在する場合はその実行を待機して別タスクの結果を渡して実行
    *             - 該当する実行中の別タスクが存在しない場合はnullを渡し即座にtaskを実行
    * @returns task の実行結果
@@ -116,7 +116,7 @@ export class StationService {
       let prefectureRes = await axios.get<string>(process.env.REACT_APP_PREFECTURE_URL)
       this.prefecture = new Map()
       prefectureRes.data.split('\n').forEach((line: string) => {
-        var cells = line.split(',')
+        let cells = line.split(',')
         if (cells.length === 2) {
           this.prefecture.set(parseInt(cells[0]), cells[1])
         }
@@ -253,13 +253,13 @@ export class StationService {
   }
 
   async getStationOrNull(code: number): Promise<Station | undefined> {
-    var s = this.stations.get(code)
+    const s = this.stations.get(code)
     if (s) return s
     // step 1: get lat/lng of the target station
     // step 2: update neighbor stations
     try {
       const res = await axios.get<StationAPIResponse>(`${process.env.REACT_APP_STATION_API_URL}/station?code=${code}`)
-      var pos = {
+      let pos = {
         lat: res.data.lat,
         lng: res.data.lng,
       }
@@ -273,7 +273,7 @@ export class StationService {
   }
 
   async getStation(code: number): Promise<Station> {
-    var s = await this.getStationOrNull(code)
+    const s = await this.getStationOrNull(code)
     if (s) {
       return s
     } else {
@@ -291,7 +291,7 @@ export class StationService {
 
   getLineById(id: string): Line | undefined {
     if (id.match(/^[0-9a-f]{6}$/)) {
-      var line = this.linesId.get(id)
+      let line = this.linesId.get(id)
       if (line) return line
     }
     const code = parseInt(id)
@@ -334,7 +334,7 @@ export class StationService {
       const res = await axios.get<StationTreeSegmentResponse>(`${process.env.REACT_APP_DATA_BASE_URL}/tree/${name}.json`)
       console.log("tree-segment", name, res.data)
       const data = res.data
-      var list = data.node_list.map(e => {
+      const list = data.node_list.map(e => {
         return isStationLeafNode(e) ? null : parseStation(e)
       }).filter((e): e is Station => e !== null)
       list.forEach(s => {

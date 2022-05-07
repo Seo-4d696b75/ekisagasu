@@ -28,7 +28,7 @@ export const setWatchCurrentLocation = createAsyncThunk(
     return {
       watch: watch,
       nav: (mapState.nav.type === NavType.IDLE && mapState.currentLocation) ?
-        await nextIdleNavStateWatchinLocation(mapState.currentLocation.position, mapState.radarK)
+        await nextIdleNavStateWatchingLocation(mapState.currentLocation.position, mapState.radarK)
         : null
     }
   }
@@ -202,7 +202,7 @@ async function checkRadarK(k: number, state: GlobalMapState): Promise<NavState |
     case NavType.IDLE: {
       if (state.watchCurrentLocation && state.currentLocation) {
         let pos = state.currentLocation.position
-        return nextIdleNavStateWatchinLocation(pos, k)
+        return nextIdleNavStateWatchingLocation(pos, k)
       }
       return null
     }
@@ -227,7 +227,7 @@ async function nextIdleNavState(state: GlobalMapState): Promise<IdleNav> {
   const location = state.currentLocation
   if (state.watchCurrentLocation && location) {
     const pos = location.position
-    return await nextIdleNavStateWatchinLocation(pos, state.radarK)
+    return await nextIdleNavStateWatchingLocation(pos, state.radarK)
   } else {
     return {
       type: NavType.IDLE,
@@ -238,7 +238,7 @@ async function nextIdleNavState(state: GlobalMapState): Promise<IdleNav> {
   }
 }
 
-async function nextIdleNavStateWatchinLocation(pos: LatLng, k: number): Promise<IdleNav> {
+async function nextIdleNavStateWatchingLocation(pos: LatLng, k: number): Promise<IdleNav> {
   const station = await StationService.updateLocation(pos, k)
   if (!station) throw Error("fail to update idle state")
   const list = makeRadarList(pos, k)
