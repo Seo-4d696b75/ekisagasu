@@ -1,5 +1,5 @@
 import axios from "axios"
-import { StationKdTree, StationLeafNodeProps, StationNodeProps } from "./KdTree"
+import { StationKdTree, StationLeafNodeProps, StationNodeProps } from "./kdTree"
 import { parseStation, Station, StationAPIResponse } from "./station"
 import { Line, LineAPIResponse, LineDetailAPIResponse, parseLine, parseLineDetail } from "./line"
 import { LatLng } from "./location"
