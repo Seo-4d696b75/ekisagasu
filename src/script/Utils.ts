@@ -25,8 +25,8 @@ export function getZoomProperty(bounds: RectBounds, width: number, height: numbe
     lng: (bounds.east + bounds.west) / 2
   };
   let zoom = Math.floor(Math.log2(Math.min(
-    360 / (bounds.north - bounds.south) * width / 256 * Math.cos(center.lat * Math.PI / 180),
-    360 / (bounds.east - bounds.west) * height / 256
+    360 / (bounds.north - bounds.south) * height / 256 * Math.cos(center.lat * Math.PI / 180),
+    360 / (bounds.east - bounds.west) * width / 256
   )));
   if (zoom < min_zoom) {
     zoom = min_zoom;
