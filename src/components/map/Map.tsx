@@ -18,6 +18,7 @@ import { useMapCallback } from "./mapEventHook"
 import { useMapOperator } from "./mapHook"
 import { CurrentPosIcon } from "./PositionIcon"
 import { useServiceCallback } from "./serviceHook"
+import { useProgressBanner } from "./progressHook"
 
 const VORONOI_COLOR = [
   "#0000FF",
@@ -57,10 +58,15 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     onStationLoaded,
   } = useServiceCallback()
 
+  // banner shown while async task taking a long time
+  const {
+    banner,
+    showProgressBannerWhile,
+  } = useProgressBanner()
+
   // functions operating the map and its state variables
   const {
     highVoronoi,
-    workerRunning,
     hideStationPin,
     hideVoronoi,
     showStation,
@@ -74,7 +80,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     focusAt,
     focusAtNearestStation,
     requestCurrentPosition,
-  } = useMapOperator(googleMapRef, mapElementRef)
+  } = useMapOperator(showProgressBannerWhile, googleMapRef, mapElementRef)
 
   // callbacks listening to map events
   const {
@@ -83,7 +89,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     onMapDragStart,
     onMapIdle,
     onMapReady,
-  } = useMapCallback(screenWide, googleMapRef, {
+  } = useMapCallback(screenWide, googleMapRef, showProgressBannerWhile, {
     focusAt,
     focusAtNearestStation,
     closeDialog,
@@ -304,27 +310,6 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     }
   }, [showHighVoronoi, highVoronoi, radarK])
 
-  const progressDialog = useMemo(() => (
-    <CSSTransition
-      in={workerRunning}
-      className="Dialog-message"
-      timeout={0}>
-      {highVoronoi ? (
-        <div className="Dialog-message">
-          <div className="Progress-container">
-            <CircularProgress
-              value={highVoronoi.length * 100 / radarK}
-              size={36}
-              color="primary"
-              thickness={5.0}
-              variant="indeterminate" />
-          </div>
-          <div className="Wait-message">計算中…{(highVoronoi.length).toString().padStart(2)}/{radarK}</div>
-        </div>
-      ) : (<div>no message</div>)}
-    </CSSTransition>
-  ), [workerRunning, highVoronoi, radarK])
-
   // when dialog closed, dialog props will be undefined before animation completed.
   // so cache dialog props using ref object.
   const infoDialogProps = useInfoDialog(nav)
@@ -351,7 +336,6 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
               onClosed={closeDialog}
               onShowVoronoi={showRadarVoronoi} />
           ) : null}
-          {progressDialog}
         </div>
       </div>
     </CSSTransition>
@@ -410,6 +394,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
 
         {InfoDialog}
         {currentPosDialog}
+        {banner}
         <CurrentPosIcon onClick={requestCurrentPosition} />
       </div>
     </div>
