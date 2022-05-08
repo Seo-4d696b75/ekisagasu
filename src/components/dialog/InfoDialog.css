@@ -424,7 +424,7 @@ table {
 	cursor: pointer;
 	width: 30px;
 	height: 30px;
-	background-image: url(../img/ic_above.png);
+	background-image: url(../../img/ic_above.png);
 	background-size: contain;
 }
 

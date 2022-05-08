@@ -1,53 +1,44 @@
-import React, { FC, useMemo, useState } from "react";
-import { connect } from "react-redux";
+import React, { FC, useCallback, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { CSSTransition } from "react-transition-group";
-import img_delete from "../img/ic_delete.png";
-import img_help from "../img/ic_help.png";
-import img_search from "../img/ic_search.png";
-import img_setting from "../img/ic_settings.png";
-import * as Action from "../script/Actions";
-import { createEvent, createIdleEvent } from "../script/Event";
-import { GlobalState } from "../script/Reducer";
+import img_delete from "../../img/ic_delete.png";
+import img_help from "../../img/ic_help.png";
+import img_search from "../../img/ic_search.png";
+import img_setting from "../../img/ic_settings.png";
+import * as action from "../../script/actions";
+import { createEvent, createIdleEvent } from "../../script/event";
+import { RootState } from "../../script/mapState";
 import "./Header.css";
 import StationSearchBox, { StationSuggestion } from "./StationSearchBox";
 
-interface HeaderProps {
-  radarK: number
-  showPosition: boolean
-  showStationPin: boolean
-  highAccuracy: boolean
+const radarMin = process.env.REACT_APP_RADAR_MIN
+const radarMax = process.env.REACT_APP_RADAR_MAX
 
-}
+const Header: FC = () => {
+  const {
+    radarK,
+    watchCurrentLocation,
+    showStationPin,
+    isHighAccuracyLocation,
+  } = useSelector((state: RootState) => state.mapState)
 
-function mapGlobalState2Props(state: GlobalState): HeaderProps {
-  return {
-    radarK: state.radar_k,
-    showPosition: state.watch_position,
-    showStationPin: state.show_station_pin,
-    highAccuracy: state.high_accuracy,
+  const dispatch = useDispatch()
 
-  }
-}
-
-const Header: FC<HeaderProps> = ({ radarK, showPosition, showStationPin, highAccuracy }) => {
   const [showSetting, setShowSetting] = useState(false)
   const [showSearchBox, setShowSearchBox] = useState(false)
   const [inputFocusRequest, setInputFocusRequest] = useState(createIdleEvent<void>())
 
-  const onRadarKChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("radar-k chnaged", e.target.value)
+  const onRadarKChanged = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    //console.log("radar-k changed", e.target.value)
     var k = parseInt(e.target.value)
-    Action.setRadarK(k)
-  }
+    dispatch(action.setRadarK(k))
+  }, [dispatch]) // dispatch reference is stable, but redux doesn't know it
 
-  const showStationItem = (item: StationSuggestion) => {
-    Action.requestShowStationItem(item)
+  const showStationItem = useCallback((item: StationSuggestion) => {
+    dispatch(action.requestShowStationItem(item))
     setShowSearchBox(false)
-  }
-
-  const radar_min = process.env.REACT_APP_RADAR_MIN
-  const radar_max = process.env.REACT_APP_RADAR_MAX
+  }, [dispatch])
 
   const searchBoxSection = useMemo(() => {
     //console.log("render: search box")
@@ -64,7 +55,7 @@ const Header: FC<HeaderProps> = ({ radarK, showPosition, showStationPin, highAcc
         </div>
       </CSSTransition>
     )
-  }, [showSearchBox, inputFocusRequest])
+  }, [showSearchBox, inputFocusRequest, showStationItem])
 
   const actionButtonSection = useMemo(() => (
     <div className="Action-container">
@@ -90,27 +81,27 @@ const Header: FC<HeaderProps> = ({ radarK, showPosition, showStationPin, highAcc
     <>
       <div className="Setting-title radar"> レーダ検知数 &nbsp;<strong>{radarK}</strong></div>
       <div className="Setting-slider radar">
-        <span>{radar_min}</span>
+        <span>{radarMin}</span>
         <input
           type="range"
-          min={radar_min}
-          max={radar_max}
+          min={radarMin}
+          max={radarMax}
           value={radarK}
           step="1"
           name="radar"
           onChange={onRadarKChanged}
           list="radar-list">
-        </input><span>{radar_max}</span>
+        </input><span>{radarMax}</span>
         <datalist id="radar-list">
-          <option value={radar_min} label={radar_min.toString()}></option>
-          {[...Array(radar_max).keys()].slice(radar_min + 1).map(v => (
+          <option value={radarMin} label={radarMin.toString()}></option>
+          {[...Array(radarMax).keys()].slice(radarMin + 1).map(v => (
             <option value={v}></option>
           ))}
-          <option value={radar_max} label={radar_max.toString()}></option>
+          <option value={radarMax} label={radarMax.toString()}></option>
         </datalist>
       </div>
     </>
-  ), [radarK])
+  ), [radarK, onRadarKChanged])
 
   const settingPositionSection = useMemo(() => (
     <div className="switch-container">
@@ -119,12 +110,12 @@ const Header: FC<HeaderProps> = ({ radarK, showPosition, showStationPin, highAcc
         <input id="toggle-position"
           className="toggle-input"
           type='checkbox'
-          checked={showPosition}
-          onChange={(e) => Action.setWatchCurrentPosition(e.target.checked)} />
+          checked={watchCurrentLocation}
+          onChange={(e) => dispatch(action.setWatchCurrentLocation(e.target.checked))} />
         <label htmlFor="toggle-position" className="toggle-label" />
       </div>
     </div>
-  ), [showPosition])
+  ), [watchCurrentLocation, dispatch])
 
   const settingAccuracySection = useMemo(() => (
     <div className="switch-container">
@@ -133,12 +124,12 @@ const Header: FC<HeaderProps> = ({ radarK, showPosition, showStationPin, highAcc
         <input id="toggle-accuracy"
           className="toggle-input"
           type='checkbox'
-          checked={highAccuracy}
-          onChange={(e) => Action.setPositionAccuracy(e.target.checked)} />
+          checked={isHighAccuracyLocation}
+          onChange={(e) => dispatch(action.setHighAccuracyLocation(e.target.checked))} />
         <label htmlFor="toggle-accuracy" className="toggle-label" />
       </div>
     </div>
-  ), [highAccuracy])
+  ), [isHighAccuracyLocation, dispatch])
 
   const settingStationPinSection = useMemo(() => (
     <div className="switch-container">
@@ -148,23 +139,25 @@ const Header: FC<HeaderProps> = ({ radarK, showPosition, showStationPin, highAcc
           className="toggle-input"
           type='checkbox'
           checked={showStationPin}
-          onChange={(e) => Action.setShowStationPin(e.target.checked)} />
+          onChange={(e) => dispatch(action.setShowStationPin(e.target.checked))} />
         <label htmlFor="toggle-pin" className="toggle-label" />
       </div>
     </div>
-  ), [showStationPin])
+  ), [showStationPin, dispatch])
 
-  const settingSection = useMemo(() => {
-    //console.log("render: setting dialog")
-    return (
+  return (
+    <div className='Map-header'>
+      <div className="Header-frame">
+        <div className="App-title"> 駅サガース </div>
+        {searchBoxSection}
+        {actionButtonSection}
+      </div>
       <CSSTransition
         in={showSetting}
         className="Setting-container"
         timeout={400}>
-
         <div className="Setting-container">
           <div className="Setting-frame">
-
             <img
               src={img_delete}
               alt="close dialog"
@@ -176,21 +169,9 @@ const Header: FC<HeaderProps> = ({ radarK, showPosition, showStationPin, highAcc
             {settingStationPinSection}
           </div>
         </div>
-
       </CSSTransition>
-    )
-  }, [showSetting, radarK, showPosition, highAccuracy, showStationPin])
-
-  return (
-    <div className='Map-header'>
-      <div className="Header-frame">
-        <div className="App-title"> 駅サガース </div>
-        {searchBoxSection}
-        {actionButtonSection}
-      </div>
-      {settingSection}
     </div>
   )
 }
 
-export default connect(mapGlobalState2Props)(Header)
+export default Header

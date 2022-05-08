@@ -1,9 +1,10 @@
-import { FC, useRef } from "react";
-import ic_mylocation from "../img/ic_mylocation.png"
+import { FC } from "react";
+import ic_mylocation from "../../img/ic_mylocation.png";
+import { useRefCallback } from "../hooks";
 
 export const CurrentPosIcon: FC<{onClick: () => void}> = ({onClick}) => {
-  const onClickRef = useRef<()=>void>()
-  onClickRef.current = onClick
+
+  const onClickRef = useRefCallback<()=>void>(onClick)
 
   return (
     <div className="menu mylocation">
@@ -11,7 +12,7 @@ export const CurrentPosIcon: FC<{onClick: () => void}> = ({onClick}) => {
         src={ic_mylocation}
         alt="move to current location"
         className="icon mylocation"
-        onClick={() => onClickRef.current?.()}></img>
+        onClick={onClickRef}></img>
     </div>
   )
 }

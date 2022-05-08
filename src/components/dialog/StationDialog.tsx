@@ -1,12 +1,13 @@
-import { FC, useMemo, useRef, useState } from "react";
-import img_delete from "../img/ic_delete.png";
-import img_radar from "../img/radar.png";
-import img_voronoi from "../img/voronoi.png";
-import { Line } from "../script/Line";
-import { Station } from "../script/Station";
+import { FC, useMemo, useState } from "react";
+import img_delete from "../../img/ic_delete.png";
+import img_radar from "../../img/radar.png";
+import img_voronoi from "../../img/voronoi.png";
+import { Line } from "../../script/line";
+import { Station } from "../../script/station";
 import { StationDetails, StationRadar, StationTitle } from "./DialogSections";
+import { useRefCallback } from "../hooks";
 import "./InfoDialog.css";
-import { StationDialogProps } from "./MapNavState";
+import { StationDialogProps } from "../navState";
 
 interface StationInfoProps {
   info: StationDialogProps
@@ -21,15 +22,11 @@ export const StationDialog: FC<StationInfoProps> = ({ info, onClosed, onLineSele
 
   const station = info.props.station
 
-  const showVoronoiCallbackRef = useRef<() => void>()
-  showVoronoiCallbackRef.current = () => {
-    if (onShowVoronoi) {
-      onShowVoronoi(station)
-    }
-  }
+  const showVoronoiCallbackRef = useRefCallback(() => {
+    onShowVoronoi?.(station)
+  })
 
-  const onClosedRef = useRef<() => void>()
-  onClosedRef.current = onClosed
+  const onClosedRef = useRefCallback(onClosed)
 
   const actionBottonSection = useMemo(() => {
     return (
@@ -38,9 +35,9 @@ export const StationDialog: FC<StationInfoProps> = ({ info, onClosed, onLineSele
           src={img_delete}
           alt="close dialog"
           className="icon-action close"
-          onClick={() => onClosedRef.current?.()} /><br />
+          onClick={() => onClosedRef()} /><br />
         <img
-          onClick={() => showVoronoiCallbackRef.current?.()}
+          onClick={() => showVoronoiCallbackRef()}
           src={img_voronoi}
           alt="show voronoi"
           className="icon-action" /><br />
@@ -51,7 +48,7 @@ export const StationDialog: FC<StationInfoProps> = ({ info, onClosed, onLineSele
           className="icon-action radar" />
       </div>
     )
-  }, [])
+  }, [onClosedRef, showVoronoiCallbackRef])
 
   return (
     <div className="info-dialog">
