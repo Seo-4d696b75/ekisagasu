@@ -24,7 +24,8 @@
     "downlevelIteration": true,
     "sourceMap": false,
     "types": [
-      "googlemaps"
+      "googlemaps",
+      "jest",
     ]
   },
   "include": [
