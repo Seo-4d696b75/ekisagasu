@@ -24,7 +24,7 @@ export interface StationTreeSegmentProps {
   node_list: NodeProps[]
 }
 
-type NodeProps = StationNodeProps | StationLeafNodeProps
+export type NodeProps = StationNodeProps | StationLeafNodeProps
 
 function isLeafNode(node: NodeProps): node is StationLeafNodeProps {
   return node.segment !== undefined
@@ -38,7 +38,7 @@ function isLeafNode(node: NodeProps): node is StationLeafNodeProps {
  * - 有効なデータを持つ頂点：即座に計算
  * - まだデータがない頂点：on-demandでデータを非同期にロードしてから計算
  */
-class StationNode {
+export class StationNode {
 
   depth: number
   code: number

@@ -11,11 +11,11 @@ type StationNodeResponse = StationAPIResponse & StationNodeProps
 
 type StationLeafNodeResponse = StationLeafNodeProps
 
-function isStationLeafNode(node: StationNodeResponse | StationLeafNodeResponse): node is StationLeafNodeResponse {
+export function isStationLeafNode(node: StationNodeResponse | StationLeafNodeResponse): node is StationLeafNodeResponse {
   return node.segment !== undefined
 }
 
-interface StationTreeSegmentResponse {
+export interface StationTreeSegmentResponse {
   name: string
   root: number
   station_size: number
