@@ -342,7 +342,6 @@ export class StationService {
         this.stationsId.set(s.id, s)
       })
       this.onStationLoadedCallback?.(list)
-      this.tasks.set(tag, null)
       return data
     })
   }
