@@ -22,6 +22,18 @@ export interface StationTreeSegmentResponse {
   node_list: (StationNodeResponse | StationLeafNodeResponse)[]
 }
 
+enum ResultType {
+  Success, Error,
+}
+
+type AsyncResult<T> = {
+  type: ResultType.Success,
+  value: T
+} | {
+  type: ResultType.Error,
+  err?: any
+}
+
 /**
  * 内部状態を持つデータ（UIに依存しない）を保持します
  * 
@@ -52,44 +64,51 @@ export class StationService {
    * - 内部状態をもつ計算の順序が保証できない
    * このserviceで適切な同期をとる
    */
-  tasks: Map<string, Promise<any> | null> = new Map()
-
-  taskId: number = 0
+  tasks: Map<string, Promise<any>> = new Map()
 
   /**
    * tagで指定した非同期タスクの実行を同期する.
    * 
-   * tagで識別される同種のタスクが並行して高々１つのみ実行されることを保証する(実行順序は保証しない)
+   * tagで識別される同種のタスクが並行して高々１つのみ実行されることを保証する
    * この関数呼び出し時に以前に実行を開始した別の非同期処理がまだ完了してない場合はその完了を待ってから実行する
    * 
    * @param tag 同期するタスクの種類の識別子
    * @param task 同期したいタスク asyncな関数・λ式を利用する.引数はこの関数の呼び出し時の状況に応じて,  
-   *             - 該当する実行中の別タスクが存在する場合はその実行を待機して別タスクの結果を渡して実行
-   *             - 該当する実行中の別タスクが存在しない場合はnullを渡し即座にtaskを実行
+   *             - 該当する実行中の別タスクが存在する場合はその実行を待機してから実行
+   *             - 該当する実行中の別タスクが存在しない場合は即座にtaskを実行
    * @returns task の実行結果
    */
   async runSync<T>(tag: string, task: () => Promise<T>): Promise<T> {
-    this.taskId += 1
-    while (true) {
-      const running = this.tasks.get(tag)
-      if (running) {
-        //console.log(`runSync(id:${id}) wait:`, tag)
-        await running
-      } else {
-        //console.log(`runSync(id:${id}) wait: ${wait} run:`, tag)
-        break
+    const running = this.tasks.get(tag)
+    const next: Promise<AsyncResult<T>> = (
+      running?.then(() => {
+        // 前段の処理を待機
+        return task()
+      }) ?? task()
+    ).then(result => {
+      return {
+        type: ResultType.Success,
+        value: result,
       }
-    }
-    const next = task().then(r => {
-      this.tasks.set(tag, null)
-      //console.log(`runSync(id:${id}) done:`, tag)
-      return r
-    }).catch(e => {
-      this.tasks.set(tag, null)
-      throw e
+    }).catch(err => {
+      return {
+        type: ResultType.Error,
+        err: err,
+      }
     })
     this.tasks.set(tag, next)
-    return await next
+    // nextはrejectされない
+    return next.then(result => {
+      // 後処理
+      if (Object.is(this.tasks.get(tag), next)) {
+        this.tasks.delete(tag)
+      }
+      if (result.type === ResultType.Success) {
+        return result.value
+      } else {
+        return Promise.reject(result.err)
+      }
+    })
   }
 
   async initialize(): Promise<StationService> {
@@ -305,10 +324,10 @@ export class StationService {
     // 単一のupdate_** 呼び出しでも同一segmentが複数から要求される
     const tag = `line-details-${code}`
     return await this.runSync(tag, async () => {
-    const line = this.lines.get(code)
-    if (!line) {
-      throw Error(`line not found id:${code}`)
-    }
+      const line = this.lines.get(code)
+      if (!line) {
+        throw Error(`line not found id:${code}`)
+      }
       if (line.detail) return line
       let res = await axios.get<LineDetailAPIResponse>(`${process.env.REACT_APP_DATA_BASE_URL}/line/${code}.json`)
       let detail = parseLineDetail(res.data)
