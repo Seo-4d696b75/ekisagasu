@@ -1,4 +1,9 @@
-import { StationService } from "../../script/StationService"
+import { parseStation, Station, StationAPIResponse } from "../../script/station"
+import { StationService, StationTreeSegmentResponse } from "../../script/StationService"
+import axios from "axios"
+import MockAdapter from "axios-mock-adapter"
+
+const mock = new MockAdapter(axios)
 
 export { }
 
@@ -144,6 +149,111 @@ describe("StationService", () => {
           expect(task2).toHaveBeenCalled()
         }),
       ])
+    })
+  })
+
+  describe("駅・路線データ読み出し", () => {
+    let data: StationTreeSegmentResponse
+    let targetData: StationAPIResponse
+    let target: Station
+    const stations: Station[] = []
+    const mockService = jest.spyOn(service, "updateLocation").mockImplementation(async () => {
+      // update & load station data
+      service.stations.set(target.code, target)
+      service.stationsId.set(target.id, target)
+      return target
+    })
+    beforeAll(async () => {
+      data = await import("./tree-root.json") as StationTreeSegmentResponse
+      targetData = data.node_list.splice(data.station_size - 1, 1)[0] as StationAPIResponse
+      target = parseStation(targetData)
+      data.node_list.forEach(e => {
+        let s = parseStation(e as StationAPIResponse)
+        stations.push(s)
+        service.stations.set(s.code, s)
+        service.stationsId.set(s.id, s)
+      })
+    })
+    beforeEach(() => {
+      service.stations.delete(target.code)
+      service.stationsId.delete(target.id)
+    })
+    afterAll(() => {
+      service.release()
+    })
+    afterEach(() => {
+      mockService.mockClear()
+      mock.resetHistory()
+    })
+    test("getStationImmediate", () => {
+      let s = stations[0]
+      let r = service.getStationImmediate(s.code)
+      expect(s).toBe(r)
+    })
+    test("getStationOrNull > found", async () => {
+      let s = stations[0]
+      let r = await service.getStationOrNull(s.code)
+      expect(s).toBe(r)
+    })
+    test("getStationOrNull > API > not found", async () => {
+      const path = `${process.env.REACT_APP_STATION_API_URL}/station?code=${target.code}`
+      mock.onGet(path).reply(404)
+      let r = await service.getStationOrNull(target.code)
+      expect(r).toBeUndefined()
+      expect(mock.history.get.length).toBe(1)
+      expect(mock.history.get[0].url).toBe(path)
+    })
+    test("getStationOrNull > API > found", async () => {
+      const path = `${process.env.REACT_APP_STATION_API_URL}/station?code=${target.code}`
+      mock.onGet(path).reply(200, targetData)
+      let r = await service.getStationOrNull(target.code)
+      expect(r).toBe(target)
+      expect(mockService.mock.calls.length).toBe(1)
+      expect(mockService.mock.calls[0][0]).toEqual(target.position)
+      expect(mock.history.get.length).toBe(1)
+      expect(mock.history.get[0].url).toBe(path)
+    })
+    test("getStation > found", async () => {
+      let s = stations[0]
+      let r = await service.getStation(s.code)
+      expect(s).toBe(r)
+    })
+    test("getStation > not found", async () => {
+      const path = `${process.env.REACT_APP_STATION_API_URL}/station?code=${target.code}`
+      mock.onGet(path).reply(404)
+      await expect(service.getStation(target.code)).rejects.toThrowError()
+      expect(mock.history.get.length).toBe(1)
+      expect(mock.history.get[0].url).toBe(path)
+    })
+    test("getStationById code > found", async () => {
+      let s = stations[0]
+      let r = await service.getStationById(s.code.toString())
+      expect(s).toBe(r)
+    })
+    test("getStationById id > found", async () => {
+      let s = stations[0]
+      let r = await service.getStationById(s.id)
+      expect(s).toBe(r)
+    })
+    test("getStationById invalid id > Error", async () => {
+      await expect(service.getStationById("hogehoge")).rejects.toThrowError()
+    })
+    test("getStationById > API > not found", async () => {
+      const path = `${process.env.REACT_APP_STATION_API_URL}/station?id=${target.id}`
+      mock.onGet(path).reply(404)
+      await expect(service.getStationById(target.id)).rejects.toThrowError()
+      expect(mock.history.get.length).toBe(1)
+      expect(mock.history.get[0].url).toBe(path)
+    })
+    test("getStationById > API >  found", async () => {
+      const path = `${process.env.REACT_APP_STATION_API_URL}/station?id=${target.id}`
+      mock.onGet(path).reply(200, targetData)
+      let r = await service.getStationById(target.id)
+      expect(r).toBe(target)
+      expect(mockService.mock.calls.length).toBe(1)
+      expect(mockService.mock.calls[0][0]).toEqual(target.position)
+      expect(mock.history.get.length).toBe(1)
+      expect(mock.history.get[0].url).toBe(path)
     })
   })
 })
