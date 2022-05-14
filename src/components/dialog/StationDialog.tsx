@@ -28,7 +28,7 @@ export const StationDialog: FC<StationInfoProps> = ({ info, onClosed, onLineSele
 
   const onClosedRef = useRefCallback(onClosed)
 
-  const actionBottonSection = useMemo(() => {
+  const actionButtonSection = useMemo(() => {
     return (
       <div className="button-container">
         <img
@@ -55,7 +55,7 @@ export const StationDialog: FC<StationInfoProps> = ({ info, onClosed, onLineSele
 
       <div className="container-main station-title">
         <StationTitle station={station} />
-        {actionBottonSection}
+        {actionButtonSection}
       </div>
 
       <StationDetails
