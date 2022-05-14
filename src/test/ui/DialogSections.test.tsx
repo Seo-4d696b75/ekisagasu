@@ -137,3 +137,34 @@ describe("StationDetail", () => {
     })
   })
 })
+
+const onStationSelected = jest.fn((s: Station) => { })
+const onClose = jest.fn(() => { })
+
+describe("StationRadar", () => {
+  test("表示テキストの確認", () => {
+    render(<StationRadar
+      info={stationPosDialogProps}
+      show={true}
+      onStationSelected={onStationSelected}
+      onClose={onClose} />)
+    expect(screen.getByText(`x${radarList.length}`)).toBeInTheDocument()
+    radarList.forEach(e => {
+      expect(screen.getByText(new RegExp(e.station.name))).toBeInTheDocument()
+      expect(screen.getByText(`${e.dist}m`)).toBeInTheDocument()
+    })
+  })
+  test("ボタン押下", () => {
+    render(<StationRadar
+      info={stationPosDialogProps}
+      show={true}
+      onStationSelected={onStationSelected}
+      onClose={onClose} />)
+    radarList.forEach(e => {
+      userEvent.click(screen.getByText(new RegExp(e.station.name)))
+      expect(onStationSelected.mock.lastCall[0]).toBe(e.station)
+    })
+    userEvent.click(screen.getByAltText("close radar"))
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+})
