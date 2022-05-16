@@ -11,6 +11,8 @@ jobs:
         with:
           ref: ${{github.head_ref}}
           fetch-depth: 0
+      - name: run ls/script
+        run: ls src/script
       - name: setup Node.js
         uses: actions/setup-node@v3
         with:
