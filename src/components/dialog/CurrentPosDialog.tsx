@@ -31,13 +31,13 @@ export const CurrentPosDialog: FC<CurrentPosInfoProps> = ({ info, onLineSelected
       {showDetails ? (
         <img
           src={img_delete}
-          alt="close dialog"
+          alt="close detail"
           className="icon-action close current-pos"
           onClick={() => toggleStationDetails(false)} />
       ) : (
         <img
           src={img_above}
-          alt="close dialog"
+          alt="show detail"
           className="icon-action expand"
           onClick={() => toggleStationDetails(true)} />
       )}

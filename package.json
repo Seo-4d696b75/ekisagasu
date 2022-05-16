@@ -5,14 +5,12 @@
   "dependencies": {
     "@material-ui/core": "^4.11.3",
     "@reduxjs/toolkit": "^1.8.1",
-    "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
     "@types/bootstrap": "^5.0.5",
     "@types/flux": "^3.1.9",
     "@types/google-maps-react": "^2.0.5",
     "@types/googlemaps": "^3.43.2",
-    "@types/jest": "^26.0.20",
     "@types/node": "^14.14.25",
     "@types/react": "^17.0.2",
     "@types/react-autosuggest": "^10.1.2",
@@ -41,7 +39,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "jest --silent",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build"
@@ -62,12 +60,18 @@
     ]
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^5.16.4",
+    "@types/jest": "^27.5.0",
     "axios": "^0.21.2",
+    "axios-mock-adapter": "^1.20.0",
     "flux": "^4.0.3",
     "gh-pages": "^2.2.0",
+    "jest": "^28.1.0",
+    "jest-environment-jsdom": "^28.1.0",
     "redux": "^4.0.5",
     "redux-logger": "^3.0.6",
     "redux-thunk": "^2.3.0",
+    "ts-jest": "^28.0.2",
     "ts-loader": "^8.0.15",
     "webpack-cli": "^4.5.0",
     "worker-loader": "^3.0.7"

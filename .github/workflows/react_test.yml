@@ -1,0 +1,21 @@
+name: react-test
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps: 
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.head_ref}}
+          fetch-depth: 0
+      - name: setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.14.0'
+      - name: setup node modules
+        run: npm install
+      - name: run jest
+        run: npm run test
