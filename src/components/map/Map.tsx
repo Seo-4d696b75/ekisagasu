@@ -5,6 +5,7 @@ import { useSelector } from "react-redux"
 import { CSSTransition } from "react-transition-group"
 import pin_location from "../../img/map_pin.svg"
 import pin_station from "../../img/map_pin_station.svg"
+import pin_station_extra from "../../img/map_pin_station_extra.svg"
 import { RootState } from "../../script/mapState"
 import StationService from "../../script/StationService"
 import { CurrentPosDialog } from "../dialog/CurrentPosDialog"
@@ -219,14 +220,14 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     </Marker>
   ), [selectedPos])
 
-  const selectedStationPos = isStationDialog(nav) ? nav.data.dialog.props.station.position : undefined
+  const selectedStation = isStationDialog(nav) ? nav.data.dialog.props.station : undefined
   const selectedStationMarker = useMemo(() => (
     <Marker
-      visible={selectedStationPos !== undefined}
-      position={selectedStationPos}
-      icon={pin_station} >
+      visible={selectedStation !== undefined}
+      position={selectedStation?.position}
+      icon={selectedStation?.impl ? pin_station : pin_station_extra} >
     </Marker>
-  ), [selectedStationPos])
+  ), [selectedStation])
 
   const lineData = nav.type === NavType.DIALOG_LINE && nav.data.showPolyline ? nav.data : null
   const lineMarkers = useMemo(() => {
@@ -287,7 +288,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
         <Marker
           key={i}
           position={s.position}
-          icon={pin_station}>
+          icon={s.impl ? pin_station : pin_station_extra}>
         </Marker>
       ))
     } else {
