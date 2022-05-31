@@ -9,6 +9,7 @@ const initUserSetting: GlobalMapState = {
   watchCurrentLocation: false,
   showStationPin: true,
   isDataExtra: false,
+  isDataExtraChange: createIdleEvent(),
   isHighAccuracyLocation: false,
   currentLocation: null,
   currentPositionUpdate: createIdleEvent(),
@@ -102,8 +103,13 @@ export const userSettingSlice = createSlice({
           ...action.payload,
         ]
       })
+      .addCase(setDataExtra.pending, (state, action) => {
+        // clear station list
+        state.stations = []
+      })
       .addCase(setDataExtra.fulfilled, (state, action) => {
         state.isDataExtra = action.payload.isExtra
+        state.isDataExtraChange = createEvent(action.payload.isExtra)
       })
   }
 })

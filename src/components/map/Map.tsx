@@ -44,6 +44,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     currentLocation,
     currentPositionUpdate,
     stations: voronoi,
+    isDataExtraChange,
   } = useSelector((state: RootState) => state.mapState)
 
   const [screenWide, setScreenWide] = useState(false)
@@ -127,6 +128,15 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     console.log("useEffect: location update")
     if (showCurrentPosition && nav.type === NavType.IDLE) {
       moveToCurrentPosition(new google.maps.LatLng(pos.lat, pos.lng))
+    }
+  })
+
+  useEventEffect(isDataExtraChange, isExtra => {
+    console.log("useEffect: data changed. extra:", isExtra)
+    // データセット変更時に地図で表示している現在の範囲に合わせて更新＆読み込みする
+    const map = googleMapRef.current
+    if (map) {
+      updateBounds(map)
     }
   })
 
