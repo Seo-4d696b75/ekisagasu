@@ -34,6 +34,15 @@ export const setWatchCurrentLocation = createAsyncThunk(
   }
 )
 
+export const setDataExtra = createAsyncThunk(
+  "map/setDataExtra",
+  async (isExtra: boolean) => {
+    return {
+      isExtra: isExtra
+    }
+  }
+)
+
 export const setShowStationPin = createAction<boolean>(
   "map/setShowStationPin"
 )

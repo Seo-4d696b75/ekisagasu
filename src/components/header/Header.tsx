@@ -21,6 +21,7 @@ const Header: FC = () => {
     watchCurrentLocation,
     showStationPin,
     isHighAccuracyLocation,
+    isDataExtra,
   } = useSelector((state: RootState) => state.mapState)
 
   const dispatch = useDispatch()
@@ -145,6 +146,23 @@ const Header: FC = () => {
     </div>
   ), [showStationPin, dispatch])
 
+  const settingExtraSection = useMemo(() => (
+    <div className="switch-container">
+      <div>
+        <div className="Setting-title new">NEW</div>
+        <div className="Setting-title extra"> extraデータを表示 </div>
+      </div>
+      <div className="toggle-switch pin">
+        <input id="toggle-extra"
+          className="toggle-input"
+          type='checkbox'
+          checked={isDataExtra}
+          onChange={(e) => dispatch(action.setDataExtra(e.target.checked))} />
+        <label htmlFor="toggle-extra" className="toggle-label" />
+      </div>
+    </div>
+  ), [isDataExtra, dispatch])
+
   return (
     <div className='Map-header'>
       <div className="Header-frame">
@@ -167,6 +185,7 @@ const Header: FC = () => {
             {settingPositionSection}
             {settingAccuracySection}
             {settingStationPinSection}
+            {settingExtraSection}
           </div>
         </div>
       </CSSTransition>

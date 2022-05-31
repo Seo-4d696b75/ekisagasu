@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { DialogType, isStationDialog, NavState, NavType } from "../components/navState"
-import { appendLoadedStation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStationPromise, setCurrentLocation, setHighAccuracyLocation, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions"
+import { appendLoadedStation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStationPromise, setCurrentLocation, setDataExtra, setHighAccuracyLocation, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions"
 import { createEvent, createIdleEvent } from "./event"
 import { GlobalMapState } from "./mapState"
 
@@ -8,6 +8,7 @@ const initUserSetting: GlobalMapState = {
   radarK: 18,
   watchCurrentLocation: false,
   showStationPin: true,
+  isDataExtra: false,
   isHighAccuracyLocation: false,
   currentLocation: null,
   currentPositionUpdate: createIdleEvent(),
@@ -100,6 +101,9 @@ export const userSettingSlice = createSlice({
           ...state.stations,
           ...action.payload,
         ]
+      })
+      .addCase(setDataExtra.fulfilled, (state, action) => {
+        state.isDataExtra = action.payload.isExtra
       })
   }
 })
