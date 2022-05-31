@@ -34,6 +34,12 @@ type AsyncResult<T> = {
   err?: any
 }
 
+export type DataType = "main" | "extra"
+interface DataAPIOption {
+  type: DataType
+  baseURL: string
+}
+
 /**
  * 内部状態を持つデータ（UIに依存しない）を保持します
  * 
@@ -56,6 +62,11 @@ export class StationService {
   prefecture: Map<number, string> = new Map()
 
   tree: StationKdTree | null = null
+
+  dataAPI: DataAPIOption = {
+    type: "main",
+    baseURL: process.env.REACT_APP_DATA_BASE_URL,
+  }
 
   /**
    * いくつかの関数は外部API呼び出しを行うため非同期で実行される
@@ -115,23 +126,11 @@ export class StationService {
     // 複数呼び出しに対しても初期化処理をただ１回のみ実行する
     return this.runSync("initialize", async () => {
       if (this.initialized) return this
-      // clear collections
-      this.stations.clear()
-      this.lines.clear()
-      this.stationsId.clear()
-      this.linesId.clear()
-      this.prefecture.clear()
-      this.tree = await new StationKdTree(
-        this.getStationImmediate.bind(this),
-        this.getTreeSegment.bind(this),
-      ).initialize("root")
-      let lineRes = await axios.get<LineAPIResponse[]>(`${process.env.REACT_APP_DATA_BASE_URL}/line.json`)
-      lineRes.data.forEach(d => {
-        let line = parseLine(d)
-        this.lines.set(line.code, line)
-        this.linesId.set(line.id, line)
-      })
+      // load station and line
+      await this.switchData("main")
 
+      // load prefecture
+      this.prefecture.clear()
       let prefectureRes = await axios.get<string>(process.env.REACT_APP_PREFECTURE_URL)
       this.prefecture = new Map()
       prefectureRes.data.split('\n').forEach((line: string) => {
@@ -143,6 +142,34 @@ export class StationService {
       console.log('service initialized', this)
       this.initialized = true
       return this
+    })
+  }
+
+  /**
+   * アプリ内で表示するデータを切り替える
+   * 
+   * 駅・路線データを切り替える（他データはそのまま）
+   * @param type 
+   * @returns 
+   */
+  async switchData(type: DataType): Promise<void> {
+    this.dataAPI = {
+      type: type,
+      baseURL: type === "main" ? process.env.REACT_APP_DATA_BASE_URL : process.env.REACT_APP_DATA_EXTRA_BASE_URL,
+    }
+    this.stations.clear()
+    this.lines.clear()
+    this.stationsId.clear()
+    this.linesId.clear()
+    this.tree = await new StationKdTree(
+      this.getStationImmediate.bind(this),
+      this.getTreeSegment.bind(this),
+    ).initialize("root")
+    let lineRes = await axios.get<LineAPIResponse[]>(`${this.dataAPI.baseURL}/line.json`)
+    lineRes.data.forEach(d => {
+      let line = parseLine(d)
+      this.lines.set(line.code, line)
+      this.linesId.set(line.id, line)
     })
   }
 
@@ -329,7 +356,7 @@ export class StationService {
         throw Error(`line not found id:${code}`)
       }
       if (line.detail) return line
-      let res = await axios.get<LineDetailAPIResponse>(`${process.env.REACT_APP_DATA_BASE_URL}/line/${code}.json`)
+      let res = await axios.get<LineDetailAPIResponse>(`${this.dataAPI.baseURL}/line/${code}.json`)
       let detail = parseLineDetail(res.data)
       let next: Line = {
         ...line,
@@ -350,7 +377,7 @@ export class StationService {
     const tag = `${TAG_SEGMENT_PREFIX}${name}`
     // be sure to avoid loading the same segment
     return this.runSync(tag, async () => {
-      const res = await axios.get<StationTreeSegmentResponse>(`${process.env.REACT_APP_DATA_BASE_URL}/tree/${name}.json`)
+      const res = await axios.get<StationTreeSegmentResponse>(`${this.dataAPI.baseURL}/tree/${name}.json`)
       console.log("tree-segment", name, res.data)
       const data = res.data
       const list = data.node_list.map(e => {

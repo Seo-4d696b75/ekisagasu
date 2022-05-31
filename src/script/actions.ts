@@ -37,6 +37,7 @@ export const setWatchCurrentLocation = createAsyncThunk(
 export const setDataExtra = createAsyncThunk(
   "map/setDataExtra",
   async (isExtra: boolean) => {
+    await StationService.switchData(isExtra ? "extra" : "main")
     return {
       isExtra: isExtra
     }
