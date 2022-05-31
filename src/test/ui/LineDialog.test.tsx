@@ -20,6 +20,7 @@ const line: Line = {
   "nameKana": "けいきゅうほんせん",
   "stationSize": 50,
   "color": "#00BFFF",
+  "impl": true,
 }
 
 const lineDetail: Line = {
