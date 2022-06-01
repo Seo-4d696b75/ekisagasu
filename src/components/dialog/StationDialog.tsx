@@ -8,6 +8,8 @@ import { StationDetails, StationRadar, StationTitle } from "./DialogSections";
 import { useRefCallback } from "../hooks";
 import "./InfoDialog.css";
 import { StationDialogProps } from "../navState";
+import { useSelector } from "react-redux";
+import { selectMapState } from "../../script/mapState";
 
 interface StationInfoProps {
   info: StationDialogProps
@@ -28,6 +30,8 @@ export const StationDialog: FC<StationInfoProps> = ({ info, onClosed, onLineSele
 
   const onClosedRef = useRefCallback(onClosed)
 
+  const { isDataExtra } = useSelector(selectMapState)
+
   const actionButtonSection = useMemo(() => {
     return (
       <div className="button-container">
@@ -36,11 +40,13 @@ export const StationDialog: FC<StationInfoProps> = ({ info, onClosed, onLineSele
           alt="close dialog"
           className="icon-action close"
           onClick={() => onClosedRef()} /><br />
-        <img
-          onClick={() => showVoronoiCallbackRef()}
-          src={img_voronoi}
-          alt="show voronoi"
-          className="icon-action" /><br />
+        {isDataExtra ? null : <>
+          <img
+            onClick={() => showVoronoiCallbackRef()}
+            src={img_voronoi}
+            alt="show voronoi"
+            className="icon-action voronoi" /><br />
+        </>}
         <img
           onClick={() => setShowRadar(true)}
           src={img_radar}
@@ -48,7 +54,7 @@ export const StationDialog: FC<StationInfoProps> = ({ info, onClosed, onLineSele
           className="icon-action radar" />
       </div>
     )
-  }, [onClosedRef, showVoronoiCallbackRef])
+  }, [onClosedRef, showVoronoiCallbackRef, isDataExtra])
 
   return (
     <div className="info-dialog">
