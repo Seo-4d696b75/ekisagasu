@@ -161,7 +161,7 @@ export const requestShowLine = createAsyncThunk(
 export const requestShowPolyline = createAction<{
   dialog: LineDialogProps,
   polylines: PolylineProps[],
-  stations: LatLng[],
+  stations: Station[],
 }>(
   "map/requestShowPolyline"
 )

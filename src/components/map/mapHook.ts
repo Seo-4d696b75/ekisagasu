@@ -142,7 +142,7 @@ export const useMapOperator = (
     dispatch(action.requestShowPolyline({
       dialog: nav.data.dialog,
       polylines: polyline,
-      stations: line.detail.stations.map(s => s.position),
+      stations: line.detail.stations,
     }))
     const mapElement = mapElementRef.current
     if (mapElement) {

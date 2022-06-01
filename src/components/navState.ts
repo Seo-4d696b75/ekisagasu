@@ -107,7 +107,7 @@ export type LineDialogNav = NavStateBase<NavType.DIALOG_LINE, {
   dialog: LineDialogProps
   showPolyline: boolean
   polylineList: PolylineProps[]
-  stationMakers: LatLng[]
+  stationMakers: Station[]
 }>
 
 export type IdleNav = NavStateBase<NavType.IDLE, {

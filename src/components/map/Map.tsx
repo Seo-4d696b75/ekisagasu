@@ -232,11 +232,11 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   const lineMarkers = useMemo(() => {
     if (lineData) {
       console.log("render: map polyline marker")
-      return lineData.stationMakers.map((pos, i) => (
+      return lineData.stationMakers.map((s, i) => (
         <Marker
           key={i}
-          position={pos}
-          icon={pin_station}>
+          position={s.position}
+          icon={s.impl ? pin_station : pin_station_extra}>
         </Marker>
       ))
     } else {
