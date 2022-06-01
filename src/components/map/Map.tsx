@@ -98,7 +98,6 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     // componentDidMount
     StationService.onGeolocationPositionChangedCallback = onGeolocationPositionChanged
     StationService.onStationLoadedCallback = onStationLoaded
-    StationService.initialize()
     const onScreenResized = () => {
       let wide = window.innerWidth >= 900
       console.log("resize", window.innerWidth, wide)

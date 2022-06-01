@@ -8,7 +8,7 @@ import { Line } from "../../script/line"
 import { LatLng } from "../../script/location"
 import { selectMapState } from "../../script/mapState"
 import { Station } from "../../script/station"
-import StationService from "../../script/StationService"
+import StationService, { DataType } from "../../script/StationService"
 import { AppDispatch } from "../../script/store"
 import { parseQueryBoolean } from "../../script/utils"
 import { useRefCallback } from "../hooks"
@@ -110,10 +110,15 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       dispatch(action.setNavStateIdle())
 
       const s = await StationService.initialize()
+
       // parse query actions
       const query = qs.parse(location.search)
+      if (typeof query.extra === 'string') {
+        if (parseQueryBoolean(query.extra)) {
+          dispatch(action.setDataExtra(true))
+        }
+      }
       if (typeof query.line == 'string') {
-        console.log('query: line', query.line)
         var line = s.getLineById(query.line)
         if (line) {
           try {
@@ -126,7 +131,6 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
         }
       }
       if (typeof query.station == 'string') {
-        console.log('query: station', query.station)
         try {
           let result = await dispatch(action.requestShowStationPromise(
             s.getStationById(query.station)
@@ -144,7 +148,6 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
         return
       }
       if (typeof query.mylocation == 'string') {
-        console.log('query: location', query.mylocation)
         if (parseQueryBoolean(query.mylocation)) {
           dispatch(action.setWatchCurrentLocation(true))
         }
