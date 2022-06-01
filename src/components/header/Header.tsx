@@ -42,7 +42,6 @@ const Header: FC = () => {
   }, [dispatch])
 
   const searchBoxSection = useMemo(() => {
-    //console.log("render: search box")
     return (
       <CSSTransition
         in={showSearchBox}

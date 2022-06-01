@@ -148,7 +148,6 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   const currentPosition = currentLocation?.position
   const currentPositionMarker = useMemo(() => {
     if (showCurrentPosition && currentPosition) {
-      console.log("render: map position marker")
       return (
         <Marker
           position={currentPosition}
@@ -232,7 +231,6 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   const lineData = nav.type === NavType.DIALOG_LINE && nav.data.showPolyline ? nav.data : null
   const lineMarkers = useMemo(() => {
     if (lineData) {
-      console.log("render: map polyline marker")
       return lineData.stationMakers.map((s, i) => (
         <Marker
           key={i}
@@ -265,7 +263,6 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   const showVoronoi = !hideStationOnMap && !(isStationDialog(nav) && nav.data.showHighVoronoi)
   const voronoiPolygons = useMemo(() => {
     if (showVoronoi) {
-      console.log("render: map voronoi")
       return voronoi.map((s, i) => (
         <Polygon
           key={i}
@@ -299,7 +296,6 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   const showHighVoronoi = isStationDialog(nav) && nav.data.showHighVoronoi
   const highVoronoiPolygons = useMemo(() => {
     if (showHighVoronoi) {
-      console.log("render: map high voronoi")
       return highVoronoi.map((points, i) => (
         <Polygon
           key={i}
