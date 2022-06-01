@@ -186,7 +186,7 @@ export class StationKdTree {
       let rootNode = map.get(data.root)
       if (!rootNode) throw Error(`root node not found ${data.root}`)
       this.root = new StationNode(0, rootNode, this, map, region)
-      console.log("Kd-tree initialized.", this)
+      console.log("Kd-tree initialized.")
       return this
     })
   }

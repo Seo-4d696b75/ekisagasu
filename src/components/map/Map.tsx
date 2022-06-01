@@ -100,7 +100,6 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     StationService.onStationLoadedCallback = onStationLoaded
     const onScreenResized = () => {
       let wide = window.innerWidth >= 900
-      console.log("resize", window.innerWidth, wide)
       setScreenWide(wide)
     }
     window.addEventListener("resize", onScreenResized)

@@ -378,7 +378,7 @@ export class StationService {
     // be sure to avoid loading the same segment
     return this.runSync(tag, async () => {
       const res = await axios.get<StationTreeSegmentResponse>(`${this.dataAPI.baseURL}/tree/${name}.json`)
-      console.log("tree-segment", name, res.data)
+      console.log("tree-segment loaded", name)
       const data = res.data
       const list = data.node_list.map(e => {
         return isStationLeafNode(e) ? null : parseStation(e)
