@@ -12,7 +12,7 @@ import { useRefCallback } from "../hooks"
 import { isStationDialog, NavType } from "../navState"
 import { useHighVoronoi } from "./voronoiHook"
 
-const ZOOM_TH = 10
+const ZOOM_TH = 12
 const VORONOI_SIZE_TH = 2000
 
 type HideStationState = {
@@ -23,7 +23,9 @@ type HideStationState = {
 }
 
 function shouldUpdateBounds(state: HideStationState, zoom: number, rect: RectBounds): boolean {
-  if (!state.hide) return true
+  if (!state.hide) {
+    return zoom >= ZOOM_TH || state.stationSize < VORONOI_SIZE_TH
+  }
   if (zoom > state.zoom) return true
   if (!isInsideRect(rect, state.rect)) return true
   return false
@@ -154,7 +156,7 @@ export const useMapOperator = (
     }
   }
 
-  const updateBounds = useRefCallback(async (map: google.maps.Map) => {
+  const updateBounds = useRefCallback(async (map: google.maps.Map, force?: boolean) => {
     const bounds = map.getBounds()
     if (!bounds) return
     const zoom = map.getZoom()
@@ -166,18 +168,7 @@ export const useMapOperator = (
       south: sw.lat(),
       west: sw.lng(),
     }
-    if (shouldUpdateBounds(hideState, zoom, rect)) {
-      if (!hideState.hide && zoom < ZOOM_TH && hideState.stationSize >= VORONOI_SIZE_TH) {
-        console.log(`updateBounds hide:true`)
-
-        setHideState({
-          hide: true,
-          zoom: zoom,
-          rect: hideState.rect,
-          stationSize: hideState.stationSize,
-        })
-        return
-      }
+    if (force || shouldUpdateBounds(hideState, zoom, rect)) {
       const margin = Math.min(
         Math.max(ne.lat() - sw.lat(), ne.lng() - sw.lng()) * 0.5,
         0.5
@@ -189,7 +180,6 @@ export const useMapOperator = (
         east: ne.lng() + margin,
       }
       const result = await StationService.updateRect(search, VORONOI_SIZE_TH)
-      console.log(`updateBounds zoom:${zoom} voronoi:${result.length} hide:${zoom < ZOOM_TH && result.length >= VORONOI_SIZE_TH}`)
       setHideState({
         hide: zoom < ZOOM_TH && result.length >= VORONOI_SIZE_TH,
         zoom: zoom,
@@ -197,7 +187,12 @@ export const useMapOperator = (
         stationSize: result.length,
       })
     } else {
-      console.log("updateBounds skip")
+      setHideState({
+        hide: true,
+        zoom: zoom,
+        rect: hideState.rect,
+        stationSize: hideState.stationSize,
+      })
     }
   })
 
