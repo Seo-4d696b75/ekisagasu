@@ -63,8 +63,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   const {
     highVoronoi,
     workerRunning,
-    hideStationPin,
-    hideVoronoi,
+    hideStationOnMap,
     showStation,
     showLine,
     moveToCurrentPosition,
@@ -262,7 +261,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   }, [lineData])
 
 
-  const showVoronoi = !hideVoronoi && !(isStationDialog(nav) && nav.data.showHighVoronoi)
+  const showVoronoi = !hideStationOnMap && !(isStationDialog(nav) && nav.data.showHighVoronoi)
   const voronoiPolygons = useMemo(() => {
     if (showVoronoi) {
       console.log("render: map voronoi")
@@ -281,7 +280,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     }
   }, [showVoronoi, voronoi])
 
-  const showStationMarker = !hideStationPin && showStationPin && nav.type === NavType.IDLE && showVoronoi
+  const showStationMarker = !hideStationOnMap && showStationPin && nav.type === NavType.IDLE && showVoronoi
   const stationMarkers = useMemo(() => {
     if (showStationMarker) {
       return voronoi.map((s, i) => (

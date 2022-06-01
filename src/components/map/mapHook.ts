@@ -7,13 +7,27 @@ import { selectMapState } from "../../script/mapState"
 import { Station } from "../../script/station"
 import StationService from "../../script/StationService"
 import { AppDispatch } from "../../script/store"
-import { getBounds, getZoomProperty, PolylineProps, RectBounds } from "../../script/utils"
+import { getBounds, getZoomProperty, isInsideRect, PolylineProps, RectBounds } from "../../script/utils"
+import { useRefCallback } from "../hooks"
 import { isStationDialog, NavType } from "../navState"
 import { useHighVoronoi } from "./voronoiHook"
 
-const ZOOM_TH_VORONOI = 10
-const ZOOM_TH_PIN = 12
-const VORONOI_SIZE_TH = 500
+const ZOOM_TH = 10
+const VORONOI_SIZE_TH = 2000
+
+type HideStationState = {
+  hide: boolean
+  zoom: number
+  rect: RectBounds
+  stationSize: number
+}
+
+function shouldUpdateBounds(state: HideStationState, zoom: number, rect: RectBounds): boolean {
+  if (!state.hide) return true
+  if (zoom > state.zoom) return true
+  if (!isInsideRect(rect, state.rect)) return true
+  return false
+}
 
 /**
  * 地図の操作する関数と状態変数を取得する
@@ -33,9 +47,18 @@ export const useMapOperator = (
     currentLocation,
   } = useSelector(selectMapState)
 
-  const [hideVoronoi, setHideVoronoi] = useState(false)
-  const [hideStationPin, setHideStationPin] = useState(false)
-
+  const [hideState, setHideState] = useState<HideStationState>({
+    hide: false,
+    zoom: 0,
+    rect: {
+      south: -90,
+      north: 90,
+      west: -180,
+      east: 180,
+    },
+    stationSize: 0,
+  })
+  const hideStationOnMap = hideState.hide
 
   const dispatch = useDispatch<AppDispatch>()
 
@@ -79,7 +102,7 @@ export const useMapOperator = (
       if (map && mapElement) {
         var rect = mapElement.getBoundingClientRect()
         var bounds = getBounds(list[radarK - 1])
-        var props = getZoomProperty(bounds, rect.width, rect.height, ZOOM_TH_VORONOI, station.position, 100)
+        var props = getZoomProperty(bounds, rect.width, rect.height, ZOOM_TH, station.position, 100)
         map.panTo(props.center)
         map.setZoom(props.zoom)
       }
@@ -131,25 +154,52 @@ export const useMapOperator = (
     }
   }
 
-  const updateBounds = (map: google.maps.Map) => {
+  const updateBounds = useRefCallback(async (map: google.maps.Map) => {
     const bounds = map.getBounds()
     if (!bounds) return
     const zoom = map.getZoom()
-    setHideVoronoi(zoom < ZOOM_TH_VORONOI)
-    setHideStationPin(zoom < ZOOM_TH_PIN)
-    if (zoom >= ZOOM_TH_VORONOI) {
-      var ne = bounds.getNorthEast()
-      var sw = bounds.getSouthWest()
-      var margin = Math.max(ne.lat() - sw.lat(), ne.lng() - sw.lng()) * 0.5
-      var rect = {
+    const ne = bounds.getNorthEast()
+    const sw = bounds.getSouthWest()
+    const rect = {
+      north: ne.lat(),
+      east: ne.lng(),
+      south: sw.lat(),
+      west: sw.lng(),
+    }
+    if (shouldUpdateBounds(hideState, zoom, rect)) {
+      if (!hideState.hide && zoom < ZOOM_TH && hideState.stationSize >= VORONOI_SIZE_TH) {
+        console.log(`updateBounds hide:true`)
+
+        setHideState({
+          hide: true,
+          zoom: zoom,
+          rect: hideState.rect,
+          stationSize: hideState.stationSize,
+        })
+        return
+      }
+      const margin = Math.min(
+        Math.max(ne.lat() - sw.lat(), ne.lng() - sw.lng()) * 0.5,
+        0.5
+      )
+      const search = {
         south: sw.lat() - margin,
         north: ne.lat() + margin,
         west: sw.lng() - margin,
         east: ne.lng() + margin,
       }
-      StationService.updateRect(rect, VORONOI_SIZE_TH)
+      const result = await StationService.updateRect(search, VORONOI_SIZE_TH)
+      console.log(`updateBounds zoom:${zoom} voronoi:${result.length} hide:${zoom < ZOOM_TH && result.length >= VORONOI_SIZE_TH}`)
+      setHideState({
+        hide: zoom < ZOOM_TH && result.length >= VORONOI_SIZE_TH,
+        zoom: zoom,
+        rect: search,
+        stationSize: result.length,
+      })
+    } else {
+      console.log("updateBounds skip")
     }
-  }
+  })
 
   const closeDialog = () => {
     // if any worker is running, terminate it
@@ -189,8 +239,7 @@ export const useMapOperator = (
   return {
     highVoronoi,
     workerRunning,
-    hideStationPin,
-    hideVoronoi,
+    hideStationOnMap,
     googleMapRef,
     mapElementRef,
     showStation,
