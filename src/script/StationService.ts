@@ -2,7 +2,7 @@ import axios from "axios"
 import { StationKdTree, StationLeafNodeProps, StationNodeProps } from "./kdTree"
 import { Line, LineAPIResponse, LineDetailAPIResponse, parseLine, parseLineDetail } from "./line"
 import { LatLng } from "./location"
-import { parseStation, Station, StationAPIResponse } from "./station"
+import { DelaunayStation, parseStation, Station, StationAPIResponse } from "./station"
 import { RectBounds } from "./utils"
 
 const TAG_SEGMENT_PREFIX = "station-segment:"
@@ -57,6 +57,7 @@ export class StationService {
 
   stations: Map<number, Station> = new Map()
   stationsId: Map<string, Station> = new Map()
+  stationPoints: Map<number, DelaunayStation> | undefined = undefined
   lines: Map<number, Line> = new Map()
   linesId: Map<string, Line> = new Map()
   prefecture: Map<number, string> = new Map()
@@ -325,6 +326,26 @@ export class StationService {
     } else {
       throw Error(`station not found code:${code}`)
     }
+  }
+
+  getStationPoint(code: number): Promise<DelaunayStation> {
+    return this.runSync("get-delaunay-station", async () => {
+      let map = this.stationPoints
+      if (!map) {
+        const res = await axios.get<DelaunayStation[]>(`${this.dataAPI.baseURL}/delaunay.json`)
+        map = new Map()
+        this.stationPoints = map
+        res.data.forEach(d => {
+          map?.set(d.code, d)
+        })
+      }
+      const d = map?.get(code)
+      if (d) {
+        return d
+      } else {
+        throw Error(`delaunay station not found. code: ${code}`)
+      }
+    })
   }
 
   getLine(code: number): Line {

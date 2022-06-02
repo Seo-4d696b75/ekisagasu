@@ -1,5 +1,12 @@
 import { LatLng } from "./location"
 
+export interface DelaunayStation {
+  code: number
+  lat: number
+  lng: number
+  next: number[]
+}
+
 export interface Station {
   code: number
   id: string
@@ -8,7 +15,6 @@ export interface Station {
   nameKana: string
   prefecture: number
   lines: number[]
-  next: number[]
   voronoiPolygon: LatLng[]
   impl: boolean
 }
@@ -22,7 +28,6 @@ export interface StationAPIResponse {
   name_kana: string
   prefecture: number
   lines: number[]
-  next: number[]
   impl?: boolean
   voronoi: {
     type: "Feature"
@@ -67,7 +72,6 @@ export function parseStation(data: StationAPIResponse): Station {
     nameKana: data.name_kana,
     prefecture: data.prefecture,
     lines: data.lines,
-    next: data.next,
     voronoiPolygon: voronoiList,
     impl: data.impl === undefined || data.impl
   }

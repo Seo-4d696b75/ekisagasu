@@ -1,12 +1,16 @@
 import { Voronoi } from "../diagram/voronoi"
 import { Point } from "../diagram/types"
-import { Station } from "./station"
+import { Station, DelaunayStation } from "./station"
 
 const ctx: Worker = self as any  /* eslint-disable-line no-restricted-globals */
 
+interface StationPoint extends Point{
+  code: number
+}
+
 interface WorkerState {
-  voronoi: Voronoi<Station & Point> | null
-  promise: Map<number, ((p: (Station & Point)[]) => void)>
+  voronoi: Voronoi<StationPoint> | null
+  promise: Map<number, ((p: (StationPoint)[]) => void)>
 }
 
 const state: WorkerState = {
@@ -18,8 +22,8 @@ ctx.addEventListener('message', message => {
   const data = JSON.parse(message.data)
   if (data.type === 'start') {
     const container = data.container
-    const provider = (point: Station & Point) => {
-      return new Promise<(Station & Point)[]>((resolve, reject) => {
+    const provider = (point: StationPoint) => {
+      return new Promise<(StationPoint)[]>((resolve, reject) => {
         state.promise.set(point.code, resolve)
         ctx.postMessage(JSON.stringify({
           type: 'points',
@@ -36,7 +40,7 @@ ctx.addEventListener('message', message => {
         })
       }))
     }
-    state.voronoi = new Voronoi<Point & Station>(container, provider)
+    state.voronoi = new Voronoi<StationPoint>(container, provider)
     state.voronoi.execute(data.k, data.center, progress).then(() => {
       ctx.postMessage(JSON.stringify({
         type: 'complete',

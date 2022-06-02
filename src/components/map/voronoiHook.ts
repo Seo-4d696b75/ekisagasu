@@ -38,15 +38,15 @@ export const useHighVoronoi = (radarK: number, callback: HighVoronoiCallback) =>
       const data = JSON.parse(message.data)
       if (data.type === 'points') {
         // point provide
-        StationService.getStation(data.code).then(s => {
+        StationService.getStationPoint(data.code).then(s => {
           return Promise.all(
-            s.next.map(code => StationService.getStation(code))
+            s.next.map(code => StationService.getStationPoint(code))
           )
         }).then(stations => {
           var points = stations.map(s => {
             return {
-              x: s.position.lng,
-              y: s.position.lat,
+              x: s.lng,
+              y: s.lat,
               code: s.code
             }
           })
