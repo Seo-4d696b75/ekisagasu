@@ -38,6 +38,7 @@ function shouldUpdateBounds(state: HideStationState, zoom: number, rect: RectBou
  * @returns 
  */
 export const useMapOperator = (
+  progressHandler: (task: Promise<void>, text: string) => any,
   googleMapRef: MutableRefObject<google.maps.Map<Element> | null>,
   mapElementRef: RefObject<HTMLElement>,
 ) => {
@@ -80,37 +81,24 @@ export const useMapOperator = (
     }
   }
 
-  const setCenterCurrentPosition = (map: google.maps.Map) => {
+  const setCenterCurrentPosition = async (map: google.maps.Map): Promise<void> => {
     // no move animation
-    StationService.getCurrentPosition().then(pos => {
-      let latlng = {
+    try {
+      const pos = await StationService.getCurrentPosition()
+      let latLng = {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude
       }
-      map.setCenter(latlng)
+      map.setCenter(latLng)
       dispatch(action.setCurrentLocation(pos))
-    }).catch(err => {
+    } catch (err) {
       console.warn(err)
       alert("現在位置を利用できません. ブラウザから位置情報へのアクセスを許可してください.")
-    })
+    }
   }
 
   // use high-voronoi logic via custom hook
-  const { run: runHighVoronoi, cancel: cancelHighVoronoi, highVoronoi, workerRunning } = useHighVoronoi(radarK, {
-    onStart: (_) => dispatch(action.requestShowHighVoronoi()),
-    onComplete: (station, list) => {
-      const map = googleMapRef.current
-      const mapElement = mapElementRef.current
-      if (map && mapElement) {
-        var rect = mapElement.getBoundingClientRect()
-        var bounds = getBounds(list[radarK - 1])
-        var props = getZoomProperty(bounds, rect.width, rect.height, ZOOM_TH, station.position, 100)
-        map.panTo(props.center)
-        map.setZoom(props.zoom)
-      }
-    },
-    onError: (_) => dispatch(action.setNavStateIdle()),
-  })
+  const { run: runHighVoronoi, cancel: cancelHighVoronoi, highVoronoi, workerRunning } = useHighVoronoi(radarK)
 
   const showRadarVoronoi = (station: Station) => {
     if (!isStationDialog(nav)) return
@@ -118,7 +106,27 @@ export const useMapOperator = (
       dispatch(action.setNavStateIdle())
       return
     }
-    runHighVoronoi(station)
+    progressHandler(new Promise<void>((resolve, reject) => {
+      runHighVoronoi(station, {
+        onStart: (_) => dispatch(action.requestShowHighVoronoi()),
+        onComplete: (station, list) => {
+          resolve()
+          const map = googleMapRef.current
+          const mapElement = mapElementRef.current
+          if (map && mapElement) {
+            var rect = mapElement.getBoundingClientRect()
+            var bounds = getBounds(list[radarK - 1])
+            var props = getZoomProperty(bounds, rect.width, rect.height, ZOOM_TH, station.position, 100)
+            map.panTo(props.center)
+            map.setZoom(props.zoom)
+          }
+        },
+        onError: (e) => {
+          reject(e)
+          dispatch(action.setNavStateIdle())
+        },
+      })
+    }), "レーダー範囲を計算中")
   }
 
   const showPolyline = (line: Line) => {

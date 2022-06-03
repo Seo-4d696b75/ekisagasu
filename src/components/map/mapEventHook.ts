@@ -30,14 +30,14 @@ function getUIEvent(clickEvent: any): UIEvent {
  * @param operator 地図の操作方法を教えてね
  * @returns 
  */
-export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObject<google.maps.Map<Element> | null>, operator: {
+export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObject<google.maps.Map<Element> | null>, progressHandler: <T, >(task: Promise<T>, text: string) => Promise<T>, operator: {
   focusAt: (pos: LatLng) => void
   focusAtNearestStation: (pos: LatLng) => void
   closeDialog: () => void
   updateBounds: (map: google.maps.Map) => void
   showPolyline: (line: Line) => void
   showRadarVoronoi: (station: Station) => void
-  setCenterCurrentPosition: (map: google.maps.Map) => void
+  setCenterCurrentPosition: (map: google.maps.Map) => Promise<void>
 }) => {
 
   const {
@@ -109,8 +109,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       })
       dispatch(action.setNavStateIdle())
 
-      const s = await StationService.initialize()
-
+      const s = await progressHandler(StationService.initialize(), "駅データを初期化中")
       // parse query actions
       const query = qs.parse(location.search)
       if (typeof query.extra === 'string') {
@@ -124,16 +123,16 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
           try {
             let result = await dispatch(action.requestShowLine(line)).unwrap()
             showPolylineRef(result.line)
+            return
           } catch (e) {
             console.warn("fail to show line details. query:", query.line, e)
           }
-          return
         }
       }
       if (typeof query.station == 'string') {
         try {
           let result = await dispatch(action.requestShowStationPromise(
-            s.getStationById(query.station)
+            progressHandler(s.getStationById(query.station), `駅情報(${query.station})を探しています`)
           )).unwrap()
           if (typeof query.voronoi == 'string') {
             const str = query.voronoi.toLowerCase().trim()
@@ -141,11 +140,10 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
               showRadarVoronoiRef(result.station)
             }
           }
+          return
         } catch (e) {
           console.warn("fail to show station, query:", query.station, e)
-          operator.setCenterCurrentPosition(map)
         }
-        return
       }
       if (typeof query.mylocation == 'string') {
         if (parseQueryBoolean(query.mylocation)) {
@@ -153,7 +151,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
         }
       }
       // if no query, set map center current position
-      operator.setCenterCurrentPosition(map)
+      progressHandler(operator.setCenterCurrentPosition(map), "現在位置を取得しています")
 
     }
   }
