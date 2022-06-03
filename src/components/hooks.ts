@@ -14,12 +14,10 @@ import { handleIf, PropsEvent } from "../script/event";
  * @param update 呼び出して欲しいコールバック関数の実体
  * @returns 返り値の関数を呼び出すと update引数で更新された最新のコールバック関数を同じ引数で呼び出す
  */
-export function useRefCallback<T extends (...args: any[]) => void>(update: T): ((...args: Parameters<T>) => void) {
+export function useRefCallback<T extends (...args: any[]) => any>(update: T): ((...args: Parameters<T>) => ReturnType<T>) {
   const ref = useRef<T>()
   ref.current = update
-  return useCallback((...args: Parameters<T>) => {
-    ref.current?.(...args)
-  }, [])
+  return useCallback((...args: Parameters<T>) => ref.current?.(...args), [])
 }
 
 export function useRefValue<T>(updateFunc: (update: (newValue: T) => void) => void): T | undefined {
