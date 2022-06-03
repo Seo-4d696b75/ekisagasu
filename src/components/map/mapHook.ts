@@ -125,6 +125,7 @@ export const useMapOperator = (
           reject(e)
           dispatch(action.setNavStateIdle())
         },
+        onCancel: () => reject(),
       })
     }), "レーダー範囲を計算中")
   }
