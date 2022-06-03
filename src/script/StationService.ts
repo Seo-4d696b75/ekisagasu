@@ -161,6 +161,7 @@ export class StationService {
     this.stations.clear()
     this.lines.clear()
     this.stationsId.clear()
+    this.stationPoints = undefined
     this.linesId.clear()
     this.tree = await new StationKdTree(
       this.getStationImmediate.bind(this),
