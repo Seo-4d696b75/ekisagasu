@@ -151,7 +151,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
         }
       }
       // if no query, set map center current position
-      progressHandler(operator.setCenterCurrentPosition(map), "現在位置を取得しています")
+      operator.setCenterCurrentPosition(map)
 
     }
   }

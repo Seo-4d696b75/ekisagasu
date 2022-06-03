@@ -38,7 +38,7 @@ function shouldUpdateBounds(state: HideStationState, zoom: number, rect: RectBou
  * @returns 
  */
 export const useMapOperator = (
-  progressHandler: (task: Promise<void>, text: string) => any,
+  progressHandler: (task: Promise<void> | (() => Promise<void>), text: string) => any,
   googleMapRef: MutableRefObject<google.maps.Map<Element> | null>,
   mapElementRef: RefObject<HTMLElement>,
 ) => {
@@ -73,29 +73,33 @@ export const useMapOperator = (
     dispatch(action.requestShowLine(line))
   }
 
-  const moveToCurrentPosition = (pos: google.maps.LatLng | null) => {
-    dispatch(action.setNavStateIdle())
+  const moveToPosition = (pos: LatLng | null, minZoom: number = 0) => {
     const map = googleMapRef.current
     if (pos && map) {
-      map.panTo(pos)
+      map.panTo(new google.maps.LatLng(pos.lat, pos.lng))
+      if (map.getZoom() < minZoom) {
+        map.setZoom(minZoom)
+      }
     }
   }
 
-  const setCenterCurrentPosition = async (map: google.maps.Map): Promise<void> => {
-    // no move animation
-    try {
-      const pos = await StationService.getCurrentPosition()
-      let latLng = {
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude
+  const setCenterCurrentPosition = async (map: google.maps.Map) => progressHandler(
+    async () => {
+      try {
+        const pos = await StationService.getCurrentPosition()
+        let latLng = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude
+        }
+        map.setCenter(latLng)
+        dispatch(action.setCurrentLocation(pos))
+      } catch (err) {
+        console.warn(err)
+        alert("現在位置を利用できません. ブラウザから位置情報へのアクセスを許可してください.")
       }
-      map.setCenter(latLng)
-      dispatch(action.setCurrentLocation(pos))
-    } catch (err) {
-      console.warn(err)
-      alert("現在位置を利用できません. ブラウザから位置情報へのアクセスを許可してください.")
-    }
-  }
+    },
+    "現在位置を取得しています",
+  )
 
   // use high-voronoi logic via custom hook
   const { run: runHighVoronoi, cancel: cancelHighVoronoi, highVoronoi, workerRunning } = useHighVoronoi(radarK)
@@ -227,16 +231,18 @@ export const useMapOperator = (
   }
 
   const requestCurrentPosition = () => {
+    dispatch(action.setNavStateIdle())
     if (watchCurrentLocation) {
       const pos = currentLocation?.position
       if (pos) {
-        moveToCurrentPosition(new google.maps.LatLng(pos.lat, pos.lng))
+        moveToPosition(pos, 14)
       }
     } else {
       closeDialog()
-      StationService.getCurrentPosition().then(pos => {
-        moveToCurrentPosition(new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude))
-      })
+      progressHandler(async () => {
+        const pos = await StationService.getCurrentPosition()
+        moveToPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }, 14)
+      }, "現在位置を取得しています")
     }
   }
 
@@ -248,7 +254,7 @@ export const useMapOperator = (
     mapElementRef,
     showStation,
     showLine,
-    moveToCurrentPosition,
+    moveToPosition,
     setCenterCurrentPosition,
     showRadarVoronoi,
     showPolyline,

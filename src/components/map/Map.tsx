@@ -1,7 +1,7 @@
 import { CircularProgress } from "@material-ui/core"
 import { Circle, GoogleAPI, GoogleApiWrapper, Map, Marker, Polygon, Polyline } from "google-maps-react"
 import { FC, useEffect, useMemo, useRef, useState } from "react"
-import { useSelector } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { CSSTransition } from "react-transition-group"
 import pin_location from "../../img/map_pin.svg"
 import pin_station from "../../img/map_pin_station.svg"
@@ -20,6 +20,8 @@ import { useMapOperator } from "./mapHook"
 import { CurrentPosIcon } from "./PositionIcon"
 import { useServiceCallback } from "./serviceHook"
 import { useProgressBanner } from "./progressHook"
+import { clearLoadedStation } from "../../script/actions"
+import { AppDispatch } from "../../script/store"
 
 const VORONOI_COLOR = [
   "#0000FF",
@@ -72,7 +74,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     hideStationOnMap,
     showStation,
     showLine,
-    moveToCurrentPosition,
+    moveToPosition,
     setCenterCurrentPosition,
     showRadarVoronoi,
     showPolyline,
@@ -119,19 +121,13 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   }, [onGeolocationPositionChanged, onStationLoaded])
 
   useEventEffect(focus, pos => {
-    const map = googleMapRef.current
-    if (map) {
-      map.panTo(pos)
-      if (map.getZoom() < 14) {
-        map.setZoom(14)
-      }
-    }
+    moveToPosition(pos)
   })
 
   useEventEffect(currentPositionUpdate, pos => {
     console.log("useEffect: location update")
     if (showCurrentPosition && nav.type === NavType.IDLE) {
-      moveToCurrentPosition(new google.maps.LatLng(pos.lat, pos.lng))
+      moveToPosition(pos)
     }
   })
 
