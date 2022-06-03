@@ -142,7 +142,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     // データセット変更時に地図で表示している現在の範囲に合わせて更新＆読み込みする
     const map = googleMapRef.current
     if (map) {
-      updateBounds(map, true)
+      showProgressBannerWhile(updateBounds(map, true), "駅データを切り替えています")
     }
   })
 
