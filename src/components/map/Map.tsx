@@ -135,6 +135,8 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     }
   })
 
+  const dispatch = useDispatch<AppDispatch>()
+
   useEventEffect(isDataExtraChange, isExtra => {
     console.log("useEffect: data changed. extra:", isExtra)
     // ダイアログで表示中のデータと齟齬が発生する場合があるので強制的に閉じる
@@ -142,7 +144,11 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     // データセット変更時に地図で表示している現在の範囲に合わせて更新＆読み込みする
     const map = googleMapRef.current
     if (map) {
-      showProgressBannerWhile(updateBounds(map, true), "駅データを切り替えています")
+      showProgressBannerWhile(async () => {
+        await StationService.switchData(isExtra ? "extra" : "main")
+        dispatch(clearLoadedStation())
+        await updateBounds(map, true)
+      }, "駅データを切り替えています")
     }
   })
 

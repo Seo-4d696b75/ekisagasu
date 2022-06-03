@@ -34,7 +34,7 @@ export const useProgressBanner = () => {
     </div>
   ), [show, text])
 
-  const showProgressBannerWhile = async <T,>(task: Promise<T>, text: string): Promise<T> => {
+  const showProgressBannerWhile = async <T,>(computation: Promise<T> | (() => Promise<T>), text: string): Promise<T> => {
     const id = idRef.current
     idRef.current = id + 1
     const stack = stackRef.current
@@ -42,6 +42,7 @@ export const useProgressBanner = () => {
       id: id,
       text: text
     })
+    const task = (typeof computation === "function") ? computation() : computation
     try {
       setText(text)
       setShow(true)

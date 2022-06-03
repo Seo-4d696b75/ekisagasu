@@ -34,14 +34,8 @@ export const setWatchCurrentLocation = createAsyncThunk(
   }
 )
 
-export const setDataExtra = createAsyncThunk(
+export const setDataExtra = createAction<boolean>(
   "map/setDataExtra",
-  async (isExtra: boolean) => {
-    await StationService.switchData(isExtra ? "extra" : "main")
-    return {
-      isExtra: isExtra
-    }
-  }
 )
 
 export const setShowStationPin = createAction<boolean>(
@@ -192,6 +186,10 @@ export const setNavStateIdle = createAsyncThunk(
 
 export const appendLoadedStation = createAction<Station[]>(
   "map/appendLoadedStation"
+)
+
+export const clearLoadedStation = createAction<void>(
+  "map/clearLoadedStation"
 )
 
 /**
