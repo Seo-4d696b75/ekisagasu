@@ -1,6 +1,5 @@
-import { Voronoi } from "../diagram/voronoi"
 import { Point } from "../diagram/types"
-import { Station, DelaunayStation } from "./station"
+import { Voronoi } from "../diagram/voronoi"
 
 const ctx: Worker = self as any  /* eslint-disable-line no-restricted-globals */
 
