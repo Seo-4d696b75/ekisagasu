@@ -10,7 +10,7 @@ interface MessageEntry {
 export const useProgressBanner = () => {
   const [show, setShow] = useState(false)
   const [text, setText] = useState("")
-  const stackRef = useRef<MessageEntry[]>([])
+  const queueRef = useRef<MessageEntry[]>([])
   const idRef = useRef(0)
 
   const banner = useMemo(() => (
@@ -37,24 +37,26 @@ export const useProgressBanner = () => {
   const showProgressBannerWhile = async <T,>(computation: Promise<T> | (() => Promise<T>), text: string): Promise<T> => {
     const id = idRef.current
     idRef.current = id + 1
-    const stack = stackRef.current
-    stack.push({
+    const queue = queueRef.current
+    queue.push({
       id: id,
       text: text
     })
     const task = (typeof computation === "function") ? computation() : computation
     try {
-      setText(text)
-      setShow(true)
+      if (queue.length === 1) {
+        setText(text)
+        setShow(true)
+      }
       return await task
     } finally {
-      const idx = stack.findIndex(e => e.id === id)
-      stack.splice(idx, 1)
-      let len = stack.length
+      const idx = queue.findIndex(e => e.id === id)
+      queue.splice(idx, 1)
+      let len = queue.length
       if (len === 0) {
         setShow(false)
       } else {
-        setText(stack[len - 1].text)
+        setText(queue[0].text)
       }
     }
   }
