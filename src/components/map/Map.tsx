@@ -55,17 +55,19 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   const googleMapRef = useRef<google.maps.Map | null>(null)
   const mapElementRef = useRef<HTMLDivElement>(null)
 
-  // callbacks registered to StationService
-  const {
-    onGeolocationPositionChanged,
-    onStationLoaded,
-  } = useServiceCallback()
 
   // banner shown while async task taking a long time
   const {
     banner,
     showProgressBannerWhile,
   } = useProgressBanner()
+
+  // callbacks registered to StationService
+  const {
+    onGeolocationPositionChanged,
+    onStationLoaded,
+    onDataLoadingStarted,
+  } = useServiceCallback(showProgressBannerWhile)
 
   // functions operating the map and its state variables
   const {
@@ -103,8 +105,11 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
 
   useEffect(() => {
     // componentDidMount
+    console.log("componentDidMount")
+    // register callbacks
     StationService.onGeolocationPositionChangedCallback = onGeolocationPositionChanged
     StationService.onStationLoadedCallback = onStationLoaded
+    StationService.dataLoadingCallback = onDataLoadingStarted
     const onScreenResized = () => {
       let wide = window.innerWidth >= 900
       setScreenWide(wide)
@@ -113,11 +118,12 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     onScreenResized()
     return () => {
       // componentWillUnmount
+      console.log("componentWillUnmount")
       StationService.release()
       window.removeEventListener("resize", onScreenResized)
       googleMapRef.current = null
     }
-  }, [onGeolocationPositionChanged, onStationLoaded])
+  }, [onGeolocationPositionChanged, onStationLoaded, onDataLoadingStarted])
 
   useEventEffect(focus, pos => {
     moveToPosition(pos)
