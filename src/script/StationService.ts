@@ -1,4 +1,4 @@
-import axios from "axios"
+import axios, { AxiosResponse } from "axios"
 import { StationKdTree, StationLeafNodeProps, StationNodeProps } from "./kdTree"
 import { Line, LineAPIResponse, LineDetailAPIResponse, parseLine, parseLineDetail } from "./line"
 import { LatLng } from "./location"
@@ -70,6 +70,26 @@ export class StationService {
   }
 
   /**
+   * 新しく読み込まれた駅一覧
+   * 
+   * update**関数による近傍点の探索で新しいtree-segmentをロードしたタイミングで呼ばれる
+   */
+  onStationLoadedCallback: ((list: Station[]) => void) | undefined = undefined
+
+  /**
+   * HTTP通信によるデータ取得時にコールバックされる
+   * 
+   * @param url 
+   * @param promise HTTP通信の非同期処理 **必ずresolveされる**
+   */
+  dataLoadingCallback: ((url: string, promise: Promise<unknown>) => void) | undefined = undefined
+
+  /**
+   * 現在位置を監視している場合に変更された位置情報をコールバックする
+   */
+  onGeolocationPositionChangedCallback: ((pos: GeolocationPosition) => void) | undefined = undefined
+
+  /**
    * いくつかの関数は外部API呼び出しを行うため非同期で実行される
    * 関数の呼び出しのタイミングによっては, 
    * - 重複してネットワークリソースを要求してまう
@@ -123,6 +143,18 @@ export class StationService {
     })
   }
 
+  /**
+   * HTTP通信でデータ取得
+   * @param url 
+   * @returns 
+   */
+  async get<T>(url: string): Promise<AxiosResponse<T>> {
+    const call = axios.get<T>(url)
+    const safeCall = call.catch((e) => null)
+    this.dataLoadingCallback?.(url, safeCall)
+    return call
+  }
+
   async initialize(): Promise<StationService> {
     // 複数呼び出しに対しても初期化処理をただ１回のみ実行する
     return this.runSync("initialize", async () => {
@@ -132,7 +164,7 @@ export class StationService {
 
       // load prefecture
       this.prefecture.clear()
-      let prefectureRes = await axios.get<string>(process.env.REACT_APP_PREFECTURE_URL)
+      let prefectureRes = await this.get<string>(process.env.REACT_APP_PREFECTURE_URL)
       this.prefecture = new Map()
       prefectureRes.data.split('\n').forEach((line: string) => {
         let cells = line.split(',')
@@ -167,7 +199,7 @@ export class StationService {
       this.getStationImmediate.bind(this),
       this.getTreeSegment.bind(this),
     ).initialize("root")
-    let lineRes = await axios.get<LineAPIResponse[]>(`${this.dataAPI.baseURL}/line.json`)
+    let lineRes = await this.get<LineAPIResponse[]>(`${this.dataAPI.baseURL}/line.json`)
     lineRes.data.forEach(d => {
       let line = parseLine(d)
       this.lines.set(line.code, line)
@@ -187,6 +219,7 @@ export class StationService {
     this.setWatchCurrentPosition(false)
     this.onGeolocationPositionChangedCallback = undefined
     this.onStationLoadedCallback = undefined
+    this.dataLoadingCallback = undefined
     console.log('service released')
   }
 
@@ -198,8 +231,6 @@ export class StationService {
       this.setWatchCurrentPosition(true)
     }
   }
-
-  onGeolocationPositionChangedCallback: ((pos: GeolocationPosition) => void) | undefined = undefined
 
   setWatchCurrentPosition(enable: boolean) {
     if (enable) {
@@ -284,7 +315,7 @@ export class StationService {
     if (id.match(/^[0-9a-f]{6}$/)) {
       let s = this.stationsId.get(id)
       if (s) return s
-      const res = await axios.get<StationAPIResponse>(`${process.env.REACT_APP_STATION_API_URL}/station?id=${id}`)
+      const res = await this.get<StationAPIResponse>(`${process.env.REACT_APP_STATION_API_URL}/station?id=${id}`)
       let pos = {
         lat: res.data.lat,
         lng: res.data.lng,
@@ -306,7 +337,7 @@ export class StationService {
     // step 1: get lat/lng of the target station
     // step 2: update neighbor stations
     try {
-      const res = await axios.get<StationAPIResponse>(`${process.env.REACT_APP_STATION_API_URL}/station?code=${code}`)
+      const res = await this.get<StationAPIResponse>(`${process.env.REACT_APP_STATION_API_URL}/station?code=${code}`)
       let pos = {
         lat: res.data.lat,
         lng: res.data.lng,
@@ -333,7 +364,7 @@ export class StationService {
     return this.runSync("get-delaunay-station", async () => {
       let map = this.stationPoints
       if (!map) {
-        const res = await axios.get<DelaunayStation[]>(`${this.dataAPI.baseURL}/delaunay.json`)
+        const res = await this.get<DelaunayStation[]>(`${this.dataAPI.baseURL}/delaunay.json`)
         map = new Map()
         this.stationPoints = map
         res.data.forEach(d => {
@@ -378,7 +409,7 @@ export class StationService {
         throw Error(`line not found id:${code}`)
       }
       if (line.detail) return line
-      let res = await axios.get<LineDetailAPIResponse>(`${this.dataAPI.baseURL}/line/${code}.json`)
+      let res = await this.get<LineDetailAPIResponse>(`${this.dataAPI.baseURL}/line/${code}.json`)
       let detail = parseLineDetail(res.data)
       let next: Line = {
         ...line,
@@ -393,13 +424,11 @@ export class StationService {
     return this.prefecture.get(code) as string
   }
 
-  onStationLoadedCallback: ((list: Station[]) => void) | undefined = undefined
-
   getTreeSegment(name: string): Promise<StationTreeSegmentResponse> {
     const tag = `${TAG_SEGMENT_PREFIX}${name}`
     // be sure to avoid loading the same segment
     return this.runSync(tag, async () => {
-      const res = await axios.get<StationTreeSegmentResponse>(`${this.dataAPI.baseURL}/tree/${name}.json`)
+      const res = await this.get<StationTreeSegmentResponse>(`${this.dataAPI.baseURL}/tree/${name}.json`)
       console.log("tree-segment loaded", name)
       const data = res.data
       const list = data.node_list.map(e => {
