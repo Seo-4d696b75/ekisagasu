@@ -4,9 +4,16 @@
 
 位置情報ゲーム「駅メモ！」の支援ツールサイト  
 
-<img src="https://user-images.githubusercontent.com/25225028/81814521-dbca7180-9563-11ea-8c8d-5367ba05e2ce.png" height="300"/>  
+<img src="https://user-images.githubusercontent.com/25225028/81814521-dbca7180-9563-11ea-8c8d-5367ba05e2ce.png" width="600"/>  
 
 駅や路線の役立つ情報が見つかる！駅や路線のデータを確認したり，チェックインする駅やレーダーでアクセスできる範囲をGoogleMap上で視覚化します．
+
+**NEW feature**  
+
+[`extra`データセット](https://github.com/Seo-4d696b75/station_database/wiki/extra)が表示できるようになりました  
+アプリ右上の設定ダイアログから「extraデータを表示する」をONにします  
+<img src="https://user-images.githubusercontent.com/25225028/171987326-7dd033ec-63f1-4518-8fae-a34b2245ed51.png" width="600">
+
   
 - [アプリを使う](https://seo-4d696b75.github.io/ekisagasu/)
 - [アプリの詳細](https://seo-4d696b75.github.io/ekisagasu/#/help)
