@@ -19,6 +19,7 @@ const line: Line = {
   "nameKana": "けいきゅうほんせん",
   "stationSize": 50,
   "color": "#00BFFF",
+  "impl": true,
 }
 const radarList: RadarStation[] = [{
   station: station,

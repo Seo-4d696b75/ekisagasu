@@ -35,7 +35,6 @@ export const LineDialog: FC<LineInfoProps> = ({ info, onClosed, onStationSelecte
   })
 
   const titleSection = useMemo(() => {
-    console.log("render: line title")
     return (
       <div className="container-main line">
         <div className="horizontal-container">
@@ -72,7 +71,6 @@ export const LineDialog: FC<LineInfoProps> = ({ info, onClosed, onStationSelecte
   const onStationSelectedRef = useRefCallback((s: Station) => onStationSelected(s))
 
   const stationListSection = useMemo(() => {
-    console.log("render: station list")
     return (
       <div className="container-accordion station-list">
         {lineDetails ? (

@@ -101,7 +101,7 @@
 	top: 40px;
 	right: 0px;
 	width: 240px;
-	height: 280px;
+	height: fit-content;
 	padding: 10px;
 	pointer-events: none;
 	z-index: 10;
@@ -150,6 +150,19 @@
 	width: 100%;
 	font-size: small;
 	text-align: start;
+    color: #444;
+}
+
+.Setting-title.new{
+    font-size: x-small;
+    font-weight: bold;
+    padding: 3px;
+    margin-left: 5px;
+    margin-bottom: -5px;
+    color: white;
+    background-color: red;
+    border-radius: 5px;
+    width: fit-content;
 }
 
 .Setting-slider{

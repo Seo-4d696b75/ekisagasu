@@ -7,6 +7,8 @@ export interface GlobalMapState {
   radarK: number
   watchCurrentLocation: boolean
   showStationPin: boolean
+  isDataExtra: boolean
+  isDataExtraChange: PropsEvent<boolean>
   isHighAccuracyLocation: boolean
   currentLocation: CurrentLocation | null
   currentPositionUpdate: PropsEvent<LatLng>

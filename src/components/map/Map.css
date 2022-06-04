@@ -36,14 +36,6 @@
 	transform: translateX(-120%);
 }
 
-.Dialog-message{
-	position: absolute;
-	width: 160px;
-	height: 40px;
-	top: 10px;
-	left: calc(100% + 10px);
-}
-
 }
 
 
@@ -76,51 +68,12 @@
 	transform: translateY(-120%);
 }
 
-
-.Dialog-message{
-	position: absolute;
-	width: 160px;
-	height: 40px;
-	top: calc(100% + 10px);
-	left: 10px;
-}
-
 }
 
 .Dialog-frame{
 	width: 100%;
 	height: 100%;
 	position: relative;
-}
-
-.Dialog-message{
-	background-color: rgba(255,255,255,0.9);
-	border-radius: 4px 4px 4px 4px;
-	box-shadow: 2px 2px 4px grey;
-	display: none;
-	transform-origin: left top;
-}
-
-
-.Dialog-message.enter-done{
-	display: flex;
-}
-
-.Wait-message{
-	display: inline-block;
-	font-size: small;
-	line-height: 40px;
-	height: 40px;
-	width: 120px;
-	text-align: center;
-	vertical-align: middle;
-	padding: 0;
-}
-
-.Progress-container{
-	width: 36px;
-	height: 36px;
-	margin: 2px;
 }
 
 .Map-relative{
@@ -158,4 +111,46 @@
 
 .icon.mylocation:hover {
 	filter: drop-shadow(2px 2px 2px grey);
+}
+
+.progress-message{
+	display: inline-block;
+	font-size: small;
+	height: 30px;
+    line-height: 18px;
+	width: fit-content;
+	text-align: left;
+	vertical-align: middle;
+	padding: 6px;
+}
+
+.progress-container{
+	width: fit-content;
+	height: 22px;
+	margin: 4px;
+}
+
+.progress-banner{
+	position: relative;
+	width: fit-content;
+	height: 30px;
+	background-color: rgba(255,255,255,0.5);
+	border-radius: 4px 4px 4px 4px;
+	box-shadow: 2px 2px 4px grey;
+	display: none;
+	transform-origin: center;
+}
+
+.progress-banner.enter-done{
+    display: flex;
+}
+
+.progress-banner-container{
+	position: absolute;
+	height: fit-content;
+	bottom: 15px;
+	left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
 }

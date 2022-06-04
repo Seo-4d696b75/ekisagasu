@@ -34,6 +34,10 @@ export const setWatchCurrentLocation = createAsyncThunk(
   }
 )
 
+export const setDataExtra = createAction<boolean>(
+  "map/setDataExtra",
+)
+
 export const setShowStationPin = createAction<boolean>(
   "map/setShowStationPin"
 )
@@ -151,7 +155,7 @@ export const requestShowLine = createAsyncThunk(
 export const requestShowPolyline = createAction<{
   dialog: LineDialogProps,
   polylines: PolylineProps[],
-  stations: LatLng[],
+  stations: Station[],
 }>(
   "map/requestShowPolyline"
 )
@@ -182,6 +186,10 @@ export const setNavStateIdle = createAsyncThunk(
 
 export const appendLoadedStation = createAction<Station[]>(
   "map/appendLoadedStation"
+)
+
+export const clearLoadedStation = createAction<void>(
+  "map/clearLoadedStation"
 )
 
 /**

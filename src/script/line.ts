@@ -9,6 +9,7 @@ export interface Line {
   nameKana: string
   stationSize: number
   color: string
+  impl: boolean
 
   detail?: LineDetail
 }
@@ -29,6 +30,7 @@ export interface LineAPIResponse {
   name_kana: string
   station_size: number
   color?: string
+  impl?: boolean
 }
 
 export interface LineDetailAPIResponse extends LineAPIResponse {
@@ -63,6 +65,7 @@ export function parseLine(data: LineAPIResponse): Line {
     nameKana: data.name_kana,
     stationSize: data.station_size,
     color: data.color ?? '#CCCCCC',
+    impl: data.impl === undefined || data.impl
   }
 }
 

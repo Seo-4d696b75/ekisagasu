@@ -40,7 +40,7 @@ export const StationDialog: FC<StationInfoProps> = ({ info, onClosed, onLineSele
           onClick={() => showVoronoiCallbackRef()}
           src={img_voronoi}
           alt="show voronoi"
-          className="icon-action" /><br />
+          className="icon-action voronoi" /><br />
         <img
           onClick={() => setShowRadar(true)}
           src={img_radar}

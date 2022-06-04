@@ -18,18 +18,23 @@ export interface HighVoronoiCallback {
  * @param callback 計算中の各段階で呼ばれるコールバック関数
  * @returns 
  */
-export const useHighVoronoi = (radarK: number, callback: HighVoronoiCallback) => {
+export const useHighVoronoi = (radarK: number) => {
 
   const [highVoronoi, setHighVoronoi] = useState<LatLng[][]>([])
   const [workerRunning, setWorkerRunning] = useState(false)
 
   const workerRef = useRef<Worker | null>(null)
+  const callbackRef = useRef<HighVoronoiCallback | null>(null)
 
-  const run = (station: Station) => {
+  const run = (station: Station, callback: HighVoronoiCallback) => {
+    callbackRef.current = callback
+
     if (workerRunning) {
-      console.log("worker is running")
+      callback.onError?.("worker is running")
+      callbackRef.current = null
       return
     }
+
     const worker = new VoronoiWorker()
     // DO NOT refer to 'voronoi', which is always an empty list at time when the listener set to the worker.
     let list: LatLng[][] = []
@@ -38,15 +43,15 @@ export const useHighVoronoi = (radarK: number, callback: HighVoronoiCallback) =>
       const data = JSON.parse(message.data)
       if (data.type === 'points') {
         // point provide
-        StationService.getStation(data.code).then(s => {
+        StationService.getStationPoint(data.code).then(s => {
           return Promise.all(
-            s.next.map(code => StationService.getStation(code))
+            s.next.map(code => StationService.getStationPoint(code))
           )
         }).then(stations => {
           var points = stations.map(s => {
             return {
-              x: s.position.lng,
-              y: s.position.lat,
+              x: s.lng,
+              y: s.lat,
               code: s.code
             }
           })
@@ -68,12 +73,14 @@ export const useHighVoronoi = (radarK: number, callback: HighVoronoiCallback) =>
         workerRef.current = null
         setWorkerRunning(false)
         callback.onComplete?.(station, list)
+        callbackRef.current = null
       } else if (data.type === "error") {
         console.error('fail to calc voronoi', data.err)
         worker.terminate()
         workerRef.current = null
         setWorkerRunning(false)
         callback.onError?.(data.err)
+        callbackRef.current = null
       }
     })
 
@@ -95,6 +102,7 @@ export const useHighVoronoi = (radarK: number, callback: HighVoronoiCallback) =>
       center: center,
     }))
     callback.onStart?.(station)
+
   }
 
   const cancel = () => {
@@ -104,8 +112,10 @@ export const useHighVoronoi = (radarK: number, callback: HighVoronoiCallback) =>
       workerRef.current = null
       setWorkerRunning(false)
       console.log("worker terminated")
+      const callback = callbackRef.current
+      callback?.onCancel?.()
+      callbackRef.current = null
     }
-    callback.onCancel?.()
   }
 
   return {

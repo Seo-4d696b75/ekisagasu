@@ -1,22 +1,25 @@
-import { CircularProgress } from "@material-ui/core"
 import { Circle, GoogleAPI, GoogleApiWrapper, Map, Marker, Polygon, Polyline } from "google-maps-react"
 import { FC, useEffect, useMemo, useRef, useState } from "react"
-import { useSelector } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { CSSTransition } from "react-transition-group"
 import pin_location from "../../img/map_pin.svg"
 import pin_station from "../../img/map_pin_station.svg"
+import pin_station_extra from "../../img/map_pin_station_extra.svg"
+import { clearLoadedStation } from "../../script/actions"
 import { RootState } from "../../script/mapState"
 import StationService from "../../script/StationService"
+import { AppDispatch } from "../../script/store"
 import { CurrentPosDialog } from "../dialog/CurrentPosDialog"
-import { useEventEffect } from "../hooks"
 import { LineDialog } from "../dialog/LineDialog"
-import { DialogType, isInfoDialog, isStationDialog, NavType } from "../navState"
 import { StationDialog } from "../dialog/StationDialog"
+import { useEventEffect } from "../hooks"
+import { DialogType, isInfoDialog, isStationDialog, NavType } from "../navState"
 import { useCurrentPosDialog, useInfoDialog } from "./dialogHook"
 import "./Map.css"
 import { useMapCallback } from "./mapEventHook"
 import { useMapOperator } from "./mapHook"
 import { CurrentPosIcon } from "./PositionIcon"
+import { useProgressBanner } from "./progressHook"
 import { useServiceCallback } from "./serviceHook"
 
 const VORONOI_COLOR = [
@@ -44,6 +47,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     currentLocation,
     currentPositionUpdate,
     stations: voronoi,
+    isDataExtraChange,
   } = useSelector((state: RootState) => state.mapState)
 
   const [screenWide, setScreenWide] = useState(false)
@@ -51,21 +55,27 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   const googleMapRef = useRef<google.maps.Map | null>(null)
   const mapElementRef = useRef<HTMLDivElement>(null)
 
+
+  // banner shown while async task taking a long time
+  const {
+    banner,
+    showProgressBannerWhile,
+  } = useProgressBanner()
+
   // callbacks registered to StationService
   const {
     onGeolocationPositionChanged,
     onStationLoaded,
-  } = useServiceCallback()
+    onDataLoadingStarted,
+  } = useServiceCallback(showProgressBannerWhile)
 
   // functions operating the map and its state variables
   const {
     highVoronoi,
-    workerRunning,
-    hideStationPin,
-    hideVoronoi,
+    hideStationOnMap,
     showStation,
     showLine,
-    moveToCurrentPosition,
+    moveToPosition,
     setCenterCurrentPosition,
     showRadarVoronoi,
     showPolyline,
@@ -74,7 +84,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     focusAt,
     focusAtNearestStation,
     requestCurrentPosition,
-  } = useMapOperator(googleMapRef, mapElementRef)
+  } = useMapOperator(showProgressBannerWhile, googleMapRef, mapElementRef)
 
   // callbacks listening to map events
   const {
@@ -83,7 +93,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     onMapDragStart,
     onMapIdle,
     onMapReady,
-  } = useMapCallback(screenWide, googleMapRef, {
+  } = useMapCallback(screenWide, googleMapRef, showProgressBannerWhile, {
     focusAt,
     focusAtNearestStation,
     closeDialog,
@@ -95,38 +105,51 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
 
   useEffect(() => {
     // componentDidMount
+    console.log("componentDidMount")
+    // register callbacks
     StationService.onGeolocationPositionChangedCallback = onGeolocationPositionChanged
     StationService.onStationLoadedCallback = onStationLoaded
-    StationService.initialize()
+    StationService.dataLoadingCallback = onDataLoadingStarted
     const onScreenResized = () => {
       let wide = window.innerWidth >= 900
-      console.log("resize", window.innerWidth, wide)
       setScreenWide(wide)
     }
     window.addEventListener("resize", onScreenResized)
     onScreenResized()
     return () => {
       // componentWillUnmount
+      console.log("componentWillUnmount")
       StationService.release()
       window.removeEventListener("resize", onScreenResized)
       googleMapRef.current = null
     }
-  }, [onGeolocationPositionChanged, onStationLoaded])
+  }, [onGeolocationPositionChanged, onStationLoaded, onDataLoadingStarted])
 
   useEventEffect(focus, pos => {
-    const map = googleMapRef.current
-    if (map) {
-      map.panTo(pos)
-      if (map.getZoom() < 14) {
-        map.setZoom(14)
-      }
-    }
+    moveToPosition(pos)
   })
 
   useEventEffect(currentPositionUpdate, pos => {
     console.log("useEffect: location update")
     if (showCurrentPosition && nav.type === NavType.IDLE) {
-      moveToCurrentPosition(new google.maps.LatLng(pos.lat, pos.lng))
+      moveToPosition(pos)
+    }
+  })
+
+  const dispatch = useDispatch<AppDispatch>()
+
+  useEventEffect(isDataExtraChange, isExtra => {
+    console.log("useEffect: data changed. extra:", isExtra)
+    // ダイアログで表示中のデータと齟齬が発生する場合があるので強制的に閉じる
+    closeDialog()
+    // データセット変更時に地図で表示している現在の範囲に合わせて更新＆読み込みする
+    const map = googleMapRef.current
+    if (map) {
+      showProgressBannerWhile(async () => {
+        await StationService.switchData(isExtra ? "extra" : "main")
+        dispatch(clearLoadedStation())
+        await updateBounds(map, true)
+      }, "駅データを切り替えています")
     }
   })
 
@@ -137,7 +160,6 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   const currentPosition = currentLocation?.position
   const currentPositionMarker = useMemo(() => {
     if (showCurrentPosition && currentPosition) {
-      console.log("render: map position marker")
       return (
         <Marker
           position={currentPosition}
@@ -209,24 +231,23 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     </Marker>
   ), [selectedPos])
 
-  const selectedStationPos = isStationDialog(nav) ? nav.data.dialog.props.station.position : undefined
+  const selectedStation = isStationDialog(nav) ? nav.data.dialog.props.station : undefined
   const selectedStationMarker = useMemo(() => (
     <Marker
-      visible={selectedStationPos !== undefined}
-      position={selectedStationPos}
-      icon={pin_station} >
+      visible={selectedStation !== undefined}
+      position={selectedStation?.position}
+      icon={selectedStation?.impl ? pin_station : pin_station_extra} >
     </Marker>
-  ), [selectedStationPos])
+  ), [selectedStation])
 
   const lineData = nav.type === NavType.DIALOG_LINE && nav.data.showPolyline ? nav.data : null
   const lineMarkers = useMemo(() => {
     if (lineData) {
-      console.log("render: map polyline marker")
-      return lineData.stationMakers.map((pos, i) => (
+      return lineData.stationMakers.map((s, i) => (
         <Marker
           key={i}
-          position={pos}
-          icon={pin_station}>
+          position={s.position}
+          icon={s.impl ? pin_station : pin_station_extra}>
         </Marker>
       ))
     } else {
@@ -251,10 +272,9 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   }, [lineData])
 
 
-  const showVoronoi = !hideVoronoi && !(isStationDialog(nav) && nav.data.showHighVoronoi)
+  const showVoronoi = !hideStationOnMap && !(isStationDialog(nav) && nav.data.showHighVoronoi)
   const voronoiPolygons = useMemo(() => {
     if (showVoronoi) {
-      console.log("render: map voronoi")
       return voronoi.map((s, i) => (
         <Polygon
           key={i}
@@ -270,14 +290,14 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     }
   }, [showVoronoi, voronoi])
 
-  const showStationMarker = !hideStationPin && showStationPin && nav.type === NavType.IDLE && showVoronoi
+  const showStationMarker = !hideStationOnMap && showStationPin && nav.type === NavType.IDLE && showVoronoi
   const stationMarkers = useMemo(() => {
     if (showStationMarker) {
       return voronoi.map((s, i) => (
         <Marker
           key={i}
           position={s.position}
-          icon={pin_station}>
+          icon={s.impl ? pin_station : pin_station_extra}>
         </Marker>
       ))
     } else {
@@ -288,7 +308,6 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   const showHighVoronoi = isStationDialog(nav) && nav.data.showHighVoronoi
   const highVoronoiPolygons = useMemo(() => {
     if (showHighVoronoi) {
-      console.log("render: map high voronoi")
       return highVoronoi.map((points, i) => (
         <Polygon
           key={i}
@@ -303,27 +322,6 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
       return null
     }
   }, [showHighVoronoi, highVoronoi, radarK])
-
-  const progressDialog = useMemo(() => (
-    <CSSTransition
-      in={workerRunning}
-      className="Dialog-message"
-      timeout={0}>
-      {highVoronoi ? (
-        <div className="Dialog-message">
-          <div className="Progress-container">
-            <CircularProgress
-              value={highVoronoi.length * 100 / radarK}
-              size={36}
-              color="primary"
-              thickness={5.0}
-              variant="indeterminate" />
-          </div>
-          <div className="Wait-message">計算中…{(highVoronoi.length).toString().padStart(2)}/{radarK}</div>
-        </div>
-      ) : (<div>no message</div>)}
-    </CSSTransition>
-  ), [workerRunning, highVoronoi, radarK])
 
   // when dialog closed, dialog props will be undefined before animation completed.
   // so cache dialog props using ref object.
@@ -351,7 +349,6 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
               onClosed={closeDialog}
               onShowVoronoi={showRadarVoronoi} />
           ) : null}
-          {progressDialog}
         </div>
       </div>
     </CSSTransition>
@@ -410,6 +407,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
 
         {InfoDialog}
         {currentPosDialog}
+        {banner}
         <CurrentPosIcon onClick={requestCurrentPosition} />
       </div>
     </div>

@@ -93,7 +93,6 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
   }, [inputFocusRequested])
 
   const searchBox = useMemo(() => {
-    console.log("render: search box")
     const inputProps: Autosuggest.InputProps<StationSuggestion> = {
       placeholder: '駅・路線を検索',
       value: value,
@@ -121,7 +120,6 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
   }, [suggestions, value, onSuggestionSelected, onSuggestionsFetchRequested, onSuggestionsClearRequested])
 
   const loadingProgress = useMemo(() => {
-    //console.log("render: loading")
     return (
       <div className={`suggestion-loading ${loading ? "show" : ""}`}>
         <CircularProgress color="primary" size={26} thickness={5.0} variant="indeterminate" />

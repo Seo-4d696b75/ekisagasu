@@ -21,7 +21,6 @@ function formatDistance(dist: number): string {
 
 export const StationTitle: FC<{ station: Station }> = ({ station }) => {
   return useMemo(() => {
-    console.log("render: station title")
     return (
       <div className="title-container station">
         <p className="title-name">{station.name}</p>
@@ -60,7 +59,6 @@ export const StationDetails: FC<StationDetailProps> = ({ info, onLineSelected })
   ), [lines, onLineSelectedRef])
 
   const detail = useMemo(() => {
-    console.log("render: station details")
     return (
       <>
         <div className="horizontal-container">
@@ -133,7 +131,6 @@ export const StationRadar: FC<StationRadarProps> = ({ info, show, onStationSelec
   const onCloseRef = useRefCallback(onClose)
 
   const content = useMemo(() => {
-    console.log("render: station radar")
     return (
       <div className="container-expand radar">
         <div className="horizontal-container radar-title">
