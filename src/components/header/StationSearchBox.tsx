@@ -2,8 +2,11 @@ import { CircularProgress } from "@material-ui/core"
 import axios from "axios"
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Autosuggest from 'react-autosuggest'
+import { useSelector } from "react-redux"
 import { handleIf, PropsEvent } from "../../script/event"
+import { selectMapState } from "../../script/mapState"
 import Service from "../../script/StationService"
+import { useEventEffect, useRefCallback } from "../hooks"
 import "./StationSearchBox.css"
 
 interface SearchProps {
@@ -11,15 +14,16 @@ interface SearchProps {
   inputFocusRequested: PropsEvent<void>
 }
 
-interface StationResponse {
+interface ApiResponse {
   code: number
   id: string
   name: string
   name_kana: string
+  impl: boolean
   prefecture?: number
 }
 
-export interface StationSuggestion extends StationResponse {
+export interface StationSuggestion extends ApiResponse {
   type: "station" | "line"
 }
 
@@ -38,7 +42,9 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
   const inputRef = useRef<Autosuggest>(null)
   const lastRequestIdRef = useRef<NodeJS.Timeout | null>(null)
 
-  const onSuggestionsFetchRequested = useCallback((request: Autosuggest.SuggestionsFetchRequestedParams) => {
+  const { isDataExtra } = useSelector(selectMapState)
+
+  const onSuggestionsFetchRequested = useRefCallback((request: Autosuggest.SuggestionsFetchRequestedParams) => {
     const value = request.value
     if (value.length < 1) {
       return
@@ -53,8 +59,8 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
       console.log('fetch suggestions', value)
       setLoading(true)
       Promise.all([
-        axios.get<StationResponse[]>(`https://station-service.herokuapp.com/api/station/search?name=${value}`),
-        axios.get<StationResponse[]>(`https://station-service.herokuapp.com/api/line/search?name=${value}`)
+        axios.get<ApiResponse[]>(`${process.env.REACT_APP_STATION_API_URL}/station/search?name=${value}&extra=${isDataExtra}`),
+        axios.get<ApiResponse[]>(`${process.env.REACT_APP_STATION_API_URL}/line/search?name=${value}&extra=${isDataExtra}`)
       ]).then(res => {
         const [stations, lines] = res
         setSuggestions([
@@ -73,7 +79,7 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
         setLoading(false)
       })
     }, 500)
-  }, [])
+  })
 
   const onSuggestionsClearRequested = useCallback(() => {
     const lastRequestId = lastRequestIdRef.current
@@ -83,14 +89,11 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
     setSuggestions([])
   }, [])
 
-  useEffect(() => {
-    handleIf(inputFocusRequested, () => {
-      //console.log("focus")
-      if (inputRef.current && inputRef.current.input) {
-        inputRef.current.input.focus()
-      }
-    })
-  }, [inputFocusRequested])
+  useEventEffect(inputFocusRequested, () => {
+    if (inputRef.current && inputRef.current.input) {
+      inputRef.current.input.focus()
+    }
+  })
 
   const searchBox = useMemo(() => {
     const inputProps: Autosuggest.InputProps<StationSuggestion> = {
@@ -110,7 +113,7 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
         onSuggestionsFetchRequested={onSuggestionsFetchRequested}
         onSuggestionsClearRequested={onSuggestionsClearRequested}
         multiSection={true}
-        getSuggestionValue={(suggenstion) => suggenstion.name}
+        getSuggestionValue={(suggestion) => suggestion.name}
         getSectionSuggestions={(section) => section.list}
         renderSectionTitle={renderSectionTitle}
         renderSuggestion={renderSuggestion}
@@ -148,6 +151,7 @@ const renderSuggestion = (suggestion: StationSuggestion, param: Autosuggest.Rend
         <span className="suggestion-prefecture">{Service.getPrefecture(suggestion.prefecture)}</span>
       ) : null}
       {suggestion.name}
+      {!suggestion.impl ? <span className="suggestion-extra">extra</span> : null}
     </div>
   )
 }
