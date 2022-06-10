@@ -86,6 +86,18 @@
   margin-right: 5px;
 }
 
+.suggestion-extra {
+  background-color: grey;
+  color: white;
+  border-radius: 4px;
+  padding: 1px;
+  padding-left: 4px;
+  padding-right: 4px;
+  padding-bottom: 2px;
+  font-weight: 800;
+  margin-left: 8px;
+}
+
 .react-autosuggest__suggestion--highlighted {
   background-color: #ddd;
 }
