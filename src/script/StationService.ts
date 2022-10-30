@@ -73,6 +73,8 @@ export class StationService {
     // APIがコールドスタートのためWebApp起動時にウォームアップしておく
     this.get(`${process.env.REACT_APP_STATION_API_URL}/info`).then(info => {
       console.log("station api data version:", info)
+    }).catch(e => {
+      console.warn("fail to warm-up api by calling /api/info", e)
     })
   }
 
