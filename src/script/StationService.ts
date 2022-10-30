@@ -69,6 +69,15 @@ export class StationService {
     baseURL: process.env.REACT_APP_DATA_BASE_URL,
   }
 
+  constructor() {
+    // APIがコールドスタートのためWebApp起動時にウォームアップしておく
+    this.get(`${process.env.REACT_APP_STATION_API_URL}/info`).then(info => {
+      console.log("station api data version:", info)
+    }).catch(e => {
+      console.warn("fail to warm-up api by calling /api/info", e)
+    })
+  }
+
   /**
    * 新しく読み込まれた駅一覧
    * 

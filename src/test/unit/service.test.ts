@@ -1,7 +1,7 @@
-import { parseStation, Station, StationAPIResponse } from "../../script/station"
-import { StationService, StationTreeSegmentResponse } from "../../script/StationService"
 import axios from "axios"
 import MockAdapter from "axios-mock-adapter"
+import { parseStation, Station, StationAPIResponse } from "../../script/station"
+import { StationService, StationTreeSegmentResponse } from "../../script/StationService"
 
 const mock = new MockAdapter(axios)
 
@@ -28,6 +28,9 @@ function initLatch(): Latch {
 }
 
 describe("StationService", () => {
+
+  const path = `${process.env.REACT_APP_STATION_API_URL}/info`
+  mock.onGet(path).reply(200, { data_version: 20221030 })
   const service = new StationService()
   describe("runSync", () => {
     beforeEach(() => {
