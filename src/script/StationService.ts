@@ -71,7 +71,7 @@ export class StationService {
 
   constructor() {
     // APIがコールドスタートのためWebApp起動時にウォームアップしておく
-    axios.get(`${process.env.REACT_APP_STATION_API_URL}/info`).then(info => {
+    this.get(`${process.env.REACT_APP_STATION_API_URL}/info`).then(info => {
       console.log("station api data version:", info)
     })
   }
