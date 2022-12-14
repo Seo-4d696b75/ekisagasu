@@ -329,10 +329,10 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
 
   const InfoDialog = (
     <div className="info-modal container">
-    <CSSTransition
-      in={isInfoDialog(nav)}
+      <CSSTransition
+        in={isInfoDialog(nav)}
         className="info-modal holder"
-      timeout={300}>
+        timeout={300}>
         <div className="info-modal holder">
           {(infoDialogProps?.type === DialogType.LINE) ? (
             <LineDialog
@@ -350,17 +350,17 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
               onShowVoronoi={showRadarVoronoi} />
           ) : null}
         </div>
-    </CSSTransition>
+      </CSSTransition>
     </div>
   )
 
   const currentPosDialogProps = useCurrentPosDialog(nav)
   const currentPosDialog = (
     <div className="info-modal container">
-    <CSSTransition
-      in={showCurrentPosition}
+      <CSSTransition
+        in={showCurrentPosition}
         className="info-modal holder current-position"
-      timeout={300}>
+        timeout={300}>
         <div className="info-modal holder current-position">
           {currentPosDialogProps ? (
             <CurrentPosDialog
@@ -369,47 +369,45 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
               onLineSelected={showLine} />
           ) : null}
         </div>
-    </CSSTransition>
+      </CSSTransition>
     </div>
   )
 
   return (
-    <div className='Map-container'>
-      <div className='Map-relative' ref={mapElementRef}>
+    <div className='Map-container' ref={mapElementRef}>
 
-        <Map
-          google={googleAPI}
-          zoom={14}
-          initialCenter={{ lat: 35.681236, lng: 139.767125 }}
-          onReady={onMapReady}
-          onClick={onMapClicked}
-          onRightclick={onMapRightClicked}
-          onDragstart={onMapDragStart}
-          onIdle={onMapIdle}
-          fullscreenControl={false}
-          streetViewControl={false}
-          zoomControl={true}
-          gestureHandling={"greedy"}
-          mapTypeControl={true}
+      <Map
+        google={googleAPI}
+        zoom={14}
+        initialCenter={{ lat: 35.681236, lng: 139.767125 }}
+        onReady={onMapReady}
+        onClick={onMapClicked}
+        onRightclick={onMapRightClicked}
+        onDragstart={onMapDragStart}
+        onIdle={onMapIdle}
+        fullscreenControl={false}
+        streetViewControl={false}
+        zoomControl={true}
+        gestureHandling={"greedy"}
+        mapTypeControl={true}
 
-        >
-          {currentPositionMarker}
-          {currentHeadingMarker}
-          {currentAccuracyCircle}
-          {selectedStationMarker}
-          {selectedPosMarker}
-          {lineMarkers}
-          {linePolylines}
-          {voronoiPolygons}
-          {stationMarkers}
-          {highVoronoiPolygons}
-        </Map>
+      >
+        {currentPositionMarker}
+        {currentHeadingMarker}
+        {currentAccuracyCircle}
+        {selectedStationMarker}
+        {selectedPosMarker}
+        {lineMarkers}
+        {linePolylines}
+        {voronoiPolygons}
+        {stationMarkers}
+        {highVoronoiPolygons}
+      </Map>
 
-        {InfoDialog}
-        {currentPosDialog}
-        {banner}
-        <CurrentPosIcon onClick={requestCurrentPosition} />
-      </div>
+      {InfoDialog}
+      {currentPosDialog}
+      {banner}
+      <CurrentPosIcon onClick={requestCurrentPosition} />
     </div>
   )
 }
