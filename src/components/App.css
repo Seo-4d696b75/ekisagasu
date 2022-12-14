@@ -1,4 +1,6 @@
-
+html, body{
+  overflow: hidden;
+}
 
 .App {
 	text-align: center;
@@ -21,7 +23,7 @@
 	top: 40px;
 	bottom: 0px;
 	left: 0px;
-	width: 100%;
+	right: 0px;
 }
 
 .Map-footer {
@@ -58,11 +60,3 @@
   color: #61dafb;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}

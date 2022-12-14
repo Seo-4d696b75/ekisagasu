@@ -96,6 +96,8 @@ export const useMapOperator = (
       } catch (err) {
         console.warn(err)
         alert("現在位置を利用できません. ブラウザから位置情報へのアクセスを許可してください.")
+        const latLng = { lat: 35.681236, lng: 139.767125 }
+        map.setCenter(latLng)
       }
     },
     "現在位置を取得しています",

@@ -169,12 +169,12 @@ const Header: FC = () => {
         {searchBoxSection}
         {actionButtonSection}
       </div>
-      <CSSTransition
-        in={showSetting}
-        className="Setting-container"
-        timeout={400}>
-        <div className="Setting-container">
-          <div className="Setting-frame">
+      <div className="setting container">
+        <CSSTransition
+          in={showSetting}
+          className="setting modal"
+          timeout={400}>
+          <div className="setting modal">
             <img
               src={img_delete}
               alt="close dialog"
@@ -186,8 +186,8 @@ const Header: FC = () => {
             {settingStationPinSection}
             {settingExtraSection}
           </div>
-        </div>
-      </CSSTransition>
+        </CSSTransition>
+      </div>
     </div>
   )
 }

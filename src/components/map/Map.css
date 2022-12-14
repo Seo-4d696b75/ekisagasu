@@ -1,38 +1,47 @@
 
-
-.Dialog-container{
+.info-modal.container {
 	position: absolute;
 	top: 0px;
 	left: 0px;
-	z-index: 10;
 	width: 100%;
 	max-width: 320px;
 	pointer-events: none;
 }
 
-.Dialog-container.current-position{
+.info-modal.holder{
+	position: relative;
+	pointer-events: all;
+}
+
+.info-modal.holder.current-position{
 	z-index: 5;
 }
 
 @media screen and (min-width:900px){
 
-.Dialog-container,
-.Dialog-container.enter{
-	transform: translateX(-120%);
+/* 画面下部まで高さいっぱい */
+.info-modal.container {
 	bottom: 0;
 }
 
-.Dialog-container.enter-active{
+/* 横方向にアニメーション */
+.info-modal.holder,
+.info-modal.holder.enter{
+	height: 100%;
+	transform: translateX(-120%);
+}
+
+.info-modal.holder.enter-active{
 	transition: all 300ms ease-out;
+	transition-delay: 10ms;
 	transform: translateX(0);
 }
-.Dialog-container.enter-done,
-.Dialog-container.exit{
+.info-modal.holder.enter-done{
 	transform: translateX(0);
 }
 
-.Dialog-container.exit-active{
-	transition: all 300ms ease-in;
+.info-modal.holder.exit,
+.info-modal.holder.exit-active{
 	transform: translateX(-120%);
 }
 
@@ -41,45 +50,27 @@
 
 @media screen and (max-width:900px) {
 
-.Dialog-container{
+/* 縦方向にアニメーション */
+.info-modal.holder,
+.info-modal.holder.enter{
 	transform: translateY(-120%);
 	height: fit-content;
-
 }
 
-.Dialog-container.enter{
-	transform: translateY(-120%);
-}
-
-.Dialog-container.enter-active{
+.info-modal.holder.enter-active{
 	transition: all 300ms ease-out;
+	transition-delay: 10ms;
 	transform: translateY(0);
 }
-.Dialog-container.enter-done{
-	transform: translateY(0);
-}
-
-.Dialog-container.exit{
+.info-modal.holder.enter-done{
 	transform: translateY(0);
 }
 
-.Dialog-container.exit-active{
-	transition: all 300ms ease-in;
+.info-modal.holder.exit,
+.info-modal.holder.exit-active{
 	transform: translateY(-120%);
 }
 
-}
-
-.Dialog-frame{
-	width: 100%;
-	height: 100%;
-	position: relative;
-}
-
-.Map-relative{
-	position: relative;
-	width: 100%;
-	height: 100%;
 }
 
 .Map{
