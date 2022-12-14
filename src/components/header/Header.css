@@ -29,7 +29,8 @@
 	height: 40px;
 	vertical-align: middle;
 	transform: scaleX(0.1);
-	display: none;
+	transform-origin: 100% 0;
+	visibility: hidden;
 }
 
 @media screen and (min-width:500px){
@@ -51,20 +52,20 @@
 
 
 .search-box.enter{
-	transform: scaleX(0.1);
-	display: block;
+    transform: scaleX(0.1);
+	visibility: visible;
 }
 
 .search-box.enter-active{
-	transition: transform 300ms ease-out;
-	transform: scaleX(1.0);
-	transform-origin: 100% 0;
-	display: block;
+	transition: all 100ms ease-out;
+	transition-delay: 1ms;
+    transform: scaleX(1.0);
+	visibility: visible;
 }
 
 .search-box.enter-done{
-	transform: scaleX(1.0);
-	display: block;
+    transform: scaleX(1.0);
+	visibility: visible;
 }
 
 .Action-button{
@@ -128,15 +129,15 @@
 .setting.modal.enter-active{
 	transition: all 300ms ease-out;
 	transition-delay: 10ms;
-	transform: translateY(0);
+    transform: translateY(0);
 }
 
 .setting.modal.enter-done{
-	transform: translateY(0);
+    transform: translateY(0);
 }
 
 .setting.modal.exit{
-	transform: translateY(0);
+    transform: translateY(0);
 }
 
 .setting.modal.exit-active{
@@ -229,7 +230,7 @@
   width: 75px;
   height: 42px;
   margin: auto;
-	transform: scale(0.6);
+    transform: scale(0.6);
 }
 
 .switch-container{
