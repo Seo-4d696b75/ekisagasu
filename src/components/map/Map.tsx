@@ -328,12 +328,12 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   const infoDialogProps = useInfoDialog(nav)
 
   const InfoDialog = (
+    <div className="info-modal container">
     <CSSTransition
       in={isInfoDialog(nav)}
-      className="Dialog-container"
+        className="info-modal holder"
       timeout={300}>
-      <div className="Dialog-container">
-        <div className="Dialog-frame">
+        <div className="info-modal holder">
           {(infoDialogProps?.type === DialogType.LINE) ? (
             <LineDialog
               info={infoDialogProps}
@@ -350,18 +350,18 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
               onShowVoronoi={showRadarVoronoi} />
           ) : null}
         </div>
-      </div>
     </CSSTransition>
+    </div>
   )
 
   const currentPosDialogProps = useCurrentPosDialog(nav)
   const currentPosDialog = (
+    <div className="info-modal container">
     <CSSTransition
       in={showCurrentPosition}
-      className="Dialog-container current-position"
+        className="info-modal holder current-position"
       timeout={300}>
-      <div className="Dialog-container current-position">
-        <div className="Dialog-frame">
+        <div className="info-modal holder current-position">
           {currentPosDialogProps ? (
             <CurrentPosDialog
               info={currentPosDialogProps}
@@ -369,8 +369,8 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
               onLineSelected={showLine} />
           ) : null}
         </div>
-      </div>
     </CSSTransition>
+    </div>
   )
 
   return (
