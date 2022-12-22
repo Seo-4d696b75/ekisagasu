@@ -42,12 +42,14 @@ export const userSettingSlice = createSlice({
         state.isHighAccuracyLocation = action.payload
       })
       .addCase(setCurrentLocation.fulfilled, (state, action) => {
-        const loc = action.payload
+        const { nav, location } = action.payload
         const previous = state.currentLocation?.position
-        state.currentLocation = loc
+        state.nav = nav
+        state.currentLocation = location
+        const pos = location.position
         state.currentPositionUpdate =
-          (previous && loc.position.lat === previous.lat && loc.position.lng === previous.lng) ?
-            state.currentPositionUpdate : createEvent(loc.position)
+          (previous && pos.lat === previous.lat && pos.lng === previous.lng) ?
+            state.currentPositionUpdate : createEvent(pos)
       })
       .addCase(requestShowSelectedPosition.fulfilled, (state, action) => {
         state.nav = action.payload.nav
