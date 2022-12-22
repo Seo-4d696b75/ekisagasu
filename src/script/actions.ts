@@ -1,6 +1,6 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
-import { copyNavState, DialogType, IdleNav, LineDialogNav, LineDialogProps, NavState, NavType, RadarStation, StationDialogNav } from "../components/navState";
 import { StationSuggestion } from "../components/header/StationSearchBox";
+import { copyNavState, DialogType, IdleNav, LineDialogNav, LineDialogProps, NavState, NavType, RadarStation, StationDialogNav } from "../components/navState";
 import { Line } from "./line";
 import { CurrentLocation, LatLng } from "./location";
 import { GlobalMapState, RootState } from "./mapState";
@@ -52,14 +52,28 @@ export const setHighAccuracyLocation = createAsyncThunk(
 
 export const setCurrentLocation = createAsyncThunk(
   "map/setCurrentLocation",
-  async (loc: GeolocationPosition) => {
+  async (loc: GeolocationPosition, thunkAPI) => {
+    const { mapState } = thunkAPI.getState() as RootState
     const coords = loc.coords
     let location: CurrentLocation = {
       position: { lat: coords.latitude, lng: coords.longitude },
       accuracy: coords.accuracy,
       heading: coords.heading
     }
-    return location
+    if (mapState.nav.type === NavType.IDLE && mapState.watchCurrentLocation) {
+      // 現在地のダイアログを更新
+      let next = await nextIdleNavStateWatchingLocation(location.position, mapState.radarK)
+      return {
+        nav: next,
+        location: location,
+      }
+    } else {
+      return {
+        nav: mapState.nav,
+        location: location,
+      }
+    }
+
   }
 )
 

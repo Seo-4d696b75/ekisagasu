@@ -130,7 +130,6 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   })
 
   useEventEffect(currentPositionUpdate, pos => {
-    console.log("useEffect: location update")
     if (showCurrentPosition && nav.type === NavType.IDLE) {
       moveToPosition(pos)
     }
