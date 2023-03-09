@@ -30,6 +30,8 @@ jobs:
           node-version: 16
       - name: Install Dependencies
         run: npm install
+      - name: Setup API key
+        run: echo "REACT_APP_API_KEY=${{ secrets.API_KEY }}" > .env.production
       - name: Build
         run: npm run build
       - name: Upload artifact
