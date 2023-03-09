@@ -1,18 +1,27 @@
 import React from 'react';
 import { Link } from "react-router-dom";
-import github_icon from "../../img//GitHub-Mark.png";
-import github_logo from "../../img//GitHub_Logo.png";
-import google_icon from "../../img//googlemapjs.png";
-import react_icon from "../../img//reactjs.jpg";
+import github_icon from "../../img/GitHub-Mark.png";
+import github_logo from "../../img/GitHub_Logo.png";
+import google_icon from "../../img/googlemapjs.png";
+import react_icon from "../../img/reactjs.jpg";
 import './Help.css';
 
-import screen_default from "../../img//screen_default.png";
-import screen_device from "../../img//screen_device.png";
-import screen_line from "../../img//screen_line.png";
-import screen_point from "../../img//screen_point.png";
-import screen_radar from "../../img//screen_radar.png";
-import screen_station from "../../img//screen_station.png";
-import screen_voronoi from "../../img//screen_voronoi.png";
+import screen_default from "../../img/screen_default.png";
+import screen_device from "../../img/screen_device.png";
+import screen_extra from "../../img/screen_extra.png";
+import screen_line from "../../img/screen_line.png";
+import screen_point from "../../img/screen_point.png";
+import screen_polyline from "../../img/screen_polyline.png";
+import screen_radar from "../../img/screen_radar.png";
+import screen_search from "../../img/screen_search.png";
+import screen_station from "../../img/screen_station.png";
+import screen_voronoi from "../../img/screen_voronoi.png";
+
+import ic_line from "../../img/ic_line.png";
+import ic_search from "../../img/ic_search.png";
+import ic_setting from "../../img/ic_settings.png";
+import ic_radar from "../../img/radar.png";
+import ic_voronoi from "../../img/voronoi.png";
 
 export default class Help extends React.Component {
 
@@ -77,6 +86,33 @@ export default class Help extends React.Component {
             <img className="image screen" alt="screen shot" src={screen_line} />
 
             <p>登録駅一覧に表示される各駅をクリックすると、その駅のダイアログが開きます。</p>
+
+            <h4>路線を地図上に表示</h4>
+
+            <p>路線情報のダイアログにおいて<img className='icon' width="24" alt="polyline" src={ic_line}></img>アイコンをクリックすると、路線のポイラインを地図上に表示できます。</p>
+            <img className="image screen" alt="screen shot" src={screen_polyline} />
+
+            <h4>駅・路線を検索</h4>
+
+            <p>ヘッダーの<img className='icon header' width="24" alt="search" src={ic_search}></img>アイコンをクリックすると検索モーダルが開きます。</p>
+            <img className="image screen" alt="screen shot" src={screen_search} />
+
+            <p>注意：駅名の末尾に付与された重複防止用の都道府県・鉄道会社名は検索にヒットしません。</p>
+
+
+            <h4>現在位置の表示</h4>
+
+            <p>ヘッダーの<img className='icon header' width="24" alt="search" src={ic_setting}></img>アイコンから設定モーダルを開き「現在位置の表示」をOnにすると、現在位置のピンが地図上に同時に表示されます。</p>
+            <img className="image screen" alt="screen shot" src={screen_extra} />
+
+
+            <h4>廃駅の表示</h4>
+
+            <p>ヘッダーの<img className='icon header' width="24" alt="search" src={ic_setting}></img>アイコンから設定モーダルを開き「extraデータを表示」をOnにすると、駅メモ以外の廃駅も表示できます。</p>
+            <img className="image screen" alt="screen shot" src={screen_extra} />
+
+            <p>追加された廃駅は灰色のアイコンで表示されます。</p>
+
 
             <h4>レスポンシブなデザイン</h4>
 
