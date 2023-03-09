@@ -1,9 +1,9 @@
 import { CircularProgress } from "@material-ui/core"
 import axios from "axios"
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { FC, useCallback, useMemo, useRef, useState } from "react"
 import Autosuggest from 'react-autosuggest'
 import { useSelector } from "react-redux"
-import { handleIf, PropsEvent } from "../../script/event"
+import { PropsEvent } from "../../script/event"
 import { selectMapState } from "../../script/mapState"
 import Service from "../../script/StationService"
 import { useEventEffect, useRefCallback } from "../hooks"
