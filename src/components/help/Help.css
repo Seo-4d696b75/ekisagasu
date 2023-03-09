@@ -26,6 +26,14 @@
     width: 100%;
 }
 
+.icon {
+    vertical-align: middle;
+}
+
+.icon.header {
+    filter: contrast(0);
+}
+
 h1 {
     white-space: normal;
     text-align: center;
