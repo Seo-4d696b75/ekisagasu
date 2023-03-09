@@ -6,6 +6,7 @@ import google_icon from "../../img/googlemapjs.png";
 import react_icon from "../../img/reactjs.jpg";
 import './Help.css';
 
+import screen_current from "../../img/screen_current.png";
 import screen_default from "../../img/screen_default.png";
 import screen_device from "../../img/screen_device.png";
 import screen_extra from "../../img/screen_extra.png";
@@ -103,7 +104,7 @@ export default class Help extends React.Component {
             <h4>現在位置の表示</h4>
 
             <p>ヘッダーの<img className='icon header' width="24" alt="search" src={ic_setting}></img>アイコンから設定モーダルを開き「現在位置の表示」をOnにすると、現在位置のピンが地図上に同時に表示されます。</p>
-            <img className="image screen" alt="screen shot" src={screen_extra} />
+            <img className="image screen" alt="screen shot" src={screen_current} />
 
 
             <h4>廃駅の表示</h4>
