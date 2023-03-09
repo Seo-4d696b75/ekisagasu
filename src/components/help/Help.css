@@ -1,32 +1,29 @@
-.root-container {
+.help-container {
     background-color: white;
-    margin: 0;
-    padding: 0;
+    width: 100%;
+    height: 100%;
 }
 
-.main-container {
-    margin-bottom: 20px;
-    margin-left: 20px;
-    margin-right: 20px;
+.content-container {
+	position: absolute;
+	top: 40px;
+	bottom: 0px;
+	left: 0px;
+	right: 0px;
+    overflow-y: scroll;
 }
 
-.Text-container{
+.content-align{
     text-align: left;
     margin-left: auto;
     margin-right: auto;
     display: block;
     width: min(100%, 600px);
+    height: 100%;
 }
 
-.Image {
+.image {
     width: 100%;
-}
-
-.Picture-frame {
-    margin-top: 40px;
-    margin-left: auto;
-    margin-right: auto;
-    width: min(100%, 600px);
 }
 
 h1 {
@@ -69,7 +66,7 @@ h4:before {
     box-sizing: border-box;
 }
 
-.Header-frame {
+.header-container {
     background-color: #154bb6;
     color: white;
     z-index: 20;
