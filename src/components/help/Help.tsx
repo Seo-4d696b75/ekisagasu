@@ -58,17 +58,17 @@ export default class Help extends React.Component {
 
             <h4>駅からレーダーでアクセス</h4>
 
-            <p>駅情報のダイアログにおいて、<img width="24" alt="radar" src="https://user-images.githubusercontent.com/25225028/81815235-b5590600-9564-11ea-9ba1-a5f8e655a7df.png" />アイコンをクリックすると、その駅から近い順に一覧表示します。</p>
+            <p>駅情報のダイアログにおいて、<img className='icon' width="24" alt="radar" src={ic_radar} />アイコンをクリックすると、その駅から近い順に一覧表示します。</p>
             <img className="image screen" alt="screen shot" src={screen_radar} /><br />
 
             <h4>任意の地点からレーダー</h4>
 
-            <p>選択したい地点を右クリック（スマホではロングタップ）すると、選択地点の最寄り駅に関するダイアログが開きます。そのダイアログの<img width="24" alt="radar" src="https://user-images.githubusercontent.com/25225028/81815235-b5590600-9564-11ea-9ba1-a5f8e655a7df.png" />アイコンをクリックします。</p>
+            <p>選択したい地点を右クリック（スマホではロングタップ）すると、選択地点の最寄り駅に関するダイアログが開きます。そのダイアログの<img className='icon' width="24" alt="radar" src={ic_radar} />アイコンをクリックします。</p>
             <img className="image screen" alt="screen shot" src={screen_point} /><br />
 
             <h4>レーダでアクセスできる範囲を表示</h4>
 
-            <p>対象の駅のダイアログにおいて、<img width="24" alt="voronoi" src="https://user-images.githubusercontent.com/25225028/81815691-40d29700-9565-11ea-810b-504c11d0826d.png" />アイコンをクリックするとアクセス範囲を表示します。内側から描画される各ポリゴンがレーダーで１,２,３...番目にアクセスできる範囲を表します。つまり一番外側の黒いポリゴンの内側なら、その駅までレーダーが届きます。</p>
+            <p>対象の駅のダイアログにおいて、<img className='icon' width="24" alt="voronoi" src={ic_voronoi} />アイコンをクリックするとアクセス範囲を表示します。内側から描画される各ポリゴンがレーダーで１,２,３...番目にアクセスできる範囲を表します。つまり一番外側の黒いポリゴンの内側なら、その駅までレーダーが届きます。</p>
             <img className="image screen" alt="screen shot" src={screen_voronoi} /><br />
 
             <h4>路線情報の確認</h4>

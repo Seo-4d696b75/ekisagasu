@@ -26,6 +26,10 @@
     width: 100%;
 }
 
+.icon {
+    vertical-align: middle;
+}
+
 h1 {
     white-space: normal;
     text-align: center;
