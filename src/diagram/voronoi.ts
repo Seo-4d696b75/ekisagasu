@@ -512,8 +512,7 @@ export class Voronoi<T extends Point> {
         .map(p => this.delaunayIndexMap.get(p) ?? 0)
         .reduce((a, b) => Math.max(a, b))
       // FIXME 適当な固定値
-      console.log(`expandDelaunay current:${this.delaunayIndex} max:${maxIndex}`)
-      await this.expandDelaunayPoints(maxIndex + 5)
+      await this.expandDelaunayPoints(maxIndex + 2)
 
       return this.searchPolygon();
     } else {
