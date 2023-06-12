@@ -464,8 +464,6 @@ export class Voronoi<T extends Point> {
     this.delaunayPoints.clear()
     this.delaunayPoints.add(this.center)
 
-    await this.expandDelaunayPoints()
-
     return this.searchPolygon();
   }
 
@@ -483,24 +481,23 @@ export class Voronoi<T extends Point> {
   private async searchPolygon(): Promise<Array<Array<Point>>> {
     const loopTime = performance.now();
 
+    // ドロネー分割点を追加
+    await this.expandDelaunayPoints(this.list)
+
     // ボロノイ範囲の計算
     const list = this.traverse(this.list);
     list.forEach(node => node.onSolved(this.targetLevel));
     this.result.push(list);
     this.list = list;
 
-
     console.log(`execute index:${this.targetLevel} time:${performance.now() - loopTime}`);
+
+    const nextLevel = this.targetLevel + 1;
     if (this.callback && this.list) {
       this.callback(this.targetLevel - 1, this.list);
     }
-    const nextLevel = this.targetLevel + 1;
     if (nextLevel <= this.level) {
       this.targetLevel = nextLevel;
-
-      // ドロネー分割点を追加
-      await this.expandDelaunayPoints(list)
-
       return this.searchPolygon();
     } else {
       this.bisectors.forEach(b => b.release());
@@ -568,7 +565,7 @@ export class Voronoi<T extends Point> {
    * 隣接DelaunayPointを追加
    * @param polygon 
    */
-  private async expandDelaunayPoints(polygon?: Node<T>[]) {
+  private async expandDelaunayPoints(polygon?: Node<T>[] | null) {
     const queue = polygon ? polygon.map(n => [n.p1.line.delaunayPoint, n.p2.line.delaunayPoint])
       .flat()
       .filter((n): n is T => !!n) : [this.center]
