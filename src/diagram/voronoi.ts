@@ -2,7 +2,7 @@ import * as line from "./line";
 import * as point from "./point";
 import * as triangle from "./triangle";
 import { DiagramError, Edge, Line, Point, Triangle } from "./types";
-import { ObjectSet } from "./utils";
+import { ObjectMap, ObjectSet } from "./utils";
 
 class VoronoiError extends DiagramError {
   constructor(mes: string) {
@@ -443,36 +443,31 @@ export class Voronoi<T extends Point> {
    * @return 1..indexまでの次数の順に計算されたポリゴンを格納したリストのPromise
    */
   async execute(level: number, center: T, callback: Callback | null): Promise<Array<Array<Point>>> {
-    if (this.running) return Promise.reject("already running");
+    if (this.running) throw new VoronoiError("already running");
     this.running = true;
 
-    try {
+    // 初期化
+    this.center = center;
+    this.level = level;
+    this.targetLevel = 1;
+    this.list = null;
+    this.time = performance.now();
+    this.result = [];
+    this.callback = callback;
+    this.bisectors = [];
+    this.addBoundary(line.init(this.container.a, this.container.b));
+    this.addBoundary(line.init(this.container.b, this.container.c));
+    this.addBoundary(line.init(this.container.c, this.container.a));
 
-      this.center = center;
-      this.level = level;
-      this.targetLevel = 1;
-      this.list = null;
-      this.time = performance.now();
-      this.result = [];
-      this.callback = callback;
-      this.bisectors = [];
-      this.addBoundary(line.init(this.container.a, this.container.b));
-      this.addBoundary(line.init(this.container.b, this.container.c));
-      this.addBoundary(line.init(this.container.c, this.container.a));
-      this.requestedPoint = new ObjectSet(point.equals, point.hashCode);
-      this.addedPoint = new ObjectSet(point.equals, point.hashCode);
-      this.requestedPoint.add(center);
-      this.addedPoint.add(center);
-      const neighbors = await this.provider(center);
-      for (let p of neighbors) {
-        if (this.addedPoint.add(p))
-          this.addBisector(p);
-      }
-    } catch (e) {
-      return Promise.reject(e)
-    }
+    this.delaunayPoints.clear()
+    this.delaunayPoints.add(center)
+    this.delaunayIndexMap.clear()
+    this.delaunayIndexMap.put(center, 0)
+    this.delaunayIndex = 0
+
+    await this.expandDelaunayPoints(1)
+
     return this.searchPolygon();
-
   }
 
   center: Point = point.ZERO
@@ -484,9 +479,9 @@ export class Voronoi<T extends Point> {
   callback: Callback | null = null
   bisectors: Array<Bisector<T>> = []
 
-
-  requestedPoint: ObjectSet<Point> = new ObjectSet(point.equals, point.hashCode)
-  addedPoint: ObjectSet<Point> = new ObjectSet(point.equals, point.hashCode)
+  delaunayPoints = new ObjectSet<T>(point.equals, point.hashCode)
+  delaunayIndexMap = new ObjectMap<Point, number>(point.equals, point.hashCode)
+  delaunayIndex = 0
 
   private async searchPolygon(): Promise<Array<Array<Point>>> {
     const loopTime = performance.now();
@@ -506,8 +501,19 @@ export class Voronoi<T extends Point> {
     if (nextLevel <= this.level) {
       this.targetLevel = nextLevel;
 
-      // ドロネー分割点・二等分線を追加
-      await this.checkDelaunayPoints(list)
+      // ドロネー分割点を追加
+      const maxIndex = list
+        .map(n => ([
+          n.p1.line.delaunayPoint,
+          n.p2.line.delaunayPoint,
+        ]))
+        .flat()
+        .filter((p): p is T => !!p)
+        .map(p => this.delaunayIndexMap.get(p) ?? 0)
+        .reduce((a, b) => Math.max(a, b))
+      // FIXME 適当な固定値
+      console.log(`expandDelaunay current:${this.delaunayIndex} max:${maxIndex}`)
+      await this.expandDelaunayPoints(maxIndex + 5)
 
       return this.searchPolygon();
     } else {
@@ -559,7 +565,13 @@ export class Voronoi<T extends Point> {
       current = next;
       next = current.next(previous);
       previous = current;
-      if (point.equals(start, next)) break;
+      if (point.equals(start, next)) break
+      if (polygon.some(p => point.equals(p, next!))) break
+      polygon.forEach(p => {
+        if (point.equals(p, next!)) {
+          console.warn(`point duplicated`, next, polygon)
+        }
+      })
       polygon.push(next);
     }
 
@@ -570,42 +582,22 @@ export class Voronoi<T extends Point> {
    * 隣接DelaunayPointを追加
    * @param polygon 
    */
-  private async checkDelaunayPoints(polygon: Node<T>[]) {
-    let queue: QueuePoint<T>[] = polygon.map(n => ([
-      n.p1.line.delaunayPoint,
-      n.p2.line.delaunayPoint,
-    ])).flat().filter((p): p is T => !!p).map(p => ({
-      point: p,
-      dist: 0,
-    }))
-    while (true) {
-      let target = queue.shift()
-      if (!target) break
-      const next = await this.requestExtension(target)
-      queue = [
-        ...queue,
-        ...next,
-      ]
-    }
-  }
-
-  private async requestExtension(target: QueuePoint<T>): Promise<QueuePoint<T>[]> {
-    const nextQueue: QueuePoint<T>[] = []
-    if (this.requestedPoint.add(target.point)) {
-      const neighbors = await this.provider(target.point)
-      for (let p of neighbors) {
-        if (this.addedPoint.add(p)) {
-          this.addBisector(p);
-          if (target.dist < 2) {
-            nextQueue.push({
-              point: p,
-              dist: target.dist + 1,
-            })
-          }
-        }
+  private async expandDelaunayPoints(targetIndex: number) {
+    while (this.delaunayIndex < targetIndex) {
+      const index = this.delaunayIndex
+      const queue = Array.from(this.delaunayPoints)
+        .filter(p => this.delaunayIndexMap.get(p) === index)
+      for (let p of queue) {
+        const neighbors = await this.provider(p)
+        neighbors
+          .filter(n => this.delaunayPoints.add(n))
+          .forEach(n => {
+            this.addBisector(n)
+            this.delaunayIndexMap.put(n, index + 1)
+          })
       }
+      this.delaunayIndex = index + 1
     }
-    return nextQueue
   }
 
   /**
@@ -650,9 +642,4 @@ export class Voronoi<T extends Point> {
 
 
 
-}
-
-interface QueuePoint<T extends Point> {
-  point: T,
-  dist: number,
 }
