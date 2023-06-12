@@ -3,7 +3,7 @@ import { Voronoi } from "../diagram/voronoi"
 
 const ctx: Worker = self as any  /* eslint-disable-line no-restricted-globals */
 
-interface StationPoint extends Point{
+interface StationPoint extends Point {
   code: number
 }
 
@@ -39,8 +39,8 @@ ctx.addEventListener('message', message => {
         })
       }))
     }
-    state.voronoi = new Voronoi<StationPoint>(container, provider)
-    state.voronoi.execute(data.k, data.center, progress).then(() => {
+    state.voronoi = new Voronoi<StationPoint>(data.center, container, provider)
+    state.voronoi.execute(data.k, progress).then(() => {
       ctx.postMessage(JSON.stringify({
         type: 'complete',
       }))
