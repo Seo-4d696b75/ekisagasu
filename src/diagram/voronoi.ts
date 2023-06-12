@@ -160,7 +160,7 @@ class Node<T extends Point> implements Point {
         this.index = level + 0.5;
       }
     } else if (Math.round(this.index) !== this.index) {
-      if (this.index + 0.5 !== level) throw new VoronoiError("index mismatch");
+      if (this.index + 0.5 !== level) throw new VoronoiError(`index mismatch. current: ${level}, node: ${this.index}`);
     }
   }
 
