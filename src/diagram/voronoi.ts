@@ -26,6 +26,8 @@ function invert(step: StepDirection): StepDirection {
   }
 }
 
+const ERROR = Math.pow(2, -30);
+
 /**
  * Point + 付加情報 のラッパー  
  * 二つの二等分線の交点においてBisectorオブジェクトどうしの接続をモデル化
@@ -605,7 +607,7 @@ export class Voronoi<T extends Point> {
     );
     this.bisectors.forEach(preexist => {
       var p = line.getIntersection(bisector.line, preexist.line);
-      if (p && triangle.containsPoint(this.container, p)) {
+      if (p && triangle.containsPoint(this.container, p, ERROR)) {
         var a = new Intersection<T>(p, bisector, preexist.line, this.center);
         var b = new Intersection<T>(p, preexist, bisector.line, this.center);
         var n = new Node(p, a, b);
