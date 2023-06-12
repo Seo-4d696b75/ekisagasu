@@ -138,11 +138,11 @@ export function getPerpendicularBisector(p1: Point | Edge, p2?: Point): Line {
   if (p2) {
 
     // p1,p2:Point
-    return {
-      a: p1.x - p2.x,
-      b: p1.y - p2.y,
-      c: (-Math.pow(p1.x, 2) - Math.pow(p1.y, 2) + Math.pow(p2.x, 2) + Math.pow(p2.y, 2)) / 2,
-    }
+    return init(
+      p1.x - p2.x,
+      p1.y - p2.y,
+      (-Math.pow(p1.x, 2) - Math.pow(p1.y, 2) + Math.pow(p2.x, 2) + Math.pow(p2.y, 2)) / 2,
+    )
   }
   throw new LineError(`invalid arguments p1:${p1},p2:${p2}`)
 }
