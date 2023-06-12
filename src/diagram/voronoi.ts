@@ -1,7 +1,7 @@
-import { Point, Line, Edge, Triangle, DiagramError } from "./types"
-import * as point from "./point";
 import * as line from "./line";
+import * as point from "./point";
 import * as triangle from "./triangle";
+import { DiagramError, Edge, Line, Point, Triangle } from "./types";
 import { ObjectSet } from "./utils";
 
 class VoronoiError extends DiagramError {
@@ -25,8 +25,6 @@ function invert(step: StepDirection): StepDirection {
       return "zero"
   }
 }
-
-const ERROR = Math.pow(2, -30);
 
 /**
  * Point + 付加情報 のラッパー  
@@ -491,13 +489,14 @@ export class Voronoi<T extends Point> {
   addedPoint: ObjectSet<Point> = new ObjectSet(point.equals, point.hashCode)
 
   private async searchPolygon(): Promise<Array<Array<Point>>> {
-    var loopTime = performance.now();
-    var promise: Array<Promise<void>> = [];
-    var list = this.traverse(this.list, promise);
+    const loopTime = performance.now();
+
+    // ボロノイ範囲の計算
+    const list = this.traverse(this.list);
     list.forEach(node => node.onSolved(this.targetLevel));
     this.result.push(list);
     this.list = list;
-    await Promise.all(promise);
+
 
     console.log(`execute index:${this.targetLevel} time:${performance.now() - loopTime}`);
     if (this.callback && this.list) {
@@ -506,6 +505,10 @@ export class Voronoi<T extends Point> {
     const nextLevel = this.targetLevel + 1;
     if (nextLevel <= this.level) {
       this.targetLevel = nextLevel;
+
+      // ドロネー分割点・二等分線を追加
+      await this.checkDelaunayPoints(list)
+
       return this.searchPolygon();
     } else {
       this.bisectors.forEach(b => b.release());
@@ -518,10 +521,16 @@ export class Voronoi<T extends Point> {
 
   }
 
-  private traverse(list: Array<Node<T>> | null, tasks: Array<Promise<void>>) {
+  /**
+   * 現在の字数のボロノイ範囲のポリゴンを計算する
+   * @param previousPolygon 
+   * @param tasks 
+   * @returns ポリゴン
+   */
+  private traverse(previousPolygon: Array<Node<T>> | null): Node<T>[] {
     var next: Node<T> | null = null
     var previous: Node<T> | null = null
-    if (!list) {
+    if (!previousPolygon) {
       var history = new ObjectSet(point.equals, point.hashCode);
       var sample = this.bisectors[0];
       next = sample.intersections[1].node;
@@ -532,8 +541,8 @@ export class Voronoi<T extends Point> {
         previous = current;
       }
     } else {
-      previous = list[list.length - 1];
-      for (let n of list) {
+      previous = previousPolygon[previousPolygon.length - 1];
+      for (let n of previousPolygon) {
         next = n.nextUp(previous);
         previous = n;
         if (next && !next.hasSolved()) break;
@@ -544,32 +553,59 @@ export class Voronoi<T extends Point> {
       throw new VoronoiError("fail to traverse polygon");
     }
 
-    var start = next;
-    list = [start];
+    const start = next;
+    const polygon = [start];
     while (true) {
-      this.requestExtension(next.p1.line.delaunayPoint, tasks);
-      this.requestExtension(next.p2.line.delaunayPoint, tasks);
       current = next;
       next = current.next(previous);
       previous = current;
       if (point.equals(start, next)) break;
-      list.push(next);
+      polygon.push(next);
     }
 
-    return list;
+    return polygon
   }
 
-  private requestExtension(target: T | null, tasks: Array<Promise<void>>): void {
-    if (target && this.requestedPoint.add(target)) {
-      var task = this.provider(target).then(neighbors => {
-        for (let p of neighbors) {
-          if (this.addedPoint.add(p)) {
-            this.addBisector(p);
+  /**
+   * 隣接DelaunayPointを追加
+   * @param polygon 
+   */
+  private async checkDelaunayPoints(polygon: Node<T>[]) {
+    let queue: QueuePoint<T>[] = polygon.map(n => ([
+      n.p1.line.delaunayPoint,
+      n.p2.line.delaunayPoint,
+    ])).flat().filter((p): p is T => !!p).map(p => ({
+      point: p,
+      dist: 0,
+    }))
+    while (true) {
+      let target = queue.shift()
+      if (!target) break
+      const next = await this.requestExtension(target)
+      queue = [
+        ...queue,
+        ...next,
+      ]
+    }
+  }
+
+  private async requestExtension(target: QueuePoint<T>): Promise<QueuePoint<T>[]> {
+    const nextQueue: QueuePoint<T>[] = []
+    if (this.requestedPoint.add(target.point)) {
+      const neighbors = await this.provider(target.point)
+      for (let p of neighbors) {
+        if (this.addedPoint.add(p)) {
+          this.addBisector(p);
+          if (target.dist < 2) {
+            nextQueue.push({
+              point: p,
+              dist: target.dist + 1,
+            })
           }
         }
-      });
-      tasks.push(task);
+      }
     }
+    return nextQueue
   }
 
   /**
@@ -599,7 +635,7 @@ export class Voronoi<T extends Point> {
     );
     this.bisectors.forEach(preexist => {
       var p = line.getIntersection(bisector.line, preexist.line);
-      if (p && triangle.containsPoint(this.container, p, ERROR)) {
+      if (p && triangle.containsPoint(this.container, p)) {
         var a = new Intersection<T>(p, bisector, preexist.line, this.center);
         var b = new Intersection<T>(p, preexist, bisector.line, this.center);
         var n = new Node(p, a, b);
@@ -614,4 +650,9 @@ export class Voronoi<T extends Point> {
 
 
 
+}
+
+interface QueuePoint<T extends Point> {
+  point: T,
+  dist: number,
 }
