@@ -1,29 +1,39 @@
 <!DOCTYPE html>
 <html lang="ja">
-  <head prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# website: http://ogp.me/ns/websaite#">
-	<meta name="google-site-verification" content="zWbn8Sa1o_cVdWFvkHXgEznEt8yOw46gl8vnrqIDD9w" />
-	<meta http-equiv="Content-Type" content="text/html" charset="utf-8">
-	<meta http-equiv="Content-Script-Type" content="text/javascript">
-	<meta http-equiv="Content-Style-Type" content="text/css">
-	<meta http-equiv="Content-Language" content="ja">
-	<link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png">
-	<link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/favicon-32x32.png">
-	<link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/favicon-16x16.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-	<meta name="theme-color" content="#154bb6" />
-    <meta
-      name="description"
-      content="駅や路線の役立つ情報が見つかる！位置ゲーム「駅メモ！」に基づいた駅や路線のデータを確認したり，チェックインする駅やレーダーでアクセスできる範囲をGoogleMap上で視覚化します．"
-	/>
-	<link rel="mask-icon" href="%PUBLIC_URL%/safari-pinned-tab.svg" color="#5bbad5">
-	<meta name="msapplication-TileImage" content="%PUBLIC_URL%/mstile-150x150.png">
-	<meta name="msapplication-TileColor" content="#2d89ef">
-    <!--
+
+<head prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# website: http://ogp.me/ns/websaite#">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-JZT8LB3NE3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-JZT8LB3NE3');
+  </script>
+
+  <meta name="google-site-verification" content="zWbn8Sa1o_cVdWFvkHXgEznEt8yOw46gl8vnrqIDD9w" />
+  <meta http-equiv="Content-Type" content="text/html" charset="utf-8">
+  <meta http-equiv="Content-Script-Type" content="text/javascript">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <meta http-equiv="Content-Language" content="ja">
+  <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/favicon-16x16.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#154bb6" />
+  <meta name="description"
+    content="駅や路線の役立つ情報が見つかる！位置ゲーム「駅メモ！」に基づいた駅や路線のデータを確認したり，チェックインする駅やレーダーでアクセスできる範囲をGoogleMap上で視覚化します．" />
+  <link rel="mask-icon" href="%PUBLIC_URL%/safari-pinned-tab.svg" color="#5bbad5">
+  <meta name="msapplication-TileImage" content="%PUBLIC_URL%/mstile-150x150.png">
+  <meta name="msapplication-TileColor" content="#2d89ef">
+  <!--
       manifest.json provides metadata used when your web app is installed on a
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
     -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+  <!--
       Notice the use of %PUBLIC_URL% in the tags above.
       It will be replaced with the URL of the `public` folder during the build.
       Only files inside the `public` folder can be referenced from the HTML.
@@ -32,25 +42,26 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-	<title>駅サガース - 駅メモ！支援ツールサイト</title>
-    <meta name="description" content="駅や路線の役立つ情報が見つかる！チェックインできる駅やレーダーでアクセスできる範囲を地図上に可視化します">
-	<meta name="keywords" content="駅メモ,ステーションメモリーズ,GoogleMap,地図,位置ゲーム,ツール">
-	<meta name="author" content="© 2020 Seo-4d696b75">
-	<link rel="canonical" href="https://seo-4d696b75.github.io/ekisagasu/">
-	<meta property="og:url" content="https://seo-4d696b75.github.io/ekisagasu/" />
-	<meta property="og:type" content="website" />
-	<meta property="og:title" content="「駅サガース」駅メモ！ツールサイト" />
-	<meta property="og:description" content="駅や路線の役立つ情報が見つかる！チェックインできる駅やレーダーでアクセスできる範囲を地図上に可視化します" />
-	<meta property="og:site_name" content="駅サガース - 駅メモ！支援ツールサイト" />
-	<meta property="og:image" content="%PUBLIC_URL%/ogp.png" />
-	<meta name="twitter:card" content="summary">
-	<meta name="twitter:site" content="@ekimemo4d696b75">
-	<meta name="twitter:creator" content="@ekimemo4d696b75">
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
+  <title>駅サガース - 駅メモ！支援ツールサイト</title>
+  <meta name="description" content="駅や路線の役立つ情報が見つかる！チェックインできる駅やレーダーでアクセスできる範囲を地図上に可視化します">
+  <meta name="keywords" content="駅メモ,ステーションメモリーズ,GoogleMap,地図,位置ゲーム,ツール">
+  <meta name="author" content="© 2020 Seo-4d696b75">
+  <link rel="canonical" href="https://seo-4d696b75.github.io/ekisagasu/">
+  <meta property="og:url" content="https://seo-4d696b75.github.io/ekisagasu/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="「駅サガース」駅メモ！ツールサイト" />
+  <meta property="og:description" content="駅や路線の役立つ情報が見つかる！チェックインできる駅やレーダーでアクセスできる範囲を地図上に可視化します" />
+  <meta property="og:site_name" content="駅サガース - 駅メモ！支援ツールサイト" />
+  <meta property="og:image" content="%PUBLIC_URL%/ogp.png" />
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="@ekimemo4d696b75">
+  <meta name="twitter:creator" content="@ekimemo4d696b75">
+</head>
+
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+  <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.
 
@@ -60,5 +71,6 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
-  </body>
+</body>
+
 </html>
