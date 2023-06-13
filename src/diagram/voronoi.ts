@@ -402,14 +402,14 @@ class Bisector<T extends Point> {
 /** 
  * 母点集合において指定された点の隣接点を取得する
  */
-export type PointProvider<T extends Point> = (p: T) => Promise<Array<T>>
+export type PointProvider<T extends Point> = (p: T) => Promise<T[]>
 
 /**
  * 各次数における計算結果のコールバック関数
  * @param index 次数（１始まりで数えた数字）
  * @param polygon ポリゴンを成す座標点を順にもつリスト
  */
-export type Callback = (index: number, polygon: Array<Point>) => void
+export type Callback = (index: number, polygon: Point[]) => void
 
 /**
  * 高次ボロノイ分割を計算する
@@ -418,8 +418,9 @@ export class Voronoi<T extends Point> {
 
   /**
    * 
-   * @param {triangle} frame 
-   * @param {(point)=>Promise<array>} provider 
+   * @param center 中心の母点
+   * @param frame すべての母点を内包する三角形
+   * @param provider 隣接点を取得する関数
    */
   constructor(center: T, frame: Triangle, provider: PointProvider<T>) {
     this.center = center
@@ -435,21 +436,17 @@ export class Voronoi<T extends Point> {
    * 高次ボロノイ分割を計算する
    * 
    * １次から指定された次数まで逐次的に計算する
-   * @param {number} level 計算する次数
-   * @param {point} center 中心点
-   * @param {(index: number,polygon: array)=>void} callback 各次数でのボロノイ領域（ポリゴン）が計算されるたびにコールバックする
-   * @return 1..indexまでの次数の順に計算されたポリゴンを格納したリストのPromise
+   * @param level 計算する次数
+   * @param callback 各次数でのボロノイ領域（ポリゴン）が計算されるたびにコールバックする
+   * @return 1..indexまでの次数の順に計算されたポリゴンを格納したリスト
    */
-  async execute(level: number, callback: Callback | null): Promise<Array<Array<Point>>> {
+  async execute(level: number, callback: Callback | null): Promise<Point[][]> {
     assert(!this.running, () => "already running")
     this.running = true
 
     // 初期化
-    this.level = level
-    this.targetLevel = 1
-    this.list = null
+    this.targetIndex = level
     this.time = performance.now()
-    this.result = []
     this.callback = callback
     this.bisectors = []
     this.addBoundary(line.init(this.container.a, this.container.b))
@@ -459,48 +456,48 @@ export class Voronoi<T extends Point> {
     this.delaunayPoints.clear()
     this.delaunayPoints.add(this.center)
 
-    return this.searchPolygon()
+    return this.searchPolygon(1, [])
   }
 
   center: T
-  level: number = 0
-  targetLevel: number = 1
-  list: Array<Node<T>> | null = null
+  targetIndex: number = 1
+
   time: number = 0
-  result: Array<Array<Point>> = []
+
   callback: Callback | null = null
-  bisectors: Array<Bisector<T>> = []
+  bisectors: Bisector<T>[] = []
 
   delaunayPoints = new ObjectSet<T>(point.equals, point.hashCode)
 
-  private async searchPolygon(): Promise<Array<Array<Point>>> {
+  private async searchPolygon(index: number, result: Node<T>[][]): Promise<Node<T>[][]> {
     const loopTime = performance.now()
 
+    const previousPolygon = index === 1 ? null : result[result.length - 1]
+
     // ドロネー分割点を追加
-    await this.expandDelaunayPoints(this.list)
+    await this.expandDelaunayPoints(previousPolygon)
 
     // ボロノイ範囲の計算
-    const list = this.traverse(this.list)
-    list.forEach(node => node.onSolved(this.targetLevel))
-    this.result.push(list)
-    this.list = list
+    const polygon = this.traverse(previousPolygon)
+    polygon.forEach(node => node.onSolved(index))
 
-    console.log(`execute index:${this.targetLevel} time:${performance.now() - loopTime}`)
+    console.log(`execute index:${index} time:${performance.now() - loopTime}`)
 
-    const nextLevel = this.targetLevel + 1
-    if (this.callback && this.list) {
-      this.callback(this.targetLevel - 1, this.list)
+    if (this.callback) {
+      this.callback(index, polygon)
     }
-    if (nextLevel <= this.level) {
-      this.targetLevel = nextLevel
-      return this.searchPolygon()
+    if (index < this.targetIndex) {
+      return this.searchPolygon(
+        index + 1,
+        [...result, polygon],
+      )
     } else {
       this.bisectors.forEach(b => b.release())
       console.log(`execute done. time:${performance.now() - this.time}`)
 
       this.running = false
 
-      return this.result
+      return [...result, polygon]
     }
 
   }
@@ -511,45 +508,43 @@ export class Voronoi<T extends Point> {
    * @param tasks 
    * @returns ポリゴン
    */
-  private traverse(previousPolygon: Array<Node<T>> | null): Node<T>[] {
-    var next: Node<T> | null = null
-    var previous: Node<T> | null = null
-    if (!previousPolygon) {
-      var history = new ObjectSet(point.equals, point.hashCode)
-      var sample = this.bisectors[0]
-      next = sample.intersections[1].node
-      previous = sample.intersections[0].node
-      while (history.add(next)) {
-        var current: Node<T> = next
-        next = current.nextDown(previous)
-        previous = current
+  private traverse(previousPolygon: Node<T>[] | null): Node<T>[] {
+    let [previous, next] = (() => {
+      let next: Node<T> | null = null
+      let previous: Node<T> | null = null
+      if (!previousPolygon) {
+        const history = new ObjectSet(point.equals, point.hashCode)
+        const sample = this.bisectors[0]
+        next = sample.intersections[1].node
+        previous = sample.intersections[0].node
+        while (history.add(next)) {
+          const current: Node<T> = next
+          next = current.nextDown(previous)
+          previous = current
+        }
+        return [previous, next]
+      } else {
+        previous = previousPolygon[previousPolygon.length - 1]
+        for (let n of previousPolygon) {
+          next = n.nextUp(previous)
+          previous = n
+          if (next && !next.hasSolved()) return [previous, next]
+        }
+        fail("traverse start not found")
       }
-    } else {
-      previous = previousPolygon[previousPolygon.length - 1]
-      for (let n of previousPolygon) {
-        next = n.nextUp(previous)
-        previous = n
-        if (next && !next.hasSolved()) break
-      }
-    }
+    })()
 
-    if (!next || !previous || next.hasSolved()) {
-      throw new VoronoiError("fail to traverse polygon")
-    }
+    assert(next && previous && !next.hasSolved(), () => "fail to traverse polygon")
 
     const start = next
     const polygon = [start]
     while (true) {
-      current = next
+      const current = next
       next = current.next(previous)
       previous = current
+
       if (point.equals(start, next)) break
-      if (polygon.some(p => point.equals(p, next!))) break
-      polygon.forEach(p => {
-        if (point.equals(p, next!)) {
-          console.warn(`point duplicated`, next, polygon)
-        }
-      })
+      assert(polygon.every(p => !point.equals(p, next)), () => "point duplicated")
       polygon.push(next)
     }
 
@@ -577,13 +572,13 @@ export class Voronoi<T extends Point> {
    * @param {*} self Line 
    */
   private addBoundary(self: Line): void {
-    var boundary = new Bisector<T>(self)
+    const boundary = new Bisector<T>(self)
     this.bisectors.forEach(preexist => {
-      var p = line.getIntersection(boundary.line, preexist.line)
-      if (!p) throw new VoronoiError("intersection not found")
-      var a = new Intersection<T>(p, boundary)
-      var b = new Intersection<T>(p, preexist)
-      var n = new Node<T>(p, a, b)
+      const p = line.getIntersection(boundary.line, preexist.line)
+      assert(p, () => "intersection not found")
+      const a = new Intersection<T>(p, boundary)
+      const b = new Intersection<T>(p, preexist)
+      const n = new Node<T>(p, a, b)
       a.node = n
       b.node = n
       boundary.addIntersection(a)
@@ -593,16 +588,16 @@ export class Voronoi<T extends Point> {
   }
 
   private addBisector(intersection: T) {
-    var bisector = new Bisector(
+    const bisector = new Bisector(
       line.getPerpendicularBisector(intersection, this.center),
       intersection
     )
     this.bisectors.forEach(preexist => {
-      var p = line.getIntersection(bisector.line, preexist.line)
+      const p = line.getIntersection(bisector.line, preexist.line)
       if (p && triangle.containsPoint(this.container, p, ERROR)) {
-        var a = new Intersection<T>(p, bisector, preexist.line, this.center)
-        var b = new Intersection<T>(p, preexist, bisector.line, this.center)
-        var n = new Node(p, a, b)
+        const a = new Intersection<T>(p, bisector, preexist.line, this.center)
+        const b = new Intersection<T>(p, preexist, bisector.line, this.center)
+        const n = new Node(p, a, b)
         a.node = n
         b.node = n
         bisector.addIntersection(a)
@@ -611,7 +606,4 @@ export class Voronoi<T extends Point> {
     })
     this.bisectors.push(bisector)
   }
-
-
-
 }
