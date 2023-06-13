@@ -10,6 +10,15 @@ class VoronoiError extends DiagramError {
   }
 }
 
+function fail(mes: string): never {
+  throw new VoronoiError(mes)
+}
+
+function assert(value: unknown, message: () => string): asserts value {
+  if (value) return
+  fail(message())
+}
+
 /**
  * 二等分線の交点の前後における次数の変化量
  */
@@ -62,14 +71,12 @@ class Node<T extends Point> implements Point {
   _p2: Intersection<T> | null
 
   get p1(): Intersection<T> {
-    if (this._p1) return this._p1
-    throw new VoronoiError("no intersection")
+    return this._p1 ? this._p1 : fail("no intersection")
   }
 
 
   get p2(): Intersection<T> {
-    if (this._p2) return this._p2
-    throw new VoronoiError("no intersection")
+    return this._p2 ? this._p2 : fail("no intersection")
   }
 
   index: number
@@ -92,7 +99,7 @@ class Node<T extends Point> implements Point {
     } else if (p2.hasPrevious && point.equals(p2.previous, previous)) {
       return this.calcNext(p2, p1, true, p2.step)
     } else {
-      throw new VoronoiError("next node not found.")
+      fail("next node not found.")
     }
   }
 
@@ -116,14 +123,11 @@ class Node<T extends Point> implements Point {
    * @param previous 
    */
   nextDown(previous: Point): Node<T> {
-    var target: any = null
-    if (this.p1.isNeighbor(previous)) {
-      target = this.p2
-    } else if (this.p2.isNeighbor(previous)) {
-      target = this.p1
-    } else {
-      throw new VoronoiError("neighbor not found")
-    }
+    const target = this.p1.isNeighbor(previous)
+      ? this.p2
+      : this.p2.isNeighbor(previous)
+        ? this.p1
+        : fail("neighbor not found")
     if (target.hasNeighbor("down")) {
       return target.neighbor("down").node
     } else {
@@ -132,17 +136,11 @@ class Node<T extends Point> implements Point {
   }
 
   nextUp(previous: Point): Node<T> | null {
-    var t1: any = null
-    var t2: any = null
-    if (this.p1.isNeighbor(previous)) {
-      t1 = this.p2
-      t2 = this.p1
-    } else if (this.p2.isNeighbor(previous)) {
-      t1 = this.p1
-      t2 = this.p2
-    } else {
-      throw new VoronoiError("neighbor not found")
-    }
+    const [t1, t2] = this.p1.isNeighbor(previous)
+      ? [this.p2, this.p1]
+      : this.p2.isNeighbor(previous)
+        ? [this.p1, this.p2]
+        : fail("neighbor not found")
     if (t1.hasNeighbor("up")) {
       return t1.neighbor("up").node
     } else if (t2.hasNeighbor("up")) {
@@ -162,7 +160,7 @@ class Node<T extends Point> implements Point {
         this.index = level + 0.5
       }
     } else if (Math.round(this.index) !== this.index) {
-      if (this.index + 0.5 !== level) throw new VoronoiError(`index mismatch. current: ${level}, node: ${this.index}`)
+      assert(this.index + 0.5 === level, () => `index mismatch. current: ${level}, node: ${this.index}`)
     }
   }
 
@@ -190,13 +188,13 @@ class Intersection<T extends Point> implements Point {
 
     if (other && center) {
 
-      var dx = b.line.b
-      var dy = -b.line.a
+      let dx = b.line.b
+      let dy = -b.line.a
       if (dx < 0 || (dx === 0 && dy < 0)) {
         dx *= -1
         dy *= -1
       }
-      var p = {
+      let p = {
         x: intersection.x + dx,
         y: intersection.y + dy
       }
@@ -218,42 +216,39 @@ class Intersection<T extends Point> implements Point {
   _node: Node<T> | null = null
 
   get hasPrevious(): boolean {
-    if (this._previous === undefined) {
-      throw new VoronoiError("previous not init yet")
-    }
-    return this._previous !== null
+    const p = this._previous
+    assert(p !== undefined, () => "previous not init yet")
+    return p !== null
   }
 
   get previous(): Intersection<T> {
-    if (this._previous) return this._previous
-    if (this._previous === undefined) {
-      throw new VoronoiError("previous not init yet")
-    }
-    throw new VoronoiError("no previous")
+    const p = this._previous
+    assert(p !== undefined, () => "previous not init yet")
+    assert(p, () => "no previous")
+    return p
   }
 
   get hasNext(): boolean {
-    if (this._next === undefined) {
-      throw new VoronoiError("next not init yet")
-    }
-    return this._next !== null
+    const n = this._next
+    assert(n !== undefined, () => "next not init yet")
+    return n !== null
   }
 
   get next(): Intersection<T> {
-    if (this._next) return this._next
-    if (this._next === undefined) {
-      throw new VoronoiError("next not init yet")
-    }
-    throw new VoronoiError("no next")
+    const n = this._next
+    assert(n !== undefined, () => "next not init yet")
+    assert(n, () => "no next")
+    return n
   }
 
   get node(): Node<T> {
-    if (this._node) return this._node
-    throw new VoronoiError("no node")
+    const n = this._node
+    assert(n, () => "no node")
+    return n
   }
 
   set node(value: Node<T>) {
-    if (this._node) throw new VoronoiError("node already set")
+    assert(!this._node, () => "node already set")
     this._node = value
   }
 
@@ -296,7 +291,7 @@ class Intersection<T extends Point> implements Point {
     } else if (step !== "zero" && this.step !== "zero") {
       return (step === this.step) ? this.next : this.previous
     }
-    throw new VoronoiError("neighbor step invalid.")
+    fail("neighbor step invalid.")
   }
 
   onSolved(): void {
@@ -376,7 +371,7 @@ class Bisector<T extends Point> {
         this.solvedPointIndexFrom++
         this.solvedPointIndexTo++
       } else if (index <= this.solvedPointIndexTo) {
-        throw new VoronoiError("new intersection added to solved range.")
+        fail("new intersection added to solved range.")
       }
     }
   }
@@ -392,7 +387,7 @@ class Bisector<T extends Point> {
       } else if (r > 0) {
         return this.addIntersectionAt(p, mid + 1, indexTo)
       } else {
-        throw new VoronoiError("same point already added in this bisector")
+        fail("same point already added in this bisector")
       }
     }
   }
@@ -446,7 +441,7 @@ export class Voronoi<T extends Point> {
    * @return 1..indexまでの次数の順に計算されたポリゴンを格納したリストのPromise
    */
   async execute(level: number, callback: Callback | null): Promise<Array<Array<Point>>> {
-    if (this.running) throw new VoronoiError("already running")
+    assert(!this.running, () => "already running")
     this.running = true
 
     // 初期化
