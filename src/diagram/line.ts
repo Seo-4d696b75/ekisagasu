@@ -1,6 +1,6 @@
-import * as point from "./point"
 import * as edge from "./edge"
-import { Point, Line, Edge, DiagramError } from "./types"
+import * as point from "./point"
+import { DiagramError, Edge, Line, Point } from "./types"
 
 class LineInitError extends DiagramError { }
 
@@ -117,10 +117,14 @@ export function getIntersection(l1: Line, l2: Line | Edge): Point | null {
   if (det === 0) {
     return null;
   } else {
-    return {
-      x: (l1.b * l2.c - l2.b * l1.c) / det,
-      y: (l2.a * l1.c - l1.a * l2.c) / det,
-    };
+    var x = (l1.b * l2.c - l2.b * l1.c) / det
+    var y = (l2.a * l1.c - l1.a * l2.c) / det
+    // 線分が完全にx,y軸平行な場合でも浮動小数点演算の結果が微妙にズレる
+    if (l1.b === 0) x = -l1.c
+    if (l2.b === 0) x = -l2.c
+    if (l1.a === 0) y = -l1.c
+    if (l2.a === 0) y = -l2.c
+    return { x: x, y: y }
   }
 }
 
@@ -134,11 +138,11 @@ export function getPerpendicularBisector(p1: Point | Edge, p2?: Point): Line {
   if (p2) {
 
     // p1,p2:Point
-    return {
-      a: p1.x - p2.x,
-      b: p1.y - p2.y,
-      c: (-Math.pow(p1.x, 2) - Math.pow(p1.y, 2) + Math.pow(p2.x, 2) + Math.pow(p2.y, 2)) / 2,
-    }
+    return init(
+      p1.x - p2.x,
+      p1.y - p2.y,
+      (-Math.pow(p1.x, 2) - Math.pow(p1.y, 2) + Math.pow(p2.x, 2) + Math.pow(p2.y, 2)) / 2,
+    )
   }
   throw new LineError(`invalid arguments p1:${p1},p2:${p2}`)
 }

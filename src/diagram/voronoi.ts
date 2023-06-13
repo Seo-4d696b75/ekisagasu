@@ -1,13 +1,22 @@
-import { Point, Line, Edge, Triangle, DiagramError } from "./types"
-import * as point from "./point";
-import * as line from "./line";
-import * as triangle from "./triangle";
-import { ObjectSet } from "./utils";
+import * as line from "./line"
+import * as point from "./point"
+import * as triangle from "./triangle"
+import { DiagramError, Edge, Line, Point, Triangle } from "./types"
+import { ObjectSet } from "./utils"
 
 class VoronoiError extends DiagramError {
   constructor(mes: string) {
     super(mes)
   }
+}
+
+function fail(mes: string): never {
+  throw new VoronoiError(mes)
+}
+
+function assert(value: unknown, message: () => string): asserts value {
+  if (value) return
+  fail(message())
 }
 
 /**
@@ -26,7 +35,7 @@ function invert(step: StepDirection): StepDirection {
   }
 }
 
-const ERROR = Math.pow(2, -30);
+const ERROR = Math.pow(2, -30)
 
 /**
  * Point + 付加情報 のラッパー  
@@ -35,22 +44,22 @@ const ERROR = Math.pow(2, -30);
 class Node<T extends Point> implements Point {
 
   constructor(p: Point, a: Intersection<T>, b: Intersection<T>) {
-    this.x = p.x;
-    this.y = p.y;
-    this._p1 = a;
-    this._p2 = b;
-    var cnt = 0;
-    if (a.line.isBoundary) cnt++;
-    if (b.line.isBoundary) cnt++;
+    this.x = p.x
+    this.y = p.y
+    this._p1 = a
+    this._p2 = b
+    var cnt = 0
+    if (a.line.isBoundary) cnt++
+    if (b.line.isBoundary) cnt++
     if (cnt === 0) {
-      this.onBoundary = false;
-      this.index = -1;
+      this.onBoundary = false
+      this.index = -1
     } else if (cnt === 1) {
-      this.onBoundary = true;
-      this.index = -1;
+      this.onBoundary = true
+      this.index = -1
     } else {
-      this.onBoundary = false;
-      this.index = 0;
+      this.onBoundary = false
+      this.index = 0
     }
   }
 
@@ -62,14 +71,12 @@ class Node<T extends Point> implements Point {
   _p2: Intersection<T> | null
 
   get p1(): Intersection<T> {
-    if (this._p1) return this._p1
-    throw new VoronoiError("no intersection")
+    return this._p1 ? this._p1 : fail("no intersection")
   }
 
 
   get p2(): Intersection<T> {
-    if (this._p2) return this._p2
-    throw new VoronoiError("no intersection")
+    return this._p2 ? this._p2 : fail("no intersection")
   }
 
   index: number
@@ -81,18 +88,18 @@ class Node<T extends Point> implements Point {
    * @return Node
    */
   next(previous: Point) {
-    const p1 = this.p1;
-    const p2 = this.p2;
+    const p1 = this.p1
+    const p2 = this.p2
     if (p1.hasNext && point.equals(p1.next, previous)) {
-      return this.calcNext(p1, p2, false, invert(p1.step));
+      return this.calcNext(p1, p2, false, invert(p1.step))
     } else if (p1.hasPrevious && point.equals(p1.previous, previous)) {
-      return this.calcNext(p1, p2, true, p1.step);
+      return this.calcNext(p1, p2, true, p1.step)
     } else if (p2.hasNext && point.equals(p2.next, previous)) {
-      return this.calcNext(p2, p1, false, invert(p2.step));
+      return this.calcNext(p2, p1, false, invert(p2.step))
     } else if (p2.hasPrevious && point.equals(p2.previous, previous)) {
-      return this.calcNext(p2, p1, true, p2.step);
+      return this.calcNext(p2, p1, true, p2.step)
     } else {
-      throw new VoronoiError("next node not found.");
+      fail("next node not found.")
     }
   }
 
@@ -100,79 +107,70 @@ class Node<T extends Point> implements Point {
     if (this.onBoundary && this.index > 0) {
       // 頂点がFrame境界線上（Vertexではない）でかつ
       // この頂点が解決済みなら無視して同じ境界線上のお隣さんへ辿る
-      return forward ? current.next.node : current.previous.node;
+      return forward ? current.next.node : current.previous.node
     } else {
       // 頂点がFrame内部なら step = Node.STEP_UP/DOWN　のいずれか
       // FrameのVertexに位置する場合は例外的に step = Node.STEP_ZERO
-      return other.neighbor(invert(step)).node;
+      return other.neighbor(invert(step)).node
     }
   }
 
   /**
    * 辿ってきた辺とは異なる線分上の隣接頂点のうちこの頂点から見てボロノイ次数が
-         * 下がるまたは変化しない方を返す.<br>
-         * この頂点がFrame内部なら必ず次数が下がる隣接頂点を返すが、
-         * Frame境界線のVertexに相当する場合は例外的に次数変化0の方向の頂点を返す
+   * 下がるまたは変化しない方を返す.<br>
+   * この頂点がFrame内部なら必ず次数が下がる隣接頂点を返すが、
+   * Frame境界線のVertexに相当する場合は例外的に次数変化0の方向の頂点を返す
    * @param previous 
    */
   nextDown(previous: Point): Node<T> {
-    var target: any = null;
-    if (this.p1.isNeighbor(previous)) {
-      target = this.p2;
-    } else if (this.p2.isNeighbor(previous)) {
-      target = this.p1;
-    } else {
-      throw new VoronoiError("neighbor not found");
-    }
+    const target = this.p1.isNeighbor(previous)
+      ? this.p2
+      : this.p2.isNeighbor(previous)
+        ? this.p1
+        : fail("neighbor not found")
     if (target.hasNeighbor("down")) {
-      return target.neighbor("down").node;
+      return target.neighbor("down").node
     } else {
-      return target.neighbor("zero").node;
+      return target.neighbor("zero").node
     }
   }
 
   nextUp(previous: Point): Node<T> | null {
-    var t1: any = null;
-    var t2: any = null;
-    if (this.p1.isNeighbor(previous)) {
-      t1 = this.p2;
-      t2 = this.p1;
-    } else if (this.p2.isNeighbor(previous)) {
-      t1 = this.p1;
-      t2 = this.p2;
-    } else {
-      throw new VoronoiError("neighbor not found");
-    }
+    const [t1, t2] = this.p1.isNeighbor(previous)
+      ? [this.p2, this.p1]
+      : this.p2.isNeighbor(previous)
+        ? [this.p1, this.p2]
+        : fail("neighbor not found")
     if (t1.hasNeighbor("up")) {
-      return t1.neighbor("up").node;
+      return t1.neighbor("up").node
     } else if (t2.hasNeighbor("up")) {
-      return t2.neighbor("up").node;
+      return t2.neighbor("up").node
     } else {
-      return null;
+      return null
     }
   }
 
   onSolved(level: number): void {
-    this.p1.onSolved();
-    this.p2.onSolved();
+    this.p1.onSolved()
+    this.p2.onSolved()
     if (this.index < 0) {
       if (this.p1.line.isBoundary || this.p2.line.isBoundary) {
-        this.index = level;
+        this.index = level
       } else {
-        this.index = level + 0.5;
+        this.index = level + 0.5
       }
     } else if (Math.round(this.index) !== this.index) {
-      if (this.index + 0.5 !== level) throw new VoronoiError("index mismatch");
+      assert(this.index + 0.5 === level, () => `index mismatch. current: ${level}, node: ${this.index}`)
     }
   }
 
   hasSolved(): boolean {
-    return this.index >= 0;
+    return this.index >= 0
   }
 
   release() {
-    this._p1 = null;
-    this._p2 = null;
+    this._p1 = null
+    this._p2 = null
   }
 
 }
@@ -184,25 +182,25 @@ class Node<T extends Point> implements Point {
 class Intersection<T extends Point> implements Point {
 
   constructor(intersection: Point, b: Bisector<T>, other?: Line, center?: Point) {
-    this.line = b;
-    this.x = intersection.x;
-    this.y = intersection.y;
+    this.line = b
+    this.x = intersection.x
+    this.y = intersection.y
 
     if (other && center) {
 
-      var dx = b.line.b;
-      var dy = -b.line.a;
+      let dx = b.line.b
+      let dy = -b.line.a
       if (dx < 0 || (dx === 0 && dy < 0)) {
-        dx *= -1;
-        dy *= -1;
+        dx *= -1
+        dy *= -1
       }
-      var p = {
+      let p = {
         x: intersection.x + dx,
         y: intersection.y + dy
-      };
-      this.step = line.onSameSide(other, p, center) ? "down" : "up";
+      }
+      this.step = line.onSameSide(other, p, center) ? "down" : "up"
     } else {
-      this.step = "zero";
+      this.step = "zero"
     }
   }
 
@@ -218,97 +216,94 @@ class Intersection<T extends Point> implements Point {
   _node: Node<T> | null = null
 
   get hasPrevious(): boolean {
-    if (this._previous === undefined) {
-      throw new VoronoiError("previous not init yet")
-    }
-    return this._previous !== null
+    const p = this._previous
+    assert(p !== undefined, () => "previous not init yet")
+    return p !== null
   }
 
   get previous(): Intersection<T> {
-    if (this._previous) return this._previous
-    if (this._previous === undefined) {
-      throw new VoronoiError("previous not init yet")
-    }
-    throw new VoronoiError("no previous")
+    const p = this._previous
+    assert(p !== undefined, () => "previous not init yet")
+    assert(p, () => "no previous")
+    return p
   }
 
   get hasNext(): boolean {
-    if (this._next === undefined) {
-      throw new VoronoiError("next not init yet")
-    }
-    return this._next !== null
+    const n = this._next
+    assert(n !== undefined, () => "next not init yet")
+    return n !== null
   }
 
   get next(): Intersection<T> {
-    if (this._next) return this._next
-    if (this._next === undefined) {
-      throw new VoronoiError("next not init yet")
-    }
-    throw new VoronoiError("no next")
+    const n = this._next
+    assert(n !== undefined, () => "next not init yet")
+    assert(n, () => "no next")
+    return n
   }
 
   get node(): Node<T> {
-    if (this._node) return this._node
-    throw new VoronoiError("no node")
+    const n = this._node
+    assert(n, () => "no node")
+    return n
   }
 
   set node(value: Node<T>) {
-    if (this._node) throw new VoronoiError("node already set")
+    assert(!this._node, () => "node already set")
     this._node = value
   }
 
   insert(previous: Intersection<T> | null, next: Intersection<T> | null, index: number): void {
-    this._previous = previous;
-    this._next = next;
+    this._previous = previous
+    this._next = next
     if (this._previous) {
-      this._previous._next = this;
+      this._previous._next = this
     }
     if (this._next) {
-      this._next._previous = this;
-      this._next.incrementIndex();
+      this._next._previous = this
+      this._next.incrementIndex()
     }
-    this.index = index;
+    this.index = index
   }
 
   incrementIndex(): void {
-    this.index++;
-    if (this._next) this._next.incrementIndex();
+    this.index++
+    if (this._next) this._next.incrementIndex()
   }
 
   isNeighbor(p: Point): boolean {
     return (this.hasNext && point.equals(this.next, p))
-      || (this.hasPrevious && point.equals(this.previous, p));
+      || (this.hasPrevious && point.equals(this.previous, p))
   }
 
   hasNeighbor(step: StepDirection): boolean {
     if (step === "zero" && this.step === "zero") {
-      return true;
+      return true
     } else if (step !== "zero" && this.step !== "zero") {
-      return (step === this.step) ? !!this._next : !!this._previous;
+      return (step === this.step) ? !!this._next : !!this._previous
     }
-    return false;
+    return false
   }
 
   neighbor(step: StepDirection): Intersection<T> {
     if (step === "zero" && this.step === "zero") {
-      if (this._previous) return this._previous;
-      if (this._next) return this._next;
+      if (this._previous) return this._previous
+      if (this._next) return this._next
     } else if (step !== "zero" && this.step !== "zero") {
-      return (step === this.step) ? this.next : this.previous;
+      return (step === this.step) ? this.next : this.previous
     }
-    throw new VoronoiError("neighbor step invalid.");
+    fail("neighbor step invalid.")
   }
 
   onSolved(): void {
-    this.line.onIntersectionSolved(this);
+    this.line.onIntersectionSolved(this)
   }
 
   release(): void {
-    this._previous = null;
-    this._next = null;
+    this._previous = null
+    this._next = null
     if (this._node) {
-      this._node.release();
-      this._node = null;
+      this._node.release()
+      this._node = null
     }
   }
 }
@@ -319,14 +314,14 @@ class Intersection<T extends Point> implements Point {
 class Bisector<T extends Point> {
 
   constructor(bisector: Line, p?: T) {
-    this.line = bisector;
-    this.intersections = [];
+    this.line = bisector
+    this.intersections = []
     if (p) {
-      this.delaunayPoint = p;
-      this.isBoundary = false;
+      this.delaunayPoint = p
+      this.isBoundary = false
     } else {
-      this.delaunayPoint = null;
-      this.isBoundary = true;
+      this.delaunayPoint = null
+      this.isBoundary = true
     }
   }
 
@@ -343,62 +338,62 @@ class Bisector<T extends Point> {
    * @param boundary
    */
   inspectBoundary(boundary: Edge): void {
-    var p = line.getIntersection(this.line, boundary);
+    var p = line.getIntersection(this.line, boundary)
     if (p) {
       var i = new Intersection(p, this)
-      this.addIntersection(i);
+      this.addIntersection(i)
     }
   }
 
   onIntersectionSolved(intersection: Intersection<T>): void {
-    var index = intersection.index;
+    var index = intersection.index
     this.solvedPointIndexFrom = Math.min(
       this.solvedPointIndexFrom,
       index
-    );
+    )
     this.solvedPointIndexTo = Math.max(
       this.solvedPointIndexTo,
       index
-    );
+    )
   }
 
   addIntersection(intersection: Intersection<T>): void {
-    const size = this.intersections.length;
-    var index = this.addIntersectionAt(intersection, 0, size);
+    const size = this.intersections.length
+    var index = this.addIntersectionAt(intersection, 0, size)
     intersection.insert(
       index > 0 ? this.intersections[index - 1] : null,
       index < size ? this.intersections[index] : null,
       index
-    );
-    this.intersections.splice(index, 0, intersection);
+    )
+    this.intersections.splice(index, 0, intersection)
     if (this.solvedPointIndexFrom < this.solvedPointIndexTo) {
       if (index <= this.solvedPointIndexFrom) {
-        this.solvedPointIndexFrom++;
-        this.solvedPointIndexTo++;
+        this.solvedPointIndexFrom++
+        this.solvedPointIndexTo++
       } else if (index <= this.solvedPointIndexTo) {
-        throw new VoronoiError("new intersection added to solved range.");
+        fail("new intersection added to solved range.")
       }
     }
   }
 
   addIntersectionAt(p: Point, indexFrom: number, indexTo: number): number {
     if (indexFrom === indexTo) {
-      return indexFrom;
+      return indexFrom
     } else {
-      var mid = Math.floor((indexFrom + indexTo - 1) / 2);
-      var r = point.compare(p, this.intersections[mid]);
+      var mid = Math.floor((indexFrom + indexTo - 1) / 2)
+      var r = point.compare(p, this.intersections[mid])
       if (r < 0) {
-        return this.addIntersectionAt(p, indexFrom, mid);
+        return this.addIntersectionAt(p, indexFrom, mid)
       } else if (r > 0) {
-        return this.addIntersectionAt(p, mid + 1, indexTo);
+        return this.addIntersectionAt(p, mid + 1, indexTo)
       } else {
-        throw new VoronoiError("same point already added in this bisector");
+        fail("same point already added in this bisector")
       }
     }
   }
 
   release(): void {
-    this.intersections.forEach(i => i.release());
+    this.intersections.forEach(i => i.release())
     this.intersections.splice(0, this.intersections.length)
   }
 
@@ -407,14 +402,14 @@ class Bisector<T extends Point> {
 /** 
  * 母点集合において指定された点の隣接点を取得する
  */
-export type PointProvider<T extends Point> = (p: T) => Promise<Array<T>>
+export type PointProvider<T extends Point> = (p: T) => Promise<T[]>
 
 /**
  * 各次数における計算結果のコールバック関数
  * @param index 次数（１始まりで数えた数字）
  * @param polygon ポリゴンを成す座標点を順にもつリスト
  */
-export type Callback = (index: number, polygon: Array<Point>) => void
+export type Callback = (index: number, polygon: Point[]) => void
 
 /**
  * 高次ボロノイ分割を計算する
@@ -423,12 +418,14 @@ export class Voronoi<T extends Point> {
 
   /**
    * 
-   * @param {triangle} frame 
-   * @param {(point)=>Promise<array>} provider 
+   * @param center 中心の母点
+   * @param frame すべての母点を内包する三角形
+   * @param provider 隣接点を取得する関数
    */
-  constructor(frame: Triangle, provider: PointProvider<T>) {
-    this.container = frame;
-    this.provider = provider;
+  constructor(center: T, frame: Triangle, provider: PointProvider<T>) {
+    this.center = center
+    this.container = frame
+    this.provider = provider
   }
 
   container: Triangle
@@ -439,136 +436,134 @@ export class Voronoi<T extends Point> {
    * 高次ボロノイ分割を計算する
    * 
    * １次から指定された次数まで逐次的に計算する
-   * @param {number} level 計算する次数
-   * @param {point} center 中心点
-   * @param {(index: number,polygon: array)=>void} callback 各次数でのボロノイ領域（ポリゴン）が計算されるたびにコールバックする
-   * @return 1..indexまでの次数の順に計算されたポリゴンを格納したリストのPromise
+   * @param level 計算する次数
+   * @param callback 各次数でのボロノイ領域（ポリゴン）が計算されるたびにコールバックする
+   * @return 1..indexまでの次数の順に計算されたポリゴンを格納したリスト
    */
-  async execute(level: number, center: T, callback: Callback | null): Promise<Array<Array<Point>>> {
-    if (this.running) return Promise.reject("already running");
-    this.running = true;
+  async execute(level: number, callback: Callback | null): Promise<Point[][]> {
+    assert(!this.running, () => "already running")
+    this.running = true
 
-    try {
+    // 初期化
+    this.targetIndex = level
+    this.time = performance.now()
+    this.callback = callback
+    this.bisectors = []
+    this.addBoundary(line.init(this.container.a, this.container.b))
+    this.addBoundary(line.init(this.container.b, this.container.c))
+    this.addBoundary(line.init(this.container.c, this.container.a))
 
-      this.center = center;
-      this.level = level;
-      this.targetLevel = 1;
-      this.list = null;
-      this.time = performance.now();
-      this.result = [];
-      this.callback = callback;
-      this.bisectors = [];
-      this.addBoundary(line.init(this.container.a, this.container.b));
-      this.addBoundary(line.init(this.container.b, this.container.c));
-      this.addBoundary(line.init(this.container.c, this.container.a));
-      this.requestedPoint = new ObjectSet(point.equals, point.hashCode);
-      this.addedPoint = new ObjectSet(point.equals, point.hashCode);
-      this.requestedPoint.add(center);
-      this.addedPoint.add(center);
-      const neighbors = await this.provider(center);
-      for (let p of neighbors) {
-        if (this.addedPoint.add(p))
-          this.addBisector(p);
-      }
-    } catch (e) {
-      return Promise.reject(e)
-    }
-    return this.searchPolygon();
+    this.delaunayPoints.clear()
+    this.delaunayPoints.add(this.center)
 
+    return this.searchPolygon(1, [])
   }
 
-  center: Point = point.ZERO
-  level: number = 0
-  targetLevel: number = 1
-  list: Array<Node<T>> | null = null
+  center: T
+  targetIndex: number = 1
+
   time: number = 0
-  result: Array<Array<Point>> = []
+
   callback: Callback | null = null
-  bisectors: Array<Bisector<T>> = []
+  bisectors: Bisector<T>[] = []
 
+  delaunayPoints = new ObjectSet<T>(point.equals, point.hashCode)
 
-  requestedPoint: ObjectSet<Point> = new ObjectSet(point.equals, point.hashCode)
-  addedPoint: ObjectSet<Point> = new ObjectSet(point.equals, point.hashCode)
+  private async searchPolygon(index: number, result: Node<T>[][]): Promise<Node<T>[][]> {
+    const loopTime = performance.now()
 
-  private async searchPolygon(): Promise<Array<Array<Point>>> {
-    var loopTime = performance.now();
-    var promise: Array<Promise<void>> = [];
-    var list = this.traverse(this.list, promise);
-    list.forEach(node => node.onSolved(this.targetLevel));
-    this.result.push(list);
-    this.list = list;
-    await Promise.all(promise);
+    const previousPolygon = index === 1 ? null : result[result.length - 1]
 
-    console.log(`execute index:${this.targetLevel} time:${performance.now() - loopTime}`);
-    if (this.callback && this.list) {
-      this.callback(this.targetLevel - 1, this.list);
+    // ドロネー分割点を追加
+    await this.expandDelaunayPoints(previousPolygon)
+
+    // ボロノイ範囲の計算
+    const polygon = this.traverse(previousPolygon)
+    polygon.forEach(node => node.onSolved(index))
+
+    console.log(`execute index:${index} time:${performance.now() - loopTime}`)
+
+    if (this.callback) {
+      this.callback(index, polygon)
     }
-    const nextLevel = this.targetLevel + 1;
-    if (nextLevel <= this.level) {
-      this.targetLevel = nextLevel;
-      return this.searchPolygon();
+    if (index < this.targetIndex) {
+      return this.searchPolygon(
+        index + 1,
+        [...result, polygon],
+      )
     } else {
-      this.bisectors.forEach(b => b.release());
-      console.log(`execute done. time:${performance.now() - this.time}`);
+      this.bisectors.forEach(b => b.release())
+      console.log(`execute done. time:${performance.now() - this.time}`)
 
-      this.running = false;
+      this.running = false
 
-      return this.result;
+      return [...result, polygon]
     }
 
   }
 
-  private traverse(list: Array<Node<T>> | null, tasks: Array<Promise<void>>) {
-    var next: Node<T> | null = null
-    var previous: Node<T> | null = null
-    if (!list) {
-      var history = new ObjectSet(point.equals, point.hashCode);
-      var sample = this.bisectors[0];
-      next = sample.intersections[1].node;
-      previous = sample.intersections[0].node;
-      while (history.add(next)) {
-        var current: Node<T> = next;
-        next = current.nextDown(previous);
-        previous = current;
-      }
-    } else {
-      previous = list[list.length - 1];
-      for (let n of list) {
-        next = n.nextUp(previous);
-        previous = n;
-        if (next && !next.hasSolved()) break;
-      }
-    }
-
-    if (!next || !previous || next.hasSolved()) {
-      throw new VoronoiError("fail to traverse polygon");
-    }
-
-    var start = next;
-    list = [start];
-    while (true) {
-      this.requestExtension(next.p1.line.delaunayPoint, tasks);
-      this.requestExtension(next.p2.line.delaunayPoint, tasks);
-      current = next;
-      next = current.next(previous);
-      previous = current;
-      if (point.equals(start, next)) break;
-      list.push(next);
-    }
-
-    return list;
-  }
-
-  private requestExtension(target: T | null, tasks: Array<Promise<void>>): void {
-    if (target && this.requestedPoint.add(target)) {
-      var task = this.provider(target).then(neighbors => {
-        for (let p of neighbors) {
-          if (this.addedPoint.add(p)) {
-            this.addBisector(p);
-          }
+  /**
+   * 現在の字数のボロノイ範囲のポリゴンを計算する
+   * @param previousPolygon 
+   * @param tasks 
+   * @returns ポリゴン
+   */
+  private traverse(previousPolygon: Node<T>[] | null): Node<T>[] {
+    let [previous, next] = (() => {
+      let next: Node<T> | null = null
+      let previous: Node<T> | null = null
+      if (!previousPolygon) {
+        const history = new ObjectSet(point.equals, point.hashCode)
+        const sample = this.bisectors[0]
+        next = sample.intersections[1].node
+        previous = sample.intersections[0].node
+        while (history.add(next)) {
+          const current: Node<T> = next
+          next = current.nextDown(previous)
+          previous = current
         }
-      });
-      tasks.push(task);
+        return [previous, next]
+      } else {
+        previous = previousPolygon[previousPolygon.length - 1]
+        for (let n of previousPolygon) {
+          next = n.nextUp(previous)
+          previous = n
+          if (next && !next.hasSolved()) return [previous, next]
+        }
+        fail("traverse start not found")
+      }
+    })()
+
+    assert(next && previous && !next.hasSolved(), () => "fail to traverse polygon")
+
+    const start = next
+    const polygon = [start]
+    while (true) {
+      const current = next
+      next = current.next(previous)
+      previous = current
+
+      if (point.equals(start, next)) break
+      assert(polygon.every(p => !point.equals(p, next)), () => "point duplicated")
+      polygon.push(next)
+    }
+
+    return polygon
+  }
+
+  /**
+   * 隣接DelaunayPointを追加
+   * @param polygon 
+   */
+  private async expandDelaunayPoints(polygon?: Node<T>[] | null) {
+    const queue = polygon ? polygon.map(n => [n.p1.line.delaunayPoint, n.p2.line.delaunayPoint])
+      .flat()
+      .filter((n): n is T => !!n) : [this.center]
+    for (let p of queue) {
+      const neighbors = await this.provider(p)
+      neighbors
+        .filter(n => this.delaunayPoints.add(n))
+        .forEach(n => this.addBisector(n))
     }
   }
 
@@ -577,41 +572,38 @@ export class Voronoi<T extends Point> {
    * @param {*} self Line 
    */
   private addBoundary(self: Line): void {
-    var boundary = new Bisector<T>(self);
+    const boundary = new Bisector<T>(self)
     this.bisectors.forEach(preexist => {
-      var p = line.getIntersection(boundary.line, preexist.line);
-      if (!p) throw new VoronoiError("intersection not found")
-      var a = new Intersection<T>(p, boundary);
-      var b = new Intersection<T>(p, preexist);
-      var n = new Node<T>(p, a, b);
-      a.node = n;
-      b.node = n;
-      boundary.addIntersection(a);
-      preexist.addIntersection(b);
-    });
-    this.bisectors.push(boundary);
+      const p = line.getIntersection(boundary.line, preexist.line)
+      assert(p, () => "intersection not found")
+      const a = new Intersection<T>(p, boundary)
+      const b = new Intersection<T>(p, preexist)
+      const n = new Node<T>(p, a, b)
+      a.node = n
+      b.node = n
+      boundary.addIntersection(a)
+      preexist.addIntersection(b)
+    })
+    this.bisectors.push(boundary)
   }
 
   private addBisector(intersection: T) {
-    var bisector = new Bisector(
+    const bisector = new Bisector(
       line.getPerpendicularBisector(intersection, this.center),
       intersection
-    );
+    )
     this.bisectors.forEach(preexist => {
-      var p = line.getIntersection(bisector.line, preexist.line);
+      const p = line.getIntersection(bisector.line, preexist.line)
       if (p && triangle.containsPoint(this.container, p, ERROR)) {
-        var a = new Intersection<T>(p, bisector, preexist.line, this.center);
-        var b = new Intersection<T>(p, preexist, bisector.line, this.center);
-        var n = new Node(p, a, b);
-        a.node = n;
-        b.node = n;
-        bisector.addIntersection(a);
-        preexist.addIntersection(b);
+        const a = new Intersection<T>(p, bisector, preexist.line, this.center)
+        const b = new Intersection<T>(p, preexist, bisector.line, this.center)
+        const n = new Node(p, a, b)
+        a.node = n
+        b.node = n
+        bisector.addIntersection(a)
+        preexist.addIntersection(b)
       }
-    });
-    this.bisectors.push(bisector);
+    })
+    this.bisectors.push(bisector)
   }
-
-
-
 }
