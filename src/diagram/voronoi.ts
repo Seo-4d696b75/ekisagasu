@@ -110,9 +110,9 @@ class Node<T extends Point> implements Point {
 
   /**
    * 辿ってきた辺とは異なる線分上の隣接頂点のうちこの頂点から見てボロノイ次数が
-         * 下がるまたは変化しない方を返す.<br>
-         * この頂点がFrame内部なら必ず次数が下がる隣接頂点を返すが、
-         * Frame境界線のVertexに相当する場合は例外的に次数変化0の方向の頂点を返す
+   * 下がるまたは変化しない方を返す.<br>
+   * この頂点がFrame内部なら必ず次数が下がる隣接頂点を返すが、
+   * Frame境界線のVertexに相当する場合は例外的に次数変化0の方向の頂点を返す
    * @param previous 
    */
   nextDown(previous: Point): Node<T> {
