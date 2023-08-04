@@ -31,6 +31,7 @@ function getUIEvent(clickEvent: any): UIEvent {
  * @returns 
  */
 export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObject<google.maps.Map<Element> | null>, progressHandler: <T, >(task: Promise<T>, text: string) => Promise<T>, operator: {
+  moveToPosition: (pos: LatLng | null, minZoom?: number) => void
   focusAt: (pos: LatLng) => void
   focusAtNearestStation: (pos: LatLng) => void
   closeDialog: () => void
@@ -147,6 +148,20 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
           return
         } catch (e) {
           console.warn("fail to show station, query:", query.station, e)
+        }
+      }
+
+      // 指定位置への移動
+      if (typeof query.lat === 'string' && typeof query.lng === 'string') {
+        const lat = parseFloat(query.lat)
+        const lng = parseFloat(query.lng)
+        if (20 < lat && lat < 50 && 120 < lng && lng < 150) {
+          if(typeof query.dialog === 'string' && parseQueryBoolean(query.dialog)){
+          operator.focusAt({ lat: lat, lng: lng })
+          } else {
+            operator.moveToPosition({lat: lat, lng: lng})
+          }
+          return
         }
       }
 

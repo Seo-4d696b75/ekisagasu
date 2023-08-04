@@ -5,20 +5,20 @@ import { CSSTransition } from "react-transition-group"
 import pin_location from "../../img/map_pin.svg"
 import pin_station from "../../img/map_pin_station.svg"
 import pin_station_extra from "../../img/map_pin_station_extra.svg"
+import StationService from "../../script/StationService"
 import { clearLoadedStation } from "../../script/actions"
 import { RootState } from "../../script/mapState"
-import StationService from "../../script/StationService"
 import { AppDispatch } from "../../script/store"
 import { CurrentPosDialog } from "../dialog/CurrentPosDialog"
 import { LineDialog } from "../dialog/LineDialog"
 import { StationDialog } from "../dialog/StationDialog"
 import { useEventEffect } from "../hooks"
-import { DialogType, isInfoDialog, isStationDialog, NavType } from "../navState"
-import { useCurrentPosDialog, useInfoDialog } from "./dialogHook"
+import { DialogType, NavType, isInfoDialog, isStationDialog } from "../navState"
 import "./Map.css"
+import { CurrentPosIcon } from "./PositionIcon"
+import { useCurrentPosDialog, useInfoDialog } from "./dialogHook"
 import { useMapCallback } from "./mapEventHook"
 import { useMapOperator } from "./mapHook"
-import { CurrentPosIcon } from "./PositionIcon"
 import { useProgressBanner } from "./progressHook"
 import { useServiceCallback } from "./serviceHook"
 
@@ -94,6 +94,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     onMapIdle,
     onMapReady,
   } = useMapCallback(screenWide, googleMapRef, showProgressBannerWhile, {
+    moveToPosition,
     focusAt,
     focusAtNearestStation,
     closeDialog,
