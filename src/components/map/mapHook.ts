@@ -1,15 +1,15 @@
 import { MutableRefObject, RefObject, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
+import StationService from "../../script/StationService"
 import * as action from "../../script/actions"
 import { Line } from "../../script/line"
 import { LatLng } from "../../script/location"
 import { selectMapState } from "../../script/mapState"
 import { Station } from "../../script/station"
-import StationService from "../../script/StationService"
 import { AppDispatch } from "../../script/store"
-import { getBounds, getZoomProperty, isInsideRect, PolylineProps, RectBounds } from "../../script/utils"
+import { PolylineProps, RectBounds, getBounds, getZoomProperty, isInsideRect } from "../../script/utils"
 import { useRefCallback } from "../hooks"
-import { isStationDialog, NavType } from "../navState"
+import { NavType, isStationDialog } from "../navState"
 import { useHighVoronoi } from "./voronoiHook"
 
 const ZOOM_TH = 12
@@ -248,6 +248,20 @@ export const useMapOperator = (
     }
   }
 
+  const switchExtraData = async (isExtra: boolean) => {
+    // ダイアログで表示中のデータと齟齬が発生する場合があるので強制的に閉じる
+    closeDialog()
+    // データセット変更時に地図で表示している現在の範囲に合わせて更新＆読み込みする
+    const map = googleMapRef.current
+    if (map) {
+      progressHandler(async () => {
+        await StationService.switchData(isExtra ? "extra" : "main")
+        dispatch(action.clearLoadedStation())
+        await updateBounds(map, true)
+      }, "駅データを切り替えています")
+    }
+  }
+
   return {
     highVoronoi,
     workerRunning,
@@ -265,5 +279,6 @@ export const useMapOperator = (
     focusAt,
     focusAtNearestStation,
     requestCurrentPosition,
+    switchExtraData,
   }
 }

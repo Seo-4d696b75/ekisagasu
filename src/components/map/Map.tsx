@@ -1,14 +1,12 @@
 import { Circle, GoogleAPI, GoogleApiWrapper, Map, Marker, Polygon, Polyline } from "google-maps-react"
 import { FC, useEffect, useMemo, useRef, useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
+import { useSelector } from "react-redux"
 import { CSSTransition } from "react-transition-group"
 import pin_location from "../../img/map_pin.svg"
 import pin_station from "../../img/map_pin_station.svg"
 import pin_station_extra from "../../img/map_pin_station_extra.svg"
 import StationService from "../../script/StationService"
-import { clearLoadedStation } from "../../script/actions"
 import { RootState } from "../../script/mapState"
-import { AppDispatch } from "../../script/store"
 import { CurrentPosDialog } from "../dialog/CurrentPosDialog"
 import { LineDialog } from "../dialog/LineDialog"
 import { StationDialog } from "../dialog/StationDialog"
@@ -84,6 +82,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     focusAt,
     focusAtNearestStation,
     requestCurrentPosition,
+    switchExtraData,
   } = useMapOperator(showProgressBannerWhile, googleMapRef, mapElementRef)
 
   // callbacks listening to map events
@@ -101,7 +100,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     updateBounds,
     showPolyline,
     showRadarVoronoi,
-    setCenterCurrentPosition
+    setCenterCurrentPosition,
   })
 
   useEffect(() => {
@@ -126,8 +125,8 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     }
   }, [onGeolocationPositionChanged, onStationLoaded, onDataLoadingStarted])
 
-  useEventEffect(focus, pos => {
-    moveToPosition(pos)
+  useEventEffect(focus, target => {
+    moveToPosition(target.pos, target.zoom)
   })
 
   useEventEffect(currentPositionUpdate, pos => {
@@ -136,21 +135,9 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     }
   })
 
-  const dispatch = useDispatch<AppDispatch>()
-
   useEventEffect(isDataExtraChange, isExtra => {
     console.log("useEffect: data changed. extra:", isExtra)
-    // ダイアログで表示中のデータと齟齬が発生する場合があるので強制的に閉じる
-    closeDialog()
-    // データセット変更時に地図で表示している現在の範囲に合わせて更新＆読み込みする
-    const map = googleMapRef.current
-    if (map) {
-      showProgressBannerWhile(async () => {
-        await StationService.switchData(isExtra ? "extra" : "main")
-        dispatch(clearLoadedStation())
-        await updateBounds(map, true)
-      }, "駅データを切り替えています")
-    }
+    switchExtraData(isExtra)
   })
 
   /* ===============================
