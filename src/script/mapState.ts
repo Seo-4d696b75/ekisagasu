@@ -1,7 +1,7 @@
 import { NavState } from "../components/navState"
 import { PropsEvent } from "./event"
-import { Station } from "./station"
 import { CurrentLocation, LatLng } from "./location"
+import { Station } from "./station"
 
 export interface GlobalMapState {
   radarK: number
@@ -13,7 +13,7 @@ export interface GlobalMapState {
   currentLocation: CurrentLocation | null
   currentPositionUpdate: PropsEvent<LatLng>
   nav: NavState
-  mapFocusRequest: PropsEvent<LatLng>
+  mapFocusRequest: PropsEvent<{pos: LatLng, zoom?: number}>
   stations: Station[]
 }
 

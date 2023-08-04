@@ -31,8 +31,8 @@ function getUIEvent(clickEvent: any): UIEvent {
  * @returns 
  */
 export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObject<google.maps.Map<Element> | null>, progressHandler: <T, >(task: Promise<T>, text: string) => Promise<T>, operator: {
-  moveToPosition: (pos: LatLng | null, minZoom?: number) => void
-  focusAt: (pos: LatLng) => void
+  moveToPosition: (pos: LatLng | null, zoom?: number) => void
+  focusAt: (pos: LatLng, zoom?: number) => void
   focusAtNearestStation: (pos: LatLng) => void
   closeDialog: () => void
   updateBounds: (map: google.maps.Map) => void
@@ -111,14 +111,13 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       dispatch(action.setNavStateIdle())
 
       const s = await progressHandler(StationService.initialize(), "駅データを初期化中")
+
       // parse query actions
       const query = qs.parse(location.search)
 
       // extraデータの表示フラグ
-      if (typeof query.extra === 'string') {
-        if (parseQueryBoolean(query.extra)) {
-          dispatch(action.setDataExtra(true))
-        }
+      if (parseQueryBoolean(query.extra)) {
+        dispatch(action.setDataExtra(true))
       }
 
       // 路線情報の表示
@@ -142,7 +141,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
           const result = await dispatch(action.requestShowStationPromise(
             progressHandler(s.getStationById(query.station), `駅情報(${query.station})を探しています`)
           )).unwrap()
-          if (typeof query.voronoi === 'string' && parseQueryBoolean(query.voronoi)) {
+          if (parseQueryBoolean(query.voronoi)) {
             showRadarVoronoiRef(result.station)
           }
           return
@@ -151,23 +150,25 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
         }
       }
 
-      // 指定位置への移動
-      if (typeof query.lat === 'string' && typeof query.lng === 'string') {
-        const lat = parseFloat(query.lat)
-        const lng = parseFloat(query.lng)
-        if (20 < lat && lat < 50 && 120 < lng && lng < 150) {
-          if(typeof query.dialog === 'string' && parseQueryBoolean(query.dialog)){
-          operator.focusAt({ lat: lat, lng: lng })
-          } else {
-            operator.moveToPosition({lat: lat, lng: lng})
-          }
-          return
-        }
-      }
-
       // 現在位置を監視・追尾するフラグ
       if (typeof query.mylocation === 'string' && parseQueryBoolean(query.mylocation)) {
         dispatch(action.setWatchCurrentLocation(true))
+        return
+      }
+
+      // 指定位置への移動
+      if (typeof query.lat === 'string' && typeof query.lng === 'string' && typeof query.zoom === 'string') {
+        const lat = parseFloat(query.lat)
+        const lng = parseFloat(query.lng)
+        const zoom = parseFloat(query.zoom)
+        if (20 < lat && lat < 50 && 120 < lng && lng < 150 && 10 <= zoom && zoom <= 20) {
+          if (parseQueryBoolean(query.dialog)) {
+            operator.focusAt({ lat: lat, lng: lng }, zoom)
+          } else {
+            operator.moveToPosition({ lat: lat, lng: lng }, zoom)
+          }
+          return
+        }
       }
 
       // 指定なしの場合は現在位置（取得可能なら）に合わせる

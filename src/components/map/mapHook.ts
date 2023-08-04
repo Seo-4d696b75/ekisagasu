@@ -73,12 +73,12 @@ export const useMapOperator = (
     dispatch(action.requestShowLine(line))
   }
 
-  const moveToPosition = (pos: LatLng | null, minZoom: number = 0) => {
+  const moveToPosition = (pos: LatLng | null, zoom?: number) => {
     const map = googleMapRef.current
     if (pos && map) {
       map.panTo(new google.maps.LatLng(pos.lat, pos.lng))
-      if (map.getZoom() < minZoom) {
-        map.setZoom(minZoom)
+      if (zoom) {
+        map.setZoom(zoom)
       }
     }
   }
@@ -217,10 +217,10 @@ export const useMapOperator = (
     dispatch(action.setNavStateIdle())
   }
 
-  const focusAt = (pos: LatLng) => {
+  const focusAt = (pos: LatLng, zoom?: number) => {
     if (!StationService.initialized) return
     if (isStationDialog(nav) && nav.data.showHighVoronoi) return
-    dispatch(action.requestShowSelectedPosition(pos))
+    dispatch(action.requestShowSelectedPosition({ pos: pos, zoom: zoom }))
   }
 
   const focusAtNearestStation = (pos: LatLng) => {
