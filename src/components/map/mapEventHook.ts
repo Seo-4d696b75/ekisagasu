@@ -3,16 +3,16 @@ import qs from "query-string"
 import { MutableRefObject, useRef } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useLocation } from "react-router-dom"
+import StationService from "../../script/StationService"
 import * as action from "../../script/actions"
 import { Line } from "../../script/line"
 import { LatLng } from "../../script/location"
 import { selectMapState } from "../../script/mapState"
 import { Station } from "../../script/station"
-import StationService from "../../script/StationService"
 import { AppDispatch } from "../../script/store"
 import { parseQueryBoolean } from "../../script/utils"
 import { useRefCallback } from "../hooks"
-import { isStationDialog, NavType } from "../navState"
+import { NavType, isStationDialog } from "../navState"
 
 function getUIEvent(clickEvent: any): UIEvent {
   // googlemap onClick などのコールバック関数に渡させるイベントオブジェクトの中にあるUIEventを抽出
@@ -112,16 +112,21 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       const s = await progressHandler(StationService.initialize(), "駅データを初期化中")
       // parse query actions
       const query = qs.parse(location.search)
+
+      // extraデータの表示フラグ
       if (typeof query.extra === 'string') {
         if (parseQueryBoolean(query.extra)) {
           dispatch(action.setDataExtra(true))
         }
       }
-      if (typeof query.line == 'string') {
-        var line = s.getLineById(query.line)
+
+      // 路線情報の表示
+      if (typeof query.line === 'string') {
+        const line = s.getLineById(query.line)
         if (line) {
           try {
-            let result = await dispatch(action.requestShowLine(line)).unwrap()
+            const result = await dispatch(action.requestShowLine(line)).unwrap()
+            // マップ中心位置を路線ポリラインに合わせる
             showPolylineRef(result.line)
             return
           } catch (e) {
@@ -129,28 +134,28 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
           }
         }
       }
-      if (typeof query.station == 'string') {
+
+      // 駅情報の表示
+      if (typeof query.station === 'string') {
         try {
-          let result = await dispatch(action.requestShowStationPromise(
+          const result = await dispatch(action.requestShowStationPromise(
             progressHandler(s.getStationById(query.station), `駅情報(${query.station})を探しています`)
           )).unwrap()
-          if (typeof query.voronoi == 'string') {
-            const str = query.voronoi.toLowerCase().trim()
-            if (parseQueryBoolean(str)) {
-              showRadarVoronoiRef(result.station)
-            }
+          if (typeof query.voronoi === 'string' && parseQueryBoolean(query.voronoi)) {
+            showRadarVoronoiRef(result.station)
           }
           return
         } catch (e) {
           console.warn("fail to show station, query:", query.station, e)
         }
       }
-      if (typeof query.mylocation == 'string') {
-        if (parseQueryBoolean(query.mylocation)) {
-          dispatch(action.setWatchCurrentLocation(true))
-        }
+
+      // 現在位置を監視・追尾するフラグ
+      if (typeof query.mylocation === 'string' && parseQueryBoolean(query.mylocation)) {
+        dispatch(action.setWatchCurrentLocation(true))
       }
-      // if no query, set map center current position
+
+      // 指定なしの場合は現在位置（取得可能なら）に合わせる
       operator.setCenterCurrentPosition(map)
 
     }
