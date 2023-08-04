@@ -157,11 +157,18 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       }
 
       // 指定位置への移動
-      if (typeof query.lat === 'string' && typeof query.lng === 'string' && typeof query.zoom === 'string') {
+      if (typeof query.lat === 'string' && typeof query.lng === 'string') {
         const lat = parseFloat(query.lat)
         const lng = parseFloat(query.lng)
-        const zoom = parseFloat(query.zoom)
-        if (20 < lat && lat < 50 && 120 < lng && lng < 150 && 10 <= zoom && zoom <= 20) {
+        if (20 < lat && lat < 50 && 120 < lng && lng < 150) {
+          const zoom = (() => {
+            if (typeof query.zoom === 'string') {
+              const value = parseFloat(query.zoom)
+              if (10 <= value && value <= 20) {
+                return value
+              }
+            }
+          })()
           if (parseQueryBoolean(query.dialog)) {
             operator.focusAt({ lat: lat, lng: lng }, zoom)
           } else {
