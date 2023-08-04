@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { handleIf, PropsEvent } from "../script/event";
+import { PropsEvent, handleIf } from "../script/event";
 
 /**
  * コールバック関数をrefでメモ化します
@@ -20,14 +20,6 @@ export function useRefCallback<T extends (...args: any[]) => any>(update: T): ((
   return useCallback((...args: Parameters<T>) => ref.current?.(...args), [])
 }
 
-export function useRefValue<T>(updateFunc: (update: (newValue: T) => void) => void): T | undefined {
-  const ref = useRef<T>()
-  updateFunc((newValue: T) => {
-    ref.current = newValue
-  })
-  return ref.current
-}
-
 /**
  * `useEffect`で`PropsEvent`をハンドリングします
  * 
@@ -42,19 +34,11 @@ export function useRefValue<T>(updateFunc: (update: (newValue: T) => void) => vo
  * イベントオブジェクトeventが変化して有効な値を保持する場合、
  * `useEffect`のタイミングで１回のみコールバック関数を呼び出します
  * 
- * 引数handlerによって渡される関数がrefに保持され、最新のhandlerがコールバック関数として呼び出されます  
- * `useEffect`とは異なり`dependencies`引数は無く、handler関数には変化する依存を含めることができます
- * 
  * @param event ハンドリングするイベント `useEffect`のタイミングでhandler関数を呼び出します
  * @param handler eventをハンドリングする関数
  */
 export function useEventEffect<T>(event: PropsEvent<T>, handler: (value: T) => void) {
-  const handlerRef = useRef<(value: T) => void>()
-  handlerRef.current = handler
   useEffect(() => {
-    handleIf(event, value => {
-      // ref.current should have valid value
-      handlerRef.current?.(value)
-    })
+    handleIf(event, handler)
   }, [event])
 }
