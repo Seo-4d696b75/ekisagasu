@@ -44,16 +44,13 @@ export const useProgressBanner = () => {
     })
     const task = (typeof computation === "function") ? computation() : computation
     try {
-      if (queue.length === 1) {
-        setText(text)
-        setShow(true)
-      }
+      setText(queue[0].text)
+      setShow(true)
       return await task
     } finally {
       const idx = queue.findIndex(e => e.id === id)
       queue.splice(idx, 1)
-      let len = queue.length
-      if (len === 0) {
+      if (queue.length === 0) {
         setShow(false)
       } else {
         setText(queue[0].text)
