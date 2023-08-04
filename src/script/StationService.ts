@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from "axios"
 import { StationKdTree, StationLeafNodeProps, StationNodeProps } from "./kdTree"
 import { Line, LineAPIResponse, LineDetailAPIResponse, parseLine, parseLineDetail } from "./line"
 import { LatLng } from "./location"
-import { DelaunayStation, parseStation, Station, StationAPIResponse } from "./station"
+import { DelaunayStation, Station, StationAPIResponse, parseStation } from "./station"
 import { RectBounds } from "./utils"
 
 const TAG_SEGMENT_PREFIX = "station-segment:"
@@ -164,12 +164,12 @@ export class StationService {
     return call
   }
 
-  async initialize(): Promise<StationService> {
+  async initialize(type: DataType): Promise<StationService> {
     // 複数呼び出しに対しても初期化処理をただ１回のみ実行する
     return this.runSync("initialize", async () => {
       if (this.initialized) return this
       // load station and line
-      await this.switchData("main")
+      await this.switchData(type)
 
       // load prefecture
       this.prefecture.clear()

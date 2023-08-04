@@ -110,15 +110,13 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       })
       dispatch(action.setNavStateIdle())
 
-      const s = await progressHandler(StationService.initialize(), "駅データを初期化中")
-
       // parse query actions
       const query = qs.parse(location.search)
 
       // extraデータの表示フラグ
-      if (parseQueryBoolean(query.extra)) {
-        dispatch(action.setDataExtra(true))
-      }
+      const type = parseQueryBoolean(query.extra) ? 'extra' : 'main'
+
+      const s = await progressHandler(StationService.initialize(type), "駅データを初期化中")
 
       // 路線情報の表示
       if (typeof query.line === 'string') {
