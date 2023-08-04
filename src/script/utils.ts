@@ -71,7 +71,7 @@ export function getBounds(list: Array<LatLng | Station>): RectBounds {
 }
 
 export function parseQueryBoolean(str: string): boolean {
-  return ['true', 'yes', '1'].includes(str)
+  return ['true', 'yes', '1'].includes(str.trim().toLowerCase())
 }
 
 export function isInsideRect(position: LatLng | RectBounds, rect: RectBounds): boolean {
