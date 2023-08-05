@@ -136,13 +136,15 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     if (currentPos && showCurrentPosition && nav.type === NavType.IDLE) {
       moveToPosition(currentPos)
     }
-  }, [currentPos?.lat, currentPos?.lng])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPos?.lat, currentPos?.lng, showCurrentPosition, nav.type])
 
   // データ種類が変わったら更新
   useEffect(() => {
     if (dataType && StationService.dataAPI?.type !== dataType) {
       switchDataType(dataType)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataType])
 
   // App状態に応じてURLのクエリを動的に更新

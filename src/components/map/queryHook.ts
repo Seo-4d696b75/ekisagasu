@@ -10,7 +10,7 @@ export const useQueryEffect = (
   watchCurrentLocation: boolean,
   mapCenter: MapCenter,
 ) => {
-  const [_, setQuery] = useSearchParams()
+  const [, setQuery] = useSearchParams()
 
   useEffect(() => {
 
@@ -40,5 +40,7 @@ export const useQueryEffect = (
     }
 
     setQuery(query)
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nav, dataType, watchCurrentLocation, mapCenter])
 }

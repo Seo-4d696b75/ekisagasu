@@ -44,7 +44,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
     nav,
   } = useSelector(selectMapState)
 
-  const [query, _] = useSearchParams()
+  const [query,] = useSearchParams()
 
   const dispatch = useDispatch<AppDispatch>()
 
