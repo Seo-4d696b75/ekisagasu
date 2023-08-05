@@ -13,6 +13,10 @@ export interface LatLng {
   lng: number
 }
 
+export interface MapCenter extends LatLng {
+  zoom: number
+}
+
 export function isLatLng(value: any): value is LatLng {
   return value.lat !== undefined && typeof value.lat === 'number' &&
     value.lng !== undefined && typeof value.lng === 'number'

@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { DialogType, isStationDialog, NavState, NavType } from "../components/navState"
-import { appendLoadedStation, clearLoadedStation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStationPromise, setCurrentLocation, setDataType, setHighAccuracyLocation, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions"
+import { appendLoadedStation, clearLoadedStation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStationPromise, setCurrentLocation, setDataType, setHighAccuracyLocation, setMapCenter, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions"
 import { createEvent, createIdleEvent } from "./event"
 import { GlobalMapState } from "./mapState"
 
@@ -14,6 +14,11 @@ const initUserSetting: GlobalMapState = {
   nav: {
     type: NavType.LOADING,
     data: null
+  },
+  mapCenter: {
+    lat: 35.681236,
+    lng: 139.767125,
+    zoom: 14,
   },
   mapFocusRequest: createIdleEvent(),
   stations: [],
@@ -103,6 +108,9 @@ export const userSettingSlice = createSlice({
       })
       .addCase(clearLoadedStation, (state, action) => {
         state.stations = []
+      })
+      .addCase(setMapCenter, (state, action) => {
+        state.mapCenter = action.payload
       })
   }
 })

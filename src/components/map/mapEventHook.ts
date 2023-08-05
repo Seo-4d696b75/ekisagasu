@@ -86,6 +86,15 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
     if (StationService.initialized && map) {
       operator.updateBounds(map)
     }
+    if (map) {
+      const pos = map.getCenter()
+      const payload = {
+        lat: pos.lat(),
+        lng: pos.lng(),
+        zoom: map.getZoom(),
+      }
+      dispatch(action.setMapCenter(payload))
+    }
   }
 
   /* 非同期関数内からコールバック関数を呼び出す場合、

@@ -1,7 +1,7 @@
 import { NavState } from "../components/navState"
 import { DataType } from "./StationService"
 import { PropsEvent } from "./event"
-import { CurrentLocation, LatLng } from "./location"
+import { CurrentLocation, LatLng, MapCenter } from "./location"
 import { Station } from "./station"
 
 export interface GlobalMapState {
@@ -27,7 +27,17 @@ export interface GlobalMapState {
    * MapのUI状態
    */
   nav: NavState
+  /**
+   * Map中心位置の変更リクエスト
+   */
   mapFocusRequest: PropsEvent<{pos: LatLng, zoom?: number}>
+  /**
+   * Map中心位置
+   */
+  mapCenter: MapCenter
+  /**
+   * Mpa上に表示する駅一覧
+   */
   stations: Station[]
 }
 

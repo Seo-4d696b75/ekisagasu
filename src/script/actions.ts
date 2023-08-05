@@ -3,7 +3,7 @@ import { StationSuggestion } from "../components/header/StationSearchBox";
 import { DialogType, IdleNav, LineDialogNav, LineDialogProps, NavState, NavType, RadarStation, StationDialogNav, copyNavState } from "../components/navState";
 import StationService, { DataType } from "./StationService";
 import { Line } from "./line";
-import { CurrentLocation, LatLng } from "./location";
+import { CurrentLocation, LatLng, MapCenter } from "./location";
 import { GlobalMapState, RootState } from "./mapState";
 import { Station } from "./station";
 import { PolylineProps, measure } from "./utils";
@@ -207,6 +207,10 @@ export const appendLoadedStation = createAction<Station[]>(
 
 export const clearLoadedStation = createAction<void>(
   "map/clearLoadedStation"
+)
+
+export const setMapCenter = createAction<MapCenter>(
+  "map/setMapCenter"
 )
 
 /**
