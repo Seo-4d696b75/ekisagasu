@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import { Provider } from "react-redux";
-import { HashRouter, Route } from 'react-router-dom';
+import { HashRouter, Route, Routes } from 'react-router-dom';
 import { store } from "../script/store";
 import './App.css';
 import Header from './header/Header';
@@ -9,20 +9,24 @@ import Map from './map/Map';
 
 const APP: FC = () => {
   return (
-    <div className="App">
-      <HashRouter basename='/'>
-        <Route path='/'>
-          <div>
-            <Provider store={store}>
-              <Header></Header>
-              <Map></Map>
-            </Provider>
-          </div>
-        </Route>
-        <Route path='/help'>
-          <Help></Help>
-        </Route>
-      </HashRouter>
+    <HashRouter basename='/'>
+      <div className="App">
+        <Routes>
+          <Route path='/' element={<RootPage />} />
+          <Route path='/help' element={<Help />} />
+        </Routes>
+      </div>
+    </HashRouter>
+  )
+}
+
+const RootPage: FC = () => {
+  return (
+    <div>
+      <Provider store={store}>
+        <Header></Header>
+        <Map></Map>
+      </Provider>
     </div>
   )
 }
