@@ -35,8 +35,13 @@ export const userSettingSlice = createSlice({
         state.nav = (action.payload.nav ?? state.nav)
       })
       .addCase(setWatchCurrentLocation.fulfilled, (state, action) => {
-        state.watchCurrentLocation = action.payload.watch
-        state.nav = (action.payload.nav ?? state.nav)
+        state.watchCurrentLocation = action.payload
+        state.nav = {
+          type: NavType.IDLE,
+          data: {
+            dialog: null
+          }
+        }
       })
       .addCase(setShowStationPin, (state, action) => {
         state.showStationPin = action.payload

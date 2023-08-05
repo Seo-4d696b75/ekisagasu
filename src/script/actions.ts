@@ -22,13 +22,9 @@ export const setRadarK = createAsyncThunk(
 
 export const setWatchCurrentLocation = createAsyncThunk(
   "map/setWatchCurrentLocation",
-  async (watch: boolean, thunkAPI) => {
-    let { mapState } = thunkAPI.getState() as RootState
+  async (watch: boolean) => {
     StationService.setWatchCurrentPosition(watch)
-    return {
-      watch: watch,
-      nav: await nextIdleNavState(mapState),
-    }
+    return watch
   }
 )
 
@@ -195,7 +191,11 @@ export const setNavStateIdle = createAsyncThunk(
   "map/setNavStateIdle",
   async (_, thunkAPI) => {
     const { mapState } = thunkAPI.getState() as RootState
-    return await nextIdleNavState(mapState)
+    return await nextIdleNavState(
+      mapState.watchCurrentLocation,
+      mapState.currentLocation,
+      mapState.radarK,
+    )
   }
 )
 
@@ -250,11 +250,14 @@ function makeRadarList(pos: LatLng, k: number): RadarStation[] {
 }
 
 
-async function nextIdleNavState(state: GlobalMapState): Promise<IdleNav> {
-  const location = state.currentLocation
-  if (state.watchCurrentLocation && location) {
+async function nextIdleNavState(
+  watchCurrentLocation: boolean,
+  location: CurrentLocation | null,
+  k: number,
+): Promise<IdleNav> {
+  if (watchCurrentLocation && location) {
     const pos = location.position
-    return await nextIdleNavStateWatchingLocation(pos, state.radarK)
+    return await nextIdleNavStateWatchingLocation(pos, k)
   } else {
     return {
       type: NavType.IDLE,
