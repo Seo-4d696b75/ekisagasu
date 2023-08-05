@@ -18,6 +18,7 @@ import { useCurrentPosDialog, useInfoDialog } from "./dialogHook"
 import { useMapCallback } from "./mapEventHook"
 import { useMapOperator } from "./mapHook"
 import { useProgressBanner } from "./progressHook"
+import { useQueryEffect } from "./queryHook"
 import { useServiceCallback } from "./serviceHook"
 
 const VORONOI_COLOR = [
@@ -45,6 +46,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     currentLocation,
     stations: voronoi,
     dataType,
+    mapCenter,
   } = useSelector((state: RootState) => state.mapState)
 
   const [screenWide, setScreenWide] = useState(false)
@@ -142,6 +144,9 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
       switchDataType(dataType)
     }
   }, [dataType])
+
+  // App状態に応じてURLのクエリを動的に更新
+  useQueryEffect(nav, dataType, showCurrentPosition, mapCenter)
 
   /* ===============================
    render section below

@@ -44,7 +44,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
     nav,
   } = useSelector(selectMapState)
 
-  const [query, setQuery] = useSearchParams()
+  const [query, _] = useSearchParams()
 
   const dispatch = useDispatch<AppDispatch>()
 
@@ -158,12 +158,6 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
         }
       }
 
-      // 現在位置を監視・追尾するフラグ
-      if (parseQueryBoolean(query.get('mylocation'))) {
-        dispatch(action.setWatchCurrentLocation(true))
-        return
-      }
-
       // 指定位置への移動
       const queryLat = query.get('lat')
       const queryLng = query.get('lng')
@@ -187,6 +181,12 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
           }
           return
         }
+      }
+
+      // 現在位置を監視・追尾するフラグ
+      if (parseQueryBoolean(query.get('mylocation'))) {
+        dispatch(action.setWatchCurrentLocation(true))
+        return
       }
 
       // 指定なしの場合は現在位置（取得可能なら）に合わせる
