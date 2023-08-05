@@ -116,7 +116,9 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       // extraデータの表示フラグ
       const type = parseQueryBoolean(query.extra) ? 'extra' : 'main'
 
+      // データの初期化
       const s = await progressHandler(StationService.initialize(type), "駅データを初期化中")
+      dispatch(action.setDataType(type))
 
       // 路線情報の表示
       if (typeof query.line === 'string') {

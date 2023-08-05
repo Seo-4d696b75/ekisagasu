@@ -1,7 +1,7 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { StationSuggestion } from "../components/header/StationSearchBox";
 import { DialogType, IdleNav, LineDialogNav, LineDialogProps, NavState, NavType, RadarStation, StationDialogNav, copyNavState } from "../components/navState";
-import StationService from "./StationService";
+import StationService, { DataType } from "./StationService";
 import { Line } from "./line";
 import { CurrentLocation, LatLng } from "./location";
 import { GlobalMapState, RootState } from "./mapState";
@@ -34,7 +34,7 @@ export const setWatchCurrentLocation = createAsyncThunk(
   }
 )
 
-export const setDataExtra = createAction<boolean>(
+export const setDataType = createAction<DataType>(
   "map/setDataExtra",
 )
 

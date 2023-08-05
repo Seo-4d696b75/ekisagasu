@@ -64,10 +64,7 @@ export class StationService {
 
   tree: StationKdTree | null = null
 
-  dataAPI: DataAPIOption = {
-    type: "main",
-    baseURL: process.env.REACT_APP_DATA_BASE_URL,
-  }
+  dataAPI: DataAPIOption | null = null
 
   constructor() {
     // APIがコールドスタートのためWebApp起動時にウォームアップしておく
@@ -169,7 +166,7 @@ export class StationService {
     return this.runSync("initialize", async () => {
       if (this.initialized) return this
       // load station and line
-      await this.switchData(type)
+      await this.setData(type)
 
       // load prefecture
       this.prefecture.clear()
@@ -194,25 +191,31 @@ export class StationService {
    * @param type 
    * @returns 
    */
-  async switchData(type: DataType): Promise<void> {
-    this.dataAPI = {
-      type: type,
-      baseURL: type === "main" ? process.env.REACT_APP_DATA_BASE_URL : process.env.REACT_APP_DATA_EXTRA_BASE_URL,
-    }
-    this.stations.clear()
-    this.lines.clear()
-    this.stationsId.clear()
-    this.stationPoints = undefined
-    this.linesId.clear()
-    this.tree = await new StationKdTree(
-      this.getStationImmediate.bind(this),
-      this.getTreeSegment.bind(this),
-    ).initialize("root")
-    let lineRes = await this.get<LineAPIResponse[]>(`${this.dataAPI.baseURL}/line.json`)
-    lineRes.data.forEach(d => {
-      let line = parseLine(d)
-      this.lines.set(line.code, line)
-      this.linesId.set(line.id, line)
+  async setData(type: DataType): Promise<void> {
+    return this.runSync('switch-data', async () => {
+      if (this.dataAPI?.type === type) {
+        // 連続呼び出しの対策
+        return
+      }
+      this.dataAPI = {
+        type: type,
+        baseURL: type === "main" ? process.env.REACT_APP_DATA_BASE_URL : process.env.REACT_APP_DATA_EXTRA_BASE_URL,
+      }
+      this.stations.clear()
+      this.lines.clear()
+      this.stationsId.clear()
+      this.stationPoints = undefined
+      this.linesId.clear()
+      this.tree = await new StationKdTree(
+        this.getStationImmediate.bind(this),
+        this.getTreeSegment.bind(this),
+      ).initialize("root")
+      let lineRes = await this.get<LineAPIResponse[]>(`${this.dataAPI.baseURL}/line.json`)
+      lineRes.data.forEach(d => {
+        let line = parseLine(d)
+        this.lines.set(line.code, line)
+        this.linesId.set(line.id, line)
+      })
     })
   }
 
@@ -373,7 +376,7 @@ export class StationService {
     return this.runSync("get-delaunay-station", async () => {
       let map = this.stationPoints
       if (!map) {
-        const res = await this.get<DelaunayStation[]>(`${this.dataAPI.baseURL}/delaunay.json`)
+        const res = await this.get<DelaunayStation[]>(`${this.dataAPI!.baseURL}/delaunay.json`)
         map = new Map()
         this.stationPoints = map
         res.data.forEach(d => {
@@ -418,7 +421,7 @@ export class StationService {
         throw Error(`line not found id:${code}`)
       }
       if (line.detail) return line
-      let res = await this.get<LineDetailAPIResponse>(`${this.dataAPI.baseURL}/line/${code}.json`)
+      let res = await this.get<LineDetailAPIResponse>(`${this.dataAPI!.baseURL}/line/${code}.json`)
       let detail = parseLineDetail(res.data)
       let next: Line = {
         ...line,
@@ -437,7 +440,7 @@ export class StationService {
     const tag = `${TAG_SEGMENT_PREFIX}${name}`
     // be sure to avoid loading the same segment
     return this.runSync(tag, async () => {
-      const res = await this.get<StationTreeSegmentResponse>(`${this.dataAPI.baseURL}/tree/${name}.json`)
+      const res = await this.get<StationTreeSegmentResponse>(`${this.dataAPI!.baseURL}/tree/${name}.json`)
       console.log("tree-segment loaded", name)
       const data = res.data
       const list = data.node_list.map(e => {

@@ -21,7 +21,7 @@ const Header: FC = () => {
     watchCurrentLocation,
     showStationPin,
     isHighAccuracyLocation,
-    isDataExtra,
+    dataType,
   } = useSelector((state: RootState) => state.mapState)
 
   const dispatch = useDispatch()
@@ -155,12 +155,12 @@ const Header: FC = () => {
         <input id="toggle-extra"
           className="toggle-input"
           type='checkbox'
-          checked={isDataExtra}
-          onChange={(e) => dispatch(action.setDataExtra(e.target.checked))} />
+          checked={dataType === 'extra'}
+          onChange={(e) => dispatch(action.setDataType(e.target.checked ? 'extra' : 'main'))} />
         <label htmlFor="toggle-extra" className="toggle-label" />
       </div>
     </div>
-  ), [isDataExtra, dispatch])
+  ), [dataType, dispatch])
 
   return (
     <div className='Map-header'>

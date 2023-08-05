@@ -44,7 +44,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     mapFocusRequest: focus,
     currentLocation,
     stations: voronoi,
-    isDataExtraChange,
+    dataType,
   } = useSelector((state: RootState) => state.mapState)
 
   const [screenWide, setScreenWide] = useState(false)
@@ -81,7 +81,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     focusAt,
     focusAtNearestStation,
     requestCurrentPosition,
-    switchExtraData,
+    switchDataType,
   } = useMapOperator(showProgressBannerWhile, googleMapRef, mapElementRef)
 
   // callbacks listening to map events
@@ -136,10 +136,12 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     }
   }, [currentPos?.lat, currentPos?.lng])
 
-  useEventEffect(isDataExtraChange, isExtra => {
-    console.log("useEffect: data changed. extra:", isExtra)
-    switchExtraData(isExtra)
-  })
+  // データ種類が変わったら更新
+  useEffect(() => {
+    if (dataType && StationService.dataAPI?.type !== dataType) {
+      switchDataType(dataType)
+    }
+  }, [dataType])
 
   /* ===============================
    render section below

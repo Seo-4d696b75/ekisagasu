@@ -1,6 +1,6 @@
 import { MutableRefObject, RefObject, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import StationService from "../../script/StationService"
+import StationService, { DataType } from "../../script/StationService"
 import * as action from "../../script/actions"
 import { Line } from "../../script/line"
 import { LatLng } from "../../script/location"
@@ -248,14 +248,14 @@ export const useMapOperator = (
     }
   }
 
-  const switchExtraData = async (isExtra: boolean) => {
+  const switchDataType = async (type: DataType) => {
     // ダイアログで表示中のデータと齟齬が発生する場合があるので強制的に閉じる
     closeDialog()
     // データセット変更時に地図で表示している現在の範囲に合わせて更新＆読み込みする
     const map = googleMapRef.current
     if (map) {
       progressHandler(async () => {
-        await StationService.switchData(isExtra ? "extra" : "main")
+        await StationService.setData(type)
         dispatch(action.clearLoadedStation())
         await updateBounds(map, true)
       }, "駅データを切り替えています")
@@ -279,6 +279,6 @@ export const useMapOperator = (
     focusAt,
     focusAtNearestStation,
     requestCurrentPosition,
-    switchExtraData,
+    switchDataType,
   }
 }
