@@ -11,7 +11,7 @@ const APP: FC = () => {
   return (
     <div className="App">
       <HashRouter basename='/'>
-        <Route exact path='/'>
+        <Route path='/'>
           <div>
             <Provider store={store}>
               <Header></Header>
@@ -19,7 +19,9 @@ const APP: FC = () => {
             </Provider>
           </div>
         </Route>
-        <Route path='/help' component={Help}></Route>
+        <Route path='/help'>
+          <Help></Help>
+        </Route>
       </HashRouter>
     </div>
   )

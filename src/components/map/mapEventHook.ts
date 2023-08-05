@@ -1,8 +1,7 @@
 import { IMapProps } from "google-maps-react"
-import qs from "query-string"
 import { MutableRefObject, useRef } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { useLocation } from "react-router-dom"
+import { useSearchParams } from "react-router-dom"
 import StationService from "../../script/StationService"
 import * as action from "../../script/actions"
 import { Line } from "../../script/line"
@@ -45,7 +44,8 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
     nav,
   } = useSelector(selectMapState)
 
-  const location = useLocation()
+  const [query, setQuery] = useSearchParams()
+
   const dispatch = useDispatch<AppDispatch>()
 
   const uiEventRef = useRef<UIEvent | null>(null)
@@ -119,19 +119,17 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       })
       dispatch(action.setNavStateIdle())
 
-      // parse query actions
-      const query = qs.parse(location.search)
-
       // extraデータの表示フラグ
-      const type = parseQueryBoolean(query.extra) ? 'extra' : 'main'
+      const type = parseQueryBoolean(query.get('extra')) ? 'extra' : 'main'
 
       // データの初期化
       const s = await progressHandler(StationService.initialize(type), "駅データを初期化中")
       dispatch(action.setDataType(type))
 
       // 路線情報の表示
-      if (typeof query.line === 'string') {
-        const line = s.getLineById(query.line)
+      const queryLine = query.get('line')
+      if (typeof queryLine === 'string') {
+        const line = s.getLineById(queryLine)
         if (line) {
           try {
             const result = await dispatch(action.requestShowLine(line)).unwrap()
@@ -139,46 +137,50 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
             showPolylineRef(result.line)
             return
           } catch (e) {
-            console.warn("fail to show line details. query:", query.line, e)
+            console.warn("fail to show line details. query:", queryLine, e)
           }
         }
       }
 
       // 駅情報の表示
-      if (typeof query.station === 'string') {
+      const queryStation = query.get('station')
+      if (typeof queryStation === 'string') {
         try {
           const result = await dispatch(action.requestShowStationPromise(
-            progressHandler(s.getStationById(query.station), `駅情報(${query.station})を探しています`)
+            progressHandler(s.getStationById(queryStation), `駅情報(${queryStation})を探しています`)
           )).unwrap()
-          if (parseQueryBoolean(query.voronoi)) {
+          if (parseQueryBoolean(query.get('voronoi'))) {
             showRadarVoronoiRef(result.station)
           }
           return
         } catch (e) {
-          console.warn("fail to show station, query:", query.station, e)
+          console.warn("fail to show station, query:", queryStation, e)
         }
       }
 
       // 現在位置を監視・追尾するフラグ
-      if (typeof query.mylocation === 'string' && parseQueryBoolean(query.mylocation)) {
+      if (parseQueryBoolean(query.get('mylocation'))) {
         dispatch(action.setWatchCurrentLocation(true))
         return
       }
 
       // 指定位置への移動
-      if (typeof query.lat === 'string' && typeof query.lng === 'string') {
-        const lat = parseFloat(query.lat)
-        const lng = parseFloat(query.lng)
+      const queryLat = query.get('lat')
+      const queryLng = query.get('lng')
+      if (typeof queryLat === 'string' && typeof queryLng === 'string') {
+        const lat = parseFloat(queryLat)
+        const lng = parseFloat(queryLng)
         if (20 < lat && lat < 50 && 120 < lng && lng < 150) {
           const zoom = (() => {
-            if (typeof query.zoom === 'string') {
-              const value = parseFloat(query.zoom)
+            const queryZoom = query.get('zoom')
+            if (typeof queryZoom === 'string') {
+              const value = parseFloat(queryZoom)
               if (10 <= value && value <= 20) {
                 return value
               }
             }
           })()
-          if (parseQueryBoolean(query.dialog)) {
+          if (parseQueryBoolean(query.get('dialog'))) {
             operator.focusAt({ lat: lat, lng: lng }, zoom)
           } else {
             operator.moveToPosition({ lat: lat, lng: lng }, zoom)
