@@ -12,7 +12,6 @@ const initUserSetting: GlobalMapState = {
   isDataExtraChange: createIdleEvent(),
   isHighAccuracyLocation: false,
   currentLocation: null,
-  currentPositionUpdate: createIdleEvent(),
   nav: {
     type: NavType.LOADING,
     data: null
@@ -43,13 +42,8 @@ export const userSettingSlice = createSlice({
       })
       .addCase(setCurrentLocation.fulfilled, (state, action) => {
         const { nav, location } = action.payload
-        const previous = state.currentLocation?.position
         state.nav = nav
         state.currentLocation = location
-        const pos = location.position
-        state.currentPositionUpdate =
-          (previous && pos.lat === previous.lat && pos.lng === previous.lng) ?
-            state.currentPositionUpdate : createEvent(pos)
       })
       .addCase(requestShowSelectedPosition.fulfilled, (state, action) => {
         state.nav = action.payload.nav

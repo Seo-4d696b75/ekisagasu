@@ -43,7 +43,6 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     nav,
     mapFocusRequest: focus,
     currentLocation,
-    currentPositionUpdate,
     stations: voronoi,
     isDataExtraChange,
   } = useSelector((state: RootState) => state.mapState)
@@ -129,11 +128,13 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     moveToPosition(target.pos, target.zoom)
   })
 
-  useEventEffect(currentPositionUpdate, pos => {
-    if (showCurrentPosition && nav.type === NavType.IDLE) {
-      moveToPosition(pos)
+  // 現在位置が変更されたらMap中心位置を変更する
+  const currentPos = currentLocation?.position
+  useEffect(() => {
+    if (currentPos && showCurrentPosition && nav.type === NavType.IDLE) {
+      moveToPosition(currentPos)
     }
-  })
+  }, [currentPos?.lat, currentPos?.lng])
 
   useEventEffect(isDataExtraChange, isExtra => {
     console.log("useEffect: data changed. extra:", isExtra)
