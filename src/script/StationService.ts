@@ -5,8 +5,6 @@ import { LatLng } from "./location"
 import { DelaunayStation, Station, StationAPIResponse, parseStation } from "./station"
 import { RectBounds } from "./utils"
 
-const TAG_SEGMENT_PREFIX = "station-segment:"
-
 type StationNodeResponse = StationAPIResponse & StationNodeProps
 
 type StationLeafNodeResponse = StationLeafNodeProps
@@ -83,12 +81,12 @@ export class StationService {
   onStationLoadedCallback: ((list: Station[]) => void) | undefined = undefined
 
   /**
-   * HTTP通信によるデータ取得時にコールバックされる
+   * HTTP通信など非同期処理のコールバック
    * 
-   * @param url 
-   * @param promise HTTP通信の非同期処理 **必ずresolveされる**
+   * @param message
+   * @param promise 非同期処理
    */
-  dataLoadingCallback: ((url: string, promise: Promise<unknown>) => void) | undefined = undefined
+  dataLoadingCallback: ((message: string, promise: Promise<unknown>) => void) | undefined = undefined
 
   /**
    * 現在位置を監視している場合に変更された位置情報をコールバックする
@@ -116,14 +114,12 @@ export class StationService {
    *             - 該当する実行中の別タスクが存在しない場合は即座にtaskを実行
    * @returns task の実行結果
    */
-  async runSync<T>(tag: string, task: () => Promise<T>): Promise<T> {
-    const running = this.tasks.get(tag)
-    const next: Promise<AsyncResult<T>> = (
-      running?.then(() => {
-        // 前段の処理を待機
-        return task()
-      }) ?? task()
-    ).then(result => {
+  async runSync<T>(tag: string, message: string, task: () => Promise<T>): Promise<T> {
+    const running = this.tasks.get(tag) ?? Promise.resolve()
+    const next: Promise<AsyncResult<T>> = running.then(() => {
+      // 前段の処理を待機
+      return task()
+    }).then(result => {
       return {
         type: ResultType.Success,
         value: result,
@@ -135,6 +131,7 @@ export class StationService {
       }
     })
     this.tasks.set(tag, next)
+    this.dataLoadingCallback?.(message, next)
     // nextはrejectされない
     return next.then(result => {
       // 後処理
@@ -154,16 +151,15 @@ export class StationService {
    * @param url 
    * @returns 
    */
-  async get<T>(url: string): Promise<AxiosResponse<T>> {
-    const call = axios.get<T>(url)
-    const safeCall = call.catch((e) => null)
-    this.dataLoadingCallback?.(url, safeCall)
-    return call
+  get<T>(url: string): Promise<AxiosResponse<T>> {
+    return this.runSync(`get-${url}`, 'データを取得中', async () => {
+      return axios.get<T>(url)
+    })
   }
 
-  async initialize(type: DataType): Promise<StationService> {
+  initialize(type: DataType): Promise<StationService> {
     // 複数呼び出しに対しても初期化処理をただ１回のみ実行する
-    return this.runSync("initialize", async () => {
+    return this.runSync('initialize', '駅データを初期化中', async () => {
       if (this.initialized) return this
       // load station and line
       await this.setData(type)
@@ -192,7 +188,7 @@ export class StationService {
    * @returns 
    */
   async setData(type: DataType): Promise<void> {
-    return this.runSync('switch-data', async () => {
+    return this.runSync(`setData-${type}`, '駅データを切替中', async () => {
       if (this.dataAPI?.type === type) {
         // 連続呼び出しの対策
         return
@@ -274,21 +270,23 @@ export class StationService {
   }
 
   getCurrentPosition(): Promise<GeolocationPosition> {
-    if (navigator.geolocation) {
-      return new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            resolve(pos)
-          },
-          (err) => {
-            reject(err)
-          },
-          this.positionOptions
-        )
-      })
-    } else {
-      return Promise.reject("this device does not support Geolocation")
-    }
+    return this.runSync('getCurrentPosition', '現在位置を取得しています', async () => {
+      if (navigator.geolocation) {
+        return new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              resolve(pos)
+            },
+            (err) => {
+              reject(err)
+            },
+            this.positionOptions
+          )
+        })
+      } else {
+        throw Error("this device does not support Geolocation")
+      }
+    })
   }
 
   async updateLocation(position: LatLng, k: number, r: number = 0): Promise<Station | null> {
@@ -298,22 +296,22 @@ export class StationService {
        同時に update_**を呼び出すと前回の探索が終了する前に別の探索が走る場合があり得る
        KdTreeは内部状態を持つ実装のため挙動が予想できない
     */
-    return await this.runSync("update_location", async () => {
+    return this.runSync('update-location', '検索中', async () => {
       if (this.tree) {
         return this.tree.updateLocation(position, k, r)
       } else {
-        return Promise.reject("tree not initialized")
+        throw Error("tree not initialized")
       }
     })
   }
 
   async updateRect(rect: RectBounds, max: number = Number.MAX_SAFE_INTEGER): Promise<Station[]> {
     if (max < 1) max = 1
-    return await this.runSync("update_location", async () => {
+    return await this.runSync('update-location', '検索中', async () => {
       if (this.tree) {
         return this.tree.updateRectRegion(rect, max)
       } else {
-        return Promise.reject("tree not initialized")
+        throw Error("tree not initialized")
       }
     })
 
@@ -324,23 +322,25 @@ export class StationService {
   }
 
   async getStationById(id: string): Promise<Station> {
-    if (id.match(/^[0-9a-f]{6}$/)) {
-      let s = this.stationsId.get(id)
-      if (s) return s
-      const res = await this.get<StationAPIResponse>(`${process.env.REACT_APP_STATION_API_URL}/station?id=${id}`)
-      let pos = {
-        lat: res.data.lat,
-        lng: res.data.lng,
+    return this.runSync(`getStationById-${id}`, '駅情報を探しています', async () => {
+      if (id.match(/^[0-9a-f]{6}$/)) {
+        let s = this.stationsId.get(id)
+        if (s) return s
+        const res = await this.get<StationAPIResponse>(`${process.env.REACT_APP_STATION_API_URL}/station?id=${id}`)
+        let pos = {
+          lat: res.data.lat,
+          lng: res.data.lng,
+        }
+        // this 'update' operation loads station data as a segment
+        await this.updateLocation(pos, 1)
+        return this.stationsId.get(id) as Station
       }
-      // this 'update' operation loads station data as a segment
-      await this.updateLocation(pos, 1)
-      return this.stationsId.get(id) as Station
-    }
-    const code = parseInt(id)
-    if (!isNaN(code)) {
-      return await this.getStation(code)
-    }
-    throw Error("invalid station arg, not id nor code.")
+      const code = parseInt(id)
+      if (!isNaN(code)) {
+        return await this.getStation(code)
+      }
+      throw Error("invalid station arg, not id nor code.")
+    })
   }
 
   async getStationOrNull(code: number): Promise<Station | undefined> {
@@ -348,19 +348,21 @@ export class StationService {
     if (s) return s
     // step 1: get lat/lng of the target station
     // step 2: update neighbor stations
-    try {
-      const res = await this.get<StationAPIResponse>(`${process.env.REACT_APP_STATION_API_URL}/station?code=${code}`)
-      let pos = {
-        lat: res.data.lat,
-        lng: res.data.lng,
+    return this.runSync(`getStationOrNull-${code}`, '駅情報を探しています', async () => {
+      try {
+        const res = await this.get<StationAPIResponse>(`${process.env.REACT_APP_STATION_API_URL}/station?code=${code}`)
+        let pos = {
+          lat: res.data.lat,
+          lng: res.data.lng,
+        }
+        // this 'update' operation loads station data as a segment
+        await this.updateLocation(pos, 1)
+        return this.getStationImmediate(code)
+      } catch (e) {
+        console.warn("api error. station code:", code, e)
+        return undefined
       }
-      // this 'update' operation loads station data as a segment
-      await this.updateLocation(pos, 1)
-      return this.getStationImmediate(code)
-    } catch (e) {
-      console.warn("api error. station code:", code, e)
-      return undefined
-    }
+    })
   }
 
   async getStation(code: number): Promise<Station> {
@@ -373,7 +375,7 @@ export class StationService {
   }
 
   getStationPoint(code: number): Promise<DelaunayStation> {
-    return this.runSync("get-delaunay-station", async () => {
+    return this.runSync("getStationPoint", "図形情報を取得しています", async () => {
       let map = this.stationPoints
       if (!map) {
         const res = await this.get<DelaunayStation[]>(`${this.dataAPI!.baseURL}/delaunay.json`)
@@ -414,8 +416,8 @@ export class StationService {
 
   async getLineDetail(code: number): Promise<Line> {
     // 単一のupdate_** 呼び出しでも同一segmentが複数から要求される
-    const tag = `line-details-${code}`
-    return await this.runSync(tag, async () => {
+    const tag = `getLineDetail-${code}`
+    return await this.runSync(tag, '路線情報を取得しています', async () => {
       const line = this.lines.get(code)
       if (!line) {
         throw Error(`line not found id:${code}`)
@@ -437,9 +439,9 @@ export class StationService {
   }
 
   getTreeSegment(name: string): Promise<StationTreeSegmentResponse> {
-    const tag = `${TAG_SEGMENT_PREFIX}${name}`
+    const tag = `getTreeSegment-${name}`
     // be sure to avoid loading the same segment
-    return this.runSync(tag, async () => {
+    return this.runSync(tag, '駅情報を取得しています', async () => {
       const res = await this.get<StationTreeSegmentResponse>(`${this.dataAPI!.baseURL}/tree/${name}.json`)
       console.log("tree-segment loaded", name)
       const data = res.data

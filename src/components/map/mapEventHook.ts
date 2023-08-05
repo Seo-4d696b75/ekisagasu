@@ -29,7 +29,7 @@ function getUIEvent(clickEvent: any): UIEvent {
  * @param operator 地図の操作方法を教えてね
  * @returns 
  */
-export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObject<google.maps.Map<Element> | null>, progressHandler: <T, >(task: Promise<T>, text: string) => Promise<T>, operator: {
+export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObject<google.maps.Map<Element> | null>, operator: {
   moveToPosition: (pos: LatLng | null, zoom?: number) => void
   focusAt: (pos: LatLng, zoom?: number) => void
   focusAtNearestStation: (pos: LatLng) => void
@@ -123,7 +123,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       const type = parseQueryBoolean(query.get('extra')) ? 'extra' : 'main'
 
       // データの初期化
-      const s = await progressHandler(StationService.initialize(type), "駅データを初期化中")
+      const s = await StationService.initialize(type)
       dispatch(action.setDataType(type))
 
       // 路線情報の表示
@@ -147,7 +147,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       if (typeof queryStation === 'string') {
         try {
           const result = await dispatch(action.requestShowStationPromise(
-            progressHandler(s.getStationById(queryStation), `駅情報(${queryStation})を探しています`)
+            s.getStationById(queryStation)
           )).unwrap()
           if (parseQueryBoolean(query.get('voronoi'))) {
             showRadarVoronoiRef(result.station)

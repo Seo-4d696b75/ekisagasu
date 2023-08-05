@@ -64,7 +64,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   const {
     onGeolocationPositionChanged,
     onStationLoaded,
-    onDataLoadingStarted,
+    dataLoadingCallback,
   } = useServiceCallback(showProgressBannerWhile)
 
   // functions operating the map and its state variables
@@ -92,7 +92,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     onMapDragStart,
     onMapIdle,
     onMapReady,
-  } = useMapCallback(screenWide, googleMapRef, showProgressBannerWhile, {
+  } = useMapCallback(screenWide, googleMapRef, {
     moveToPosition,
     focusAt,
     focusAtNearestStation,
@@ -109,7 +109,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     // register callbacks
     StationService.onGeolocationPositionChangedCallback = onGeolocationPositionChanged
     StationService.onStationLoadedCallback = onStationLoaded
-    StationService.dataLoadingCallback = onDataLoadingStarted
+    StationService.dataLoadingCallback = dataLoadingCallback
     const onScreenResized = () => {
       let wide = window.innerWidth >= 900
       setScreenWide(wide)
@@ -123,7 +123,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
       window.removeEventListener("resize", onScreenResized)
       googleMapRef.current = null
     }
-  }, [onGeolocationPositionChanged, onStationLoaded, onDataLoadingStarted])
+  }, [onGeolocationPositionChanged, onStationLoaded, dataLoadingCallback])
 
   useEventEffect(focus, target => {
     moveToPosition(target.pos, target.zoom)

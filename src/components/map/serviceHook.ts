@@ -19,13 +19,13 @@ export const useServiceCallback = (progressHandler: (task: Promise<void>, text: 
     dispatch(action.appendLoadedStation(list))
   })
 
-  const onDataLoadingStarted = useRefCallback((url, promise) => {
-    progressHandler(promise, "データ読み込み中")
+  const dataLoadingCallback = useRefCallback((message, promise) => {
+    progressHandler(promise, message)
   })
 
   return {
     onGeolocationPositionChanged,
     onStationLoaded,
-    onDataLoadingStarted,
+    dataLoadingCallback,
   }
 }

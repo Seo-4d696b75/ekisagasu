@@ -83,25 +83,22 @@ export const useMapOperator = (
     }
   }
 
-  const setCenterCurrentPosition = async (map: google.maps.Map) => progressHandler(
-    async () => {
-      try {
-        const pos = await StationService.getCurrentPosition()
-        let latLng = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude
-        }
-        map.setCenter(latLng)
-        dispatch(action.setCurrentLocation(pos))
-      } catch (err) {
-        console.warn(err)
-        alert("現在位置を利用できません. ブラウザから位置情報へのアクセスを許可してください.")
-        const latLng = { lat: 35.681236, lng: 139.767125 }
-        map.setCenter(latLng)
+  const setCenterCurrentPosition = async (map: google.maps.Map) => {
+    try {
+      const pos = await StationService.getCurrentPosition()
+      let latLng = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude
       }
-    },
-    "現在位置を取得しています",
-  )
+      map.setCenter(latLng)
+      dispatch(action.setCurrentLocation(pos))
+    } catch (err) {
+      console.warn(err)
+      alert("現在位置を利用できません. ブラウザから位置情報へのアクセスを許可してください.")
+      const latLng = { lat: 35.681236, lng: 139.767125 }
+      map.setCenter(latLng)
+    }
+  }
 
   // use high-voronoi logic via custom hook
   const { run: runHighVoronoi, cancel: cancelHighVoronoi, highVoronoi, workerRunning } = useHighVoronoi(radarK)
