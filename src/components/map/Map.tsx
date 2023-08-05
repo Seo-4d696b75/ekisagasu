@@ -14,7 +14,6 @@ import { useEventEffect } from "../hooks"
 import { DialogType, NavType, isInfoDialog, isStationDialog } from "../navState"
 import "./Map.css"
 import { CurrentPosIcon } from "./PositionIcon"
-import { useCurrentPosDialog, useInfoDialog } from "./dialogHook"
 import { useMapCallback } from "./mapEventHook"
 import { useMapOperator } from "./mapHook"
 import { useProgressBanner } from "./progressHook"
@@ -320,10 +319,9 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     }
   }, [showHighVoronoi, highVoronoi, radarK])
 
-  // when dialog closed, dialog props will be undefined before animation completed.
-  // so cache dialog props using ref object.
-  const infoDialogProps = useInfoDialog(nav)
 
+  // ダイアログを閉じる時アニメーションが終了するまえに nav.data.dialog が undefined になる
+  // 動作が重くなる副作用もあるため閉じるアニメーションは無し
   const InfoDialog = (
     <div className="info-modal container">
       <CSSTransition
@@ -331,40 +329,42 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
         className="info-modal holder"
         timeout={300}>
         <div className="info-modal holder">
-          {(infoDialogProps?.type === DialogType.LINE) ? (
-            <LineDialog
-              info={infoDialogProps}
-              onStationSelected={showStation}
-              onClosed={closeDialog}
-              onShowPolyline={showPolyline} />
-          ) : (infoDialogProps?.type === DialogType.STATION ||
-            infoDialogProps?.type === DialogType.SELECT_POSITION) ? (
-            <StationDialog
-              info={infoDialogProps}
-              onStationSelected={showStation}
-              onLineSelected={showLine}
-              onClosed={closeDialog}
-              onShowVoronoi={showRadarVoronoi} />
-          ) : null}
+          {
+            !isInfoDialog(nav)
+              ? null
+              : nav.data.dialog.type === DialogType.LINE
+                ? <LineDialog
+                  info={nav.data.dialog}
+                  onStationSelected={showStation}
+                  onClosed={closeDialog}
+                  onShowPolyline={showPolyline} />
+                : <StationDialog
+                  info={nav.data.dialog}
+                  onStationSelected={showStation}
+                  onLineSelected={showLine}
+                  onClosed={closeDialog}
+                  onShowVoronoi={showRadarVoronoi} />
+          }
         </div>
       </CSSTransition>
     </div>
   )
 
-  const currentPosDialogProps = useCurrentPosDialog(nav)
   const currentPosDialog = (
-    <div className="info-modal container">
+    <div className="info-modal container current-position">
       <CSSTransition
-        in={showCurrentPosition}
+        in={nav.type === NavType.IDLE && !!nav.data.dialog}
         className="info-modal holder current-position"
         timeout={300}>
         <div className="info-modal holder current-position">
-          {currentPosDialogProps ? (
-            <CurrentPosDialog
-              info={currentPosDialogProps}
-              onStationSelected={showStation}
-              onLineSelected={showLine} />
-          ) : null}
+          {
+            nav.type === NavType.IDLE && nav.data.dialog
+              ? <CurrentPosDialog
+                info={nav.data.dialog}
+                onStationSelected={showStation}
+                onLineSelected={showLine} />
+              : null
+          }
         </div>
       </CSSTransition>
     </div>

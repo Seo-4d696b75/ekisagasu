@@ -27,9 +27,7 @@ export const setWatchCurrentLocation = createAsyncThunk(
     StationService.setWatchCurrentPosition(watch)
     return {
       watch: watch,
-      nav: (mapState.nav.type === NavType.IDLE && mapState.currentLocation) ?
-        await nextIdleNavStateWatchingLocation(mapState.currentLocation.position, mapState.radarK)
-        : null
+      nav: await nextIdleNavState(mapState),
     }
   }
 )
