@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import { useSearchParams } from "react-router-dom"
-import { DataType } from "../../script/StationService"
+import StationService, { DataType } from "../../script/StationService"
 import { MapCenter } from "../../script/location"
 import { NavState, NavType } from "../navState"
 
@@ -11,8 +11,12 @@ export const useQueryEffect = (
   mapCenter: MapCenter,
 ) => {
   const [, setQuery] = useSearchParams()
+  const initialized = StationService.initialized
 
   useEffect(() => {
+    if (!initialized) {
+      return
+    }
 
     const query: Record<string, string> = {}
     if (dataType === 'extra') {
@@ -42,5 +46,5 @@ export const useQueryEffect = (
     setQuery(query)
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nav, dataType, watchCurrentLocation, mapCenter])
+  }, [nav, dataType, watchCurrentLocation, mapCenter, initialized])
 }
