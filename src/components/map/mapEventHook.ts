@@ -123,13 +123,14 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       const type = parseQueryBoolean(query.get('extra')) ? 'extra' : 'main'
 
       // データの初期化
-      const s = await StationService.initialize(type)
+      await StationService.initialize(type)
+      // GlobalMapStateに反映する
       dispatch(action.setDataType(type))
 
       // 路線情報の表示
       const queryLine = query.get('line')
       if (typeof queryLine === 'string') {
-        const line = s.getLineById(queryLine)
+        const line = StationService.getLineById(queryLine)
         if (line) {
           try {
             const result = await dispatch(action.requestShowLine(line)).unwrap()
@@ -147,7 +148,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       if (typeof queryStation === 'string') {
         try {
           const result = await dispatch(action.requestShowStationPromise(
-            s.getStationById(queryStation)
+            StationService.getStationById(queryStation)
           )).unwrap()
           if (parseQueryBoolean(query.get('voronoi'))) {
             showRadarVoronoiRef(result.station)
