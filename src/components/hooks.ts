@@ -40,5 +40,6 @@ export function useRefCallback<T extends (...args: any[]) => any>(update: T): ((
 export function useEventEffect<T>(event: PropsEvent<T>, handler: (value: T) => void) {
   useEffect(() => {
     handleIf(event, handler)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event])
 }
