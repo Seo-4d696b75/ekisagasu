@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { DialogType, isStationDialog, NavState, NavType } from "../components/navState"
-import { appendLoadedStation, clearLoadedStation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStationPromise, setCurrentLocation, setDataExtra, setHighAccuracyLocation, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions"
+import { appendLoadedStation, clearLoadedStation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStationPromise, setCurrentLocation, setDataType, setHighAccuracyLocation, setMapCenter, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions"
 import { createEvent, createIdleEvent } from "./event"
 import { GlobalMapState } from "./mapState"
 
@@ -8,14 +8,17 @@ const initUserSetting: GlobalMapState = {
   radarK: 18,
   watchCurrentLocation: false,
   showStationPin: true,
-  isDataExtra: false,
-  isDataExtraChange: createIdleEvent(),
+  dataType: null,
   isHighAccuracyLocation: false,
   currentLocation: null,
-  currentPositionUpdate: createIdleEvent(),
   nav: {
     type: NavType.LOADING,
     data: null
+  },
+  mapCenter: {
+    lat: 35.681236,
+    lng: 139.767125,
+    zoom: 14,
   },
   mapFocusRequest: createIdleEvent(),
   stations: [],
@@ -32,8 +35,13 @@ export const userSettingSlice = createSlice({
         state.nav = (action.payload.nav ?? state.nav)
       })
       .addCase(setWatchCurrentLocation.fulfilled, (state, action) => {
-        state.watchCurrentLocation = action.payload.watch
-        state.nav = (action.payload.nav ?? state.nav)
+        state.watchCurrentLocation = action.payload
+        state.nav = {
+          type: NavType.IDLE,
+          data: {
+            dialog: null
+          }
+        }
       })
       .addCase(setShowStationPin, (state, action) => {
         state.showStationPin = action.payload
@@ -43,13 +51,8 @@ export const userSettingSlice = createSlice({
       })
       .addCase(setCurrentLocation.fulfilled, (state, action) => {
         const { nav, location } = action.payload
-        const previous = state.currentLocation?.position
         state.nav = nav
         state.currentLocation = location
-        const pos = location.position
-        state.currentPositionUpdate =
-          (previous && pos.lat === previous.lat && pos.lng === previous.lng) ?
-            state.currentPositionUpdate : createEvent(pos)
       })
       .addCase(requestShowSelectedPosition.fulfilled, (state, action) => {
         state.nav = action.payload.nav
@@ -105,12 +108,14 @@ export const userSettingSlice = createSlice({
           ...action.payload,
         ]
       })
-      .addCase(setDataExtra, (state, action) => {
-        state.isDataExtra = action.payload
-        state.isDataExtraChange = createEvent(action.payload)
+      .addCase(setDataType, (state, action) => {
+        state.dataType = action.payload
       })
       .addCase(clearLoadedStation, (state, action) => {
         state.stations = []
+      })
+      .addCase(setMapCenter, (state, action) => {
+        state.mapCenter = action.payload
       })
   }
 })

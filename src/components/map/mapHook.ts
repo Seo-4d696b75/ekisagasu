@@ -1,15 +1,15 @@
 import { MutableRefObject, RefObject, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
+import StationService, { DataType } from "../../script/StationService"
 import * as action from "../../script/actions"
 import { Line } from "../../script/line"
 import { LatLng } from "../../script/location"
 import { selectMapState } from "../../script/mapState"
 import { Station } from "../../script/station"
-import StationService from "../../script/StationService"
 import { AppDispatch } from "../../script/store"
-import { getBounds, getZoomProperty, isInsideRect, PolylineProps, RectBounds } from "../../script/utils"
+import { PolylineProps, RectBounds, getBounds, getZoomProperty, isInsideRect } from "../../script/utils"
 import { useRefCallback } from "../hooks"
-import { isStationDialog, NavType } from "../navState"
+import { NavType, isStationDialog } from "../navState"
 import { useHighVoronoi } from "./voronoiHook"
 
 const ZOOM_TH = 12
@@ -73,35 +73,32 @@ export const useMapOperator = (
     dispatch(action.requestShowLine(line))
   }
 
-  const moveToPosition = (pos: LatLng | null, minZoom: number = 0) => {
+  const moveToPosition = (pos: LatLng | null, zoom?: number) => {
     const map = googleMapRef.current
     if (pos && map) {
       map.panTo(new google.maps.LatLng(pos.lat, pos.lng))
-      if (map.getZoom() < minZoom) {
-        map.setZoom(minZoom)
+      if (zoom) {
+        map.setZoom(zoom)
       }
     }
   }
 
-  const setCenterCurrentPosition = async (map: google.maps.Map) => progressHandler(
-    async () => {
-      try {
-        const pos = await StationService.getCurrentPosition()
-        let latLng = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude
-        }
-        map.setCenter(latLng)
-        dispatch(action.setCurrentLocation(pos))
-      } catch (err) {
-        console.warn(err)
-        alert("現在位置を利用できません. ブラウザから位置情報へのアクセスを許可してください.")
-        const latLng = { lat: 35.681236, lng: 139.767125 }
-        map.setCenter(latLng)
+  const setCenterCurrentPosition = async (map: google.maps.Map) => {
+    try {
+      const pos = await StationService.getCurrentPosition()
+      let latLng = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude
       }
-    },
-    "現在位置を取得しています",
-  )
+      map.setCenter(latLng)
+      dispatch(action.setCurrentLocation(pos))
+    } catch (err) {
+      console.warn(err)
+      alert("現在位置を利用できません. ブラウザから位置情報へのアクセスを許可してください.")
+      const latLng = { lat: 35.681236, lng: 139.767125 }
+      map.setCenter(latLng)
+    }
+  }
 
   // use high-voronoi logic via custom hook
   const { run: runHighVoronoi, cancel: cancelHighVoronoi, highVoronoi, workerRunning } = useHighVoronoi(radarK)
@@ -217,10 +214,10 @@ export const useMapOperator = (
     dispatch(action.setNavStateIdle())
   }
 
-  const focusAt = (pos: LatLng) => {
+  const focusAt = (pos: LatLng, zoom?: number) => {
     if (!StationService.initialized) return
     if (isStationDialog(nav) && nav.data.showHighVoronoi) return
-    dispatch(action.requestShowSelectedPosition(pos))
+    dispatch(action.requestShowSelectedPosition({ pos: pos, zoom: zoom }))
   }
 
   const focusAtNearestStation = (pos: LatLng) => {
@@ -248,6 +245,20 @@ export const useMapOperator = (
     }
   }
 
+  const switchDataType = async (type: DataType) => {
+    // ダイアログで表示中のデータと齟齬が発生する場合があるので強制的に閉じる
+    closeDialog()
+    // データセット変更時に地図で表示している現在の範囲に合わせて更新＆読み込みする
+    const map = googleMapRef.current
+    if (map) {
+      progressHandler(async () => {
+        await StationService.setData(type)
+        dispatch(action.clearLoadedStation())
+        await updateBounds(map, true)
+      }, "駅データを切り替えています")
+    }
+  }
+
   return {
     highVoronoi,
     workerRunning,
@@ -265,5 +276,6 @@ export const useMapOperator = (
     focusAt,
     focusAtNearestStation,
     requestCurrentPosition,
+    switchDataType,
   }
 }

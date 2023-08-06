@@ -70,8 +70,8 @@ export function getBounds(list: Array<LatLng | Station>): RectBounds {
   };
 }
 
-export function parseQueryBoolean(str: string): boolean {
-  return ['true', 'yes', '1'].includes(str)
+export function parseQueryBoolean(value: any): boolean {
+  return typeof value === 'string' && ['true', 'yes', '1'].includes(value.trim().toLowerCase())
 }
 
 export function isInsideRect(position: LatLng | RectBounds, rect: RectBounds): boolean {

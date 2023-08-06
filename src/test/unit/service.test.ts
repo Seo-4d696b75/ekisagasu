@@ -40,7 +40,7 @@ describe("StationService", () => {
     test("単独", async () => {
       let result = new Object()
       let task = jest.fn(() => result)
-      let r = await service.runSync(tag, async () => {
+      let r = await service.runSync(tag, '', async () => {
         return task()
       })
       expect(r).toBe(result)
@@ -51,7 +51,7 @@ describe("StationService", () => {
       let task = jest.fn(() => {
         throw err
       })
-      await expect(service.runSync(tag, async () => {
+      await expect(service.runSync(tag, '', async () => {
         task()
       })).rejects.toThrowError(err)
       expect(task).toHaveBeenCalled()
@@ -67,8 +67,8 @@ describe("StationService", () => {
       let task2 = jest.fn(() => Promise.resolve(result2))
 
       // call runSync without async
-      let r1 = service.runSync(tag, task1)
-      let r2 = service.runSync(tag, task2)
+      let r1 = service.runSync(tag, '', task1)
+      let r2 = service.runSync(tag, '', task2)
 
       await Promise.all([
         Promise.resolve().then(async () => {
@@ -99,9 +99,9 @@ describe("StationService", () => {
       let task3 = jest.fn(() => Promise.resolve(result3))
 
       // call runSync without async
-      let r1 = service.runSync(tag, task1)
-      let r2 = service.runSync(tag, task2)
-      let r3 = service.runSync(tag, task3)
+      let r1 = service.runSync(tag, '', task1)
+      let r2 = service.runSync(tag, '', task2)
+      let r3 = service.runSync(tag, '', task3)
 
       await Promise.all([
         Promise.resolve().then(async () => {
@@ -134,8 +134,8 @@ describe("StationService", () => {
       let task2 = jest.fn(() => Promise.resolve(result2))
 
       // call runSync without async
-      let r1 = service.runSync(tag, task1)
-      let r2 = service.runSync(tag, task2)
+      let r1 = service.runSync(tag, '', task1)
+      let r2 = service.runSync(tag, '', task2)
 
       await Promise.all([
         Promise.resolve().then(async () => {

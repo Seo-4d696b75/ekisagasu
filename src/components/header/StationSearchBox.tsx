@@ -3,9 +3,9 @@ import axios from "axios"
 import { FC, useCallback, useMemo, useRef, useState } from "react"
 import Autosuggest from 'react-autosuggest'
 import { useSelector } from "react-redux"
+import Service from "../../script/StationService"
 import { PropsEvent } from "../../script/event"
 import { selectMapState } from "../../script/mapState"
-import Service from "../../script/StationService"
 import { useEventEffect, useRefCallback } from "../hooks"
 import "./StationSearchBox.css"
 
@@ -42,7 +42,8 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
   const inputRef = useRef<Autosuggest>(null)
   const lastRequestIdRef = useRef<NodeJS.Timeout | null>(null)
 
-  const { isDataExtra } = useSelector(selectMapState)
+  const { dataType } = useSelector(selectMapState)
+  const isDataExtra = dataType === 'extra'
 
   const onSuggestionsFetchRequested = useRefCallback((request: Autosuggest.SuggestionsFetchRequestedParams) => {
     const value = request.value

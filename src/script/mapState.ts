@@ -1,19 +1,43 @@
 import { NavState } from "../components/navState"
+import { DataType } from "./StationService"
 import { PropsEvent } from "./event"
+import { CurrentLocation, LatLng, MapCenter } from "./location"
 import { Station } from "./station"
-import { CurrentLocation, LatLng } from "./location"
 
 export interface GlobalMapState {
   radarK: number
-  watchCurrentLocation: boolean
   showStationPin: boolean
-  isDataExtra: boolean
-  isDataExtraChange: PropsEvent<boolean>
+  /**
+   * 表示する駅データの種類
+   */
+  dataType: DataType | null
+  /**
+   * GPSで現在地を監視・取得するフラグ
+   */
+  watchCurrentLocation: boolean
+  /**
+   * GPSで現在位置を取得するオプション
+   */
   isHighAccuracyLocation: boolean
+  /**
+   * GPSで取得した現在位置
+   */
   currentLocation: CurrentLocation | null
-  currentPositionUpdate: PropsEvent<LatLng>
+  /**
+   * MapのUI状態
+   */
   nav: NavState
-  mapFocusRequest: PropsEvent<LatLng>
+  /**
+   * Map中心位置の変更リクエスト
+   */
+  mapFocusRequest: PropsEvent<{pos: LatLng, zoom?: number}>
+  /**
+   * Map中心位置
+   */
+  mapCenter: MapCenter
+  /**
+   * Mpa上に表示する駅一覧
+   */
   stations: Station[]
 }
 

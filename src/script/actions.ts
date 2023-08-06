@@ -1,12 +1,12 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { StationSuggestion } from "../components/header/StationSearchBox";
-import { copyNavState, DialogType, IdleNav, LineDialogNav, LineDialogProps, NavState, NavType, RadarStation, StationDialogNav } from "../components/navState";
+import { DialogType, IdleNav, LineDialogNav, LineDialogProps, NavState, NavType, RadarStation, StationDialogNav, copyNavState } from "../components/navState";
+import StationService, { DataType } from "./StationService";
 import { Line } from "./line";
-import { CurrentLocation, LatLng } from "./location";
+import { CurrentLocation, LatLng, MapCenter } from "./location";
 import { GlobalMapState, RootState } from "./mapState";
 import { Station } from "./station";
-import StationService from "./StationService";
-import { measure, PolylineProps } from "./utils";
+import { PolylineProps, measure } from "./utils";
 
 export const setRadarK = createAsyncThunk(
   "map/setRadarK",
@@ -22,19 +22,13 @@ export const setRadarK = createAsyncThunk(
 
 export const setWatchCurrentLocation = createAsyncThunk(
   "map/setWatchCurrentLocation",
-  async (watch: boolean, thunkAPI) => {
-    let { mapState } = thunkAPI.getState() as RootState
+  async (watch: boolean) => {
     StationService.setWatchCurrentPosition(watch)
-    return {
-      watch: watch,
-      nav: (mapState.nav.type === NavType.IDLE && mapState.currentLocation) ?
-        await nextIdleNavStateWatchingLocation(mapState.currentLocation.position, mapState.radarK)
-        : null
-    }
+    return watch
   }
 )
 
-export const setDataExtra = createAction<boolean>(
+export const setDataType = createAction<DataType>(
   "map/setDataExtra",
 )
 
@@ -79,9 +73,9 @@ export const setCurrentLocation = createAsyncThunk(
 
 export const requestShowSelectedPosition = createAsyncThunk(
   "map/requestShowPosition",
-  async (pos: LatLng, thunkAPI) => {
+  async (target: { pos: LatLng, zoom?: number }, thunkAPI) => {
     const { mapState } = thunkAPI.getState() as RootState
-    let station = await StationService.updateLocation(pos, mapState.radarK, 0)
+    let station = await StationService.updateLocation(target.pos, mapState.radarK, 0)
     if (!station) throw Error("fail to find any station near requested position")
     let next: NavState = {
       type: NavType.DIALOG_SELECT_POS,
@@ -90,10 +84,10 @@ export const requestShowSelectedPosition = createAsyncThunk(
           type: DialogType.SELECT_POSITION,
           props: {
             station: station,
-            radarList: makeRadarList(pos, mapState.radarK),
+            radarList: makeRadarList(target.pos, mapState.radarK),
             prefecture: StationService.getPrefecture(station.prefecture),
-            position: pos,
-            dist: measure(station.position, pos),
+            position: target.pos,
+            dist: measure(station.position, target.pos),
             lines: station.lines.map(code => StationService.getLine(code)),
           },
         },
@@ -102,7 +96,7 @@ export const requestShowSelectedPosition = createAsyncThunk(
     }
     return {
       nav: next,
-      focus: pos,
+      focus: target,
     }
   }
 )
@@ -134,7 +128,10 @@ export const requestShowStationPromise = createAsyncThunk(
     }
     return {
       nav: next,
-      focus: s.position,
+      focus: {
+        pos: s.position,
+        zoom: undefined,
+      },
       station: s,
     }
   }
@@ -194,7 +191,11 @@ export const setNavStateIdle = createAsyncThunk(
   "map/setNavStateIdle",
   async (_, thunkAPI) => {
     const { mapState } = thunkAPI.getState() as RootState
-    return await nextIdleNavState(mapState)
+    return await nextIdleNavState(
+      mapState.watchCurrentLocation,
+      mapState.currentLocation,
+      mapState.radarK,
+    )
   }
 )
 
@@ -204,6 +205,10 @@ export const appendLoadedStation = createAction<Station[]>(
 
 export const clearLoadedStation = createAction<void>(
   "map/clearLoadedStation"
+)
+
+export const setMapCenter = createAction<MapCenter>(
+  "map/setMapCenter"
 )
 
 /**
@@ -245,11 +250,14 @@ function makeRadarList(pos: LatLng, k: number): RadarStation[] {
 }
 
 
-async function nextIdleNavState(state: GlobalMapState): Promise<IdleNav> {
-  const location = state.currentLocation
-  if (state.watchCurrentLocation && location) {
+async function nextIdleNavState(
+  watchCurrentLocation: boolean,
+  location: CurrentLocation | null,
+  k: number,
+): Promise<IdleNav> {
+  if (watchCurrentLocation && location) {
     const pos = location.position
-    return await nextIdleNavStateWatchingLocation(pos, state.radarK)
+    return await nextIdleNavStateWatchingLocation(pos, k)
   } else {
     return {
       type: NavType.IDLE,

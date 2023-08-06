@@ -1,18 +1,17 @@
 import { IMapProps } from "google-maps-react"
-import qs from "query-string"
 import { MutableRefObject, useRef } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { useLocation } from "react-router-dom"
+import { useSearchParams } from "react-router-dom"
+import StationService from "../../script/StationService"
 import * as action from "../../script/actions"
 import { Line } from "../../script/line"
 import { LatLng } from "../../script/location"
 import { selectMapState } from "../../script/mapState"
 import { Station } from "../../script/station"
-import StationService from "../../script/StationService"
 import { AppDispatch } from "../../script/store"
 import { parseQueryBoolean } from "../../script/utils"
 import { useRefCallback } from "../hooks"
-import { isStationDialog, NavType } from "../navState"
+import { NavType, isStationDialog } from "../navState"
 
 function getUIEvent(clickEvent: any): UIEvent {
   // googlemap onClick などのコールバック関数に渡させるイベントオブジェクトの中にあるUIEventを抽出
@@ -30,8 +29,9 @@ function getUIEvent(clickEvent: any): UIEvent {
  * @param operator 地図の操作方法を教えてね
  * @returns 
  */
-export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObject<google.maps.Map<Element> | null>, progressHandler: <T, >(task: Promise<T>, text: string) => Promise<T>, operator: {
-  focusAt: (pos: LatLng) => void
+export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObject<google.maps.Map<Element> | null>, operator: {
+  moveToPosition: (pos: LatLng | null, zoom?: number) => void
+  focusAt: (pos: LatLng, zoom?: number) => void
   focusAtNearestStation: (pos: LatLng) => void
   closeDialog: () => void
   updateBounds: (map: google.maps.Map) => void
@@ -44,7 +44,8 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
     nav,
   } = useSelector(selectMapState)
 
-  const location = useLocation()
+  const [query,] = useSearchParams()
+
   const dispatch = useDispatch<AppDispatch>()
 
   const uiEventRef = useRef<UIEvent | null>(null)
@@ -85,6 +86,15 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
     if (StationService.initialized && map) {
       operator.updateBounds(map)
     }
+    if (map) {
+      const pos = map.getCenter()
+      const payload = {
+        lat: pos.lat(),
+        lng: pos.lng(),
+        zoom: map.getZoom(),
+      }
+      dispatch(action.setMapCenter(payload))
+    }
   }
 
   /* 非同期関数内からコールバック関数を呼び出す場合、
@@ -109,48 +119,78 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       })
       dispatch(action.setNavStateIdle())
 
-      const s = await progressHandler(StationService.initialize(), "駅データを初期化中")
-      // parse query actions
-      const query = qs.parse(location.search)
-      if (typeof query.extra === 'string') {
-        if (parseQueryBoolean(query.extra)) {
-          dispatch(action.setDataExtra(true))
-        }
-      }
-      if (typeof query.line == 'string') {
-        var line = s.getLineById(query.line)
+      // extraデータの表示フラグ
+      const type = parseQueryBoolean(query.get('extra')) ? 'extra' : 'main'
+
+      // データの初期化
+      await StationService.initialize(type)
+      // GlobalMapStateに反映する
+      dispatch(action.setDataType(type))
+
+      // 路線情報の表示
+      const queryLine = query.get('line')
+      if (typeof queryLine === 'string') {
+        const line = StationService.getLineById(queryLine)
         if (line) {
           try {
-            let result = await dispatch(action.requestShowLine(line)).unwrap()
+            const result = await dispatch(action.requestShowLine(line)).unwrap()
+            // マップ中心位置を路線ポリラインに合わせる
             showPolylineRef(result.line)
             return
           } catch (e) {
-            console.warn("fail to show line details. query:", query.line, e)
+            console.warn("fail to show line details. query:", queryLine, e)
           }
         }
       }
-      if (typeof query.station == 'string') {
+
+      // 駅情報の表示
+      const queryStation = query.get('station')
+      if (typeof queryStation === 'string') {
         try {
-          let result = await dispatch(action.requestShowStationPromise(
-            progressHandler(s.getStationById(query.station), `駅情報(${query.station})を探しています`)
+          const result = await dispatch(action.requestShowStationPromise(
+            StationService.getStationById(queryStation)
           )).unwrap()
-          if (typeof query.voronoi == 'string') {
-            const str = query.voronoi.toLowerCase().trim()
-            if (parseQueryBoolean(str)) {
-              showRadarVoronoiRef(result.station)
-            }
+          if (parseQueryBoolean(query.get('voronoi'))) {
+            showRadarVoronoiRef(result.station)
           }
           return
         } catch (e) {
-          console.warn("fail to show station, query:", query.station, e)
+          console.warn("fail to show station, query:", queryStation, e)
         }
       }
-      if (typeof query.mylocation == 'string') {
-        if (parseQueryBoolean(query.mylocation)) {
-          dispatch(action.setWatchCurrentLocation(true))
+
+      // 指定位置への移動
+      const queryLat = query.get('lat')
+      const queryLng = query.get('lng')
+      if (typeof queryLat === 'string' && typeof queryLng === 'string') {
+        const lat = parseFloat(queryLat)
+        const lng = parseFloat(queryLng)
+        if (20 < lat && lat < 50 && 120 < lng && lng < 150) {
+          const zoom = (() => {
+            const queryZoom = query.get('zoom')
+            if (typeof queryZoom === 'string') {
+              const value = parseFloat(queryZoom)
+              if (10 <= value && value <= 20) {
+                return value
+              }
+            }
+          })()
+          if (parseQueryBoolean(query.get('dialog'))) {
+            operator.focusAt({ lat: lat, lng: lng }, zoom)
+          } else {
+            operator.moveToPosition({ lat: lat, lng: lng }, zoom)
+          }
+          return
         }
       }
-      // if no query, set map center current position
+
+      // 現在位置を監視・追尾するフラグ
+      if (parseQueryBoolean(query.get('mylocation'))) {
+        dispatch(action.setWatchCurrentLocation(true))
+        return
+      }
+
+      // 指定なしの場合は現在位置（取得可能なら）に合わせる
       operator.setCenterCurrentPosition(map)
 
     }

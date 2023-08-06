@@ -1,25 +1,23 @@
 import { Circle, GoogleAPI, GoogleApiWrapper, Map, Marker, Polygon, Polyline } from "google-maps-react"
 import { FC, useEffect, useMemo, useRef, useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
+import { useSelector } from "react-redux"
 import { CSSTransition } from "react-transition-group"
 import pin_location from "../../img/map_pin.svg"
 import pin_station from "../../img/map_pin_station.svg"
 import pin_station_extra from "../../img/map_pin_station_extra.svg"
-import { clearLoadedStation } from "../../script/actions"
-import { RootState } from "../../script/mapState"
 import StationService from "../../script/StationService"
-import { AppDispatch } from "../../script/store"
+import { RootState } from "../../script/mapState"
 import { CurrentPosDialog } from "../dialog/CurrentPosDialog"
 import { LineDialog } from "../dialog/LineDialog"
 import { StationDialog } from "../dialog/StationDialog"
 import { useEventEffect } from "../hooks"
-import { DialogType, isInfoDialog, isStationDialog, NavType } from "../navState"
-import { useCurrentPosDialog, useInfoDialog } from "./dialogHook"
+import { DialogType, NavType, isInfoDialog, isStationDialog } from "../navState"
 import "./Map.css"
+import { CurrentPosIcon } from "./PositionIcon"
 import { useMapCallback } from "./mapEventHook"
 import { useMapOperator } from "./mapHook"
-import { CurrentPosIcon } from "./PositionIcon"
 import { useProgressBanner } from "./progressHook"
+import { useQueryEffect } from "./queryHook"
 import { useServiceCallback } from "./serviceHook"
 
 const VORONOI_COLOR = [
@@ -45,9 +43,9 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     nav,
     mapFocusRequest: focus,
     currentLocation,
-    currentPositionUpdate,
     stations: voronoi,
-    isDataExtraChange,
+    dataType,
+    mapCenter,
   } = useSelector((state: RootState) => state.mapState)
 
   const [screenWide, setScreenWide] = useState(false)
@@ -66,7 +64,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   const {
     onGeolocationPositionChanged,
     onStationLoaded,
-    onDataLoadingStarted,
+    dataLoadingCallback,
   } = useServiceCallback(showProgressBannerWhile)
 
   // functions operating the map and its state variables
@@ -84,6 +82,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     focusAt,
     focusAtNearestStation,
     requestCurrentPosition,
+    switchDataType,
   } = useMapOperator(showProgressBannerWhile, googleMapRef, mapElementRef)
 
   // callbacks listening to map events
@@ -93,14 +92,15 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     onMapDragStart,
     onMapIdle,
     onMapReady,
-  } = useMapCallback(screenWide, googleMapRef, showProgressBannerWhile, {
+  } = useMapCallback(screenWide, googleMapRef, {
+    moveToPosition,
     focusAt,
     focusAtNearestStation,
     closeDialog,
     updateBounds,
     showPolyline,
     showRadarVoronoi,
-    setCenterCurrentPosition
+    setCenterCurrentPosition,
   })
 
   useEffect(() => {
@@ -109,7 +109,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     // register callbacks
     StationService.onGeolocationPositionChangedCallback = onGeolocationPositionChanged
     StationService.onStationLoadedCallback = onStationLoaded
-    StationService.dataLoadingCallback = onDataLoadingStarted
+    StationService.dataLoadingCallback = dataLoadingCallback
     const onScreenResized = () => {
       let wide = window.innerWidth >= 900
       setScreenWide(wide)
@@ -123,34 +123,31 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
       window.removeEventListener("resize", onScreenResized)
       googleMapRef.current = null
     }
-  }, [onGeolocationPositionChanged, onStationLoaded, onDataLoadingStarted])
+  }, [onGeolocationPositionChanged, onStationLoaded, dataLoadingCallback])
 
-  useEventEffect(focus, pos => {
-    moveToPosition(pos)
+  useEventEffect(focus, target => {
+    moveToPosition(target.pos, target.zoom)
   })
 
-  useEventEffect(currentPositionUpdate, pos => {
-    if (showCurrentPosition && nav.type === NavType.IDLE) {
-      moveToPosition(pos)
+  // 現在位置が変更されたらMap中心位置を変更する
+  const currentPos = currentLocation?.position
+  useEffect(() => {
+    if (currentPos && showCurrentPosition && nav.type === NavType.IDLE) {
+      moveToPosition(currentPos)
     }
-  })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPos?.lat, currentPos?.lng, showCurrentPosition, nav.type])
 
-  const dispatch = useDispatch<AppDispatch>()
-
-  useEventEffect(isDataExtraChange, isExtra => {
-    console.log("useEffect: data changed. extra:", isExtra)
-    // ダイアログで表示中のデータと齟齬が発生する場合があるので強制的に閉じる
-    closeDialog()
-    // データセット変更時に地図で表示している現在の範囲に合わせて更新＆読み込みする
-    const map = googleMapRef.current
-    if (map) {
-      showProgressBannerWhile(async () => {
-        await StationService.switchData(isExtra ? "extra" : "main")
-        dispatch(clearLoadedStation())
-        await updateBounds(map, true)
-      }, "駅データを切り替えています")
+  // データ種類が変わったら更新
+  useEffect(() => {
+    if (dataType && StationService.dataAPI?.type !== dataType) {
+      switchDataType(dataType)
     }
-  })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataType])
+
+  // App状態に応じてURLのクエリを動的に更新
+  useQueryEffect(nav, dataType, showCurrentPosition, mapCenter)
 
   /* ===============================
    render section below
@@ -322,10 +319,9 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     }
   }, [showHighVoronoi, highVoronoi, radarK])
 
-  // when dialog closed, dialog props will be undefined before animation completed.
-  // so cache dialog props using ref object.
-  const infoDialogProps = useInfoDialog(nav)
 
+  // ダイアログを閉じる時アニメーションが終了するまえに nav.data.dialog が undefined になる
+  // 動作が重くなる副作用もあるため閉じるアニメーションは無し
   const InfoDialog = (
     <div className="info-modal container">
       <CSSTransition
@@ -333,40 +329,42 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
         className="info-modal holder"
         timeout={300}>
         <div className="info-modal holder">
-          {(infoDialogProps?.type === DialogType.LINE) ? (
-            <LineDialog
-              info={infoDialogProps}
-              onStationSelected={showStation}
-              onClosed={closeDialog}
-              onShowPolyline={showPolyline} />
-          ) : (infoDialogProps?.type === DialogType.STATION ||
-            infoDialogProps?.type === DialogType.SELECT_POSITION) ? (
-            <StationDialog
-              info={infoDialogProps}
-              onStationSelected={showStation}
-              onLineSelected={showLine}
-              onClosed={closeDialog}
-              onShowVoronoi={showRadarVoronoi} />
-          ) : null}
+          {
+            !isInfoDialog(nav)
+              ? null
+              : nav.data.dialog.type === DialogType.LINE
+                ? <LineDialog
+                  info={nav.data.dialog}
+                  onStationSelected={showStation}
+                  onClosed={closeDialog}
+                  onShowPolyline={showPolyline} />
+                : <StationDialog
+                  info={nav.data.dialog}
+                  onStationSelected={showStation}
+                  onLineSelected={showLine}
+                  onClosed={closeDialog}
+                  onShowVoronoi={showRadarVoronoi} />
+          }
         </div>
       </CSSTransition>
     </div>
   )
 
-  const currentPosDialogProps = useCurrentPosDialog(nav)
   const currentPosDialog = (
-    <div className="info-modal container">
+    <div className="info-modal container current-position">
       <CSSTransition
-        in={showCurrentPosition}
+        in={nav.type === NavType.IDLE && !!nav.data.dialog}
         className="info-modal holder current-position"
         timeout={300}>
         <div className="info-modal holder current-position">
-          {currentPosDialogProps ? (
-            <CurrentPosDialog
-              info={currentPosDialogProps}
-              onStationSelected={showStation}
-              onLineSelected={showLine} />
-          ) : null}
+          {
+            nav.type === NavType.IDLE && nav.data.dialog
+              ? <CurrentPosDialog
+                info={nav.data.dialog}
+                onStationSelected={showStation}
+                onLineSelected={showLine} />
+              : null
+          }
         </div>
       </CSSTransition>
     </div>
