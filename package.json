@@ -75,6 +75,5 @@
     "ts-loader": "^8.0.15",
     "webpack-cli": "^4.5.0",
     "worker-loader": "^3.0.7"
-  },
-  "homepage": "https://seo-4d696b75.github.io/ekisagasu/"
+  }
 }

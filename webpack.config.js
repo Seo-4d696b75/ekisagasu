@@ -27,7 +27,7 @@ module.exports = {
   },
   output: {
     // This is required so workers are known where to be loaded from
-    publicPath: "/ekisagasu/",
+    publicPath: "/",
     filename: "bundle.js",
     path: `${__dirname}/docs`,
   },
