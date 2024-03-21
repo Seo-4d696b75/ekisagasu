@@ -35,7 +35,9 @@ export interface LineAPIResponse {
 
 export interface LineDetailAPIResponse extends LineAPIResponse {
   station_list: StationAPIResponse[]
-  polyline_list?: {
+}
+
+export interface PolylineAPIResponse {
     type: "FeatureCollection",
     features: {
       type: "Feature"
@@ -53,7 +55,6 @@ export interface LineDetailAPIResponse extends LineAPIResponse {
       south: number
       east: number
       west: number
-    }
   }
 }
 
@@ -69,11 +70,10 @@ export function parseLine(data: LineAPIResponse): Line {
   }
 }
 
-export function parseLineDetail(data: LineDetailAPIResponse): LineDetail {
-  const collection = data.polyline_list
+export function parseLineDetail(detail: LineDetailAPIResponse, geo: PolylineAPIResponse): LineDetail {
   return {
-    stations: data.station_list.map(e => parseStation(e)),
-    polylines: collection?.features?.map(e => {
+    stations: detail.station_list.map(e => parseStation(e)),
+    polylines: geo.features.map(e => {
       let points = e.geometry.coordinates.map(p => ({ lat: p[1], lng: p[0] }))
       return {
         points: points,
@@ -81,9 +81,9 @@ export function parseLineDetail(data: LineDetailAPIResponse): LineDetail {
         end: e.properties.end,
       }
     }) ?? [],
-    north: collection?.properties?.north ?? 90,
-    south: collection?.properties?.south ?? -90,
-    east: collection?.properties?.east ?? 180,
-    west: collection?.properties?.west ?? -180,
+    north: geo.properties?.north ?? 90,
+    south: geo.properties?.south ?? -90,
+    east: geo.properties?.east ?? 180,
+    west: geo.properties?.west ?? -180,
   }
 }

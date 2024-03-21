@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from "axios"
 import { StationKdTree, StationLeafNodeProps, StationNodeProps } from "./kdTree"
-import { Line, LineAPIResponse, LineDetailAPIResponse, parseLine, parseLineDetail } from "./line"
+import { Line, LineAPIResponse, LineDetailAPIResponse, PolylineAPIResponse, parseLine, parseLineDetail } from "./line"
 import { LatLng } from "./location"
 import { DelaunayStation, Station, StationAPIResponse, parseStation } from "./station"
 import { RectBounds } from "./utils"
@@ -166,7 +166,8 @@ export class StationService {
 
       // load prefecture
       this.prefecture.clear()
-      let prefectureRes = await this.get<string>(process.env.REACT_APP_PREFECTURE_URL)
+      if (!this.dataAPI) throw "data not initialized"
+      let prefectureRes = await this.get<string>(`${this.dataAPI.baseURL}/src/prefecture.csv`)
       this.prefecture = new Map()
       prefectureRes.data.split('\n').forEach((line: string) => {
         let cells = line.split(',')
@@ -195,7 +196,7 @@ export class StationService {
       }
       this.dataAPI = {
         type: type,
-        baseURL: type === "main" ? process.env.REACT_APP_DATA_BASE_URL : process.env.REACT_APP_DATA_EXTRA_BASE_URL,
+        baseURL: process.env.REACT_APP_DATA_BASE_URL,
       }
       this.stations.clear()
       this.lines.clear()
@@ -206,7 +207,7 @@ export class StationService {
         this.getStationImmediate.bind(this),
         this.getTreeSegment.bind(this),
       ).initialize("root")
-      let lineRes = await this.get<LineAPIResponse[]>(`${this.dataAPI.baseURL}/line.json`)
+      let lineRes = await this.get<LineAPIResponse[]>(`${this.dataAPI.baseURL}/out/${this.dataAPI.type}/line.json`)
       lineRes.data.forEach(d => {
         let line = parseLine(d)
         this.lines.set(line.code, line)
@@ -378,7 +379,8 @@ export class StationService {
     return this.runSync("getStationPoint", "図形情報を取得しています", async () => {
       let map = this.stationPoints
       if (!map) {
-        const res = await this.get<DelaunayStation[]>(`${this.dataAPI!.baseURL}/delaunay.json`)
+        if (!this.dataAPI) throw "data not initialized"
+        const res = await this.get<DelaunayStation[]>(`${this.dataAPI.baseURL}/out/${this.dataAPI.type}/delaunay.json`)
         map = new Map()
         this.stationPoints = map
         res.data.forEach(d => {
@@ -423,8 +425,12 @@ export class StationService {
         throw Error(`line not found id:${code}`)
       }
       if (line.detail) return line
-      let res = await this.get<LineDetailAPIResponse>(`${this.dataAPI!.baseURL}/line/${code}.json`)
-      let detail = parseLineDetail(res.data)
+      if (!this.dataAPI) throw "data not initialized"
+      let res = await Promise.all([
+        this.get<LineDetailAPIResponse>(`${this.dataAPI.baseURL}/out/${this.dataAPI.type}/line/${code}.json`),
+        this.get<PolylineAPIResponse>(`${this.dataAPI.baseURL}/out/${this.dataAPI.type}/polyline/${code}.json`),
+      ])
+      let detail = parseLineDetail(res[0].data, res[1].data)
       let next: Line = {
         ...line,
         detail: detail
@@ -442,7 +448,8 @@ export class StationService {
     const tag = `getTreeSegment-${name}`
     // be sure to avoid loading the same segment
     return this.runSync(tag, '駅情報を取得しています', async () => {
-      const res = await this.get<StationTreeSegmentResponse>(`${this.dataAPI!.baseURL}/tree/${name}.json`)
+      if (!this.dataAPI) throw "data not initialized"
+      const res = await this.get<StationTreeSegmentResponse>(`${this.dataAPI.baseURL}/out/${this.dataAPI.type}/tree/${name}.json`)
       console.log("tree-segment loaded", name)
       const data = res.data
       const list = data.node_list.map(e => {
