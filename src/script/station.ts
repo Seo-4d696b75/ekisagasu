@@ -16,7 +16,7 @@ export interface Station {
   prefecture: number
   lines: number[]
   voronoiPolygon: LatLng[]
-  impl: boolean
+  extra: boolean
 }
 
 export interface StationAPIResponse {
@@ -28,7 +28,7 @@ export interface StationAPIResponse {
   name_kana: string
   prefecture: number
   lines: number[]
-  impl?: boolean
+  extra?: boolean
   voronoi: {
     type: "Feature"
     geometry: {
@@ -73,6 +73,6 @@ export function parseStation(data: StationAPIResponse): Station {
     prefecture: data.prefecture,
     lines: data.lines,
     voronoiPolygon: voronoiList,
-    impl: data.impl === undefined || data.impl
+    extra: !!data.extra,
   }
 }

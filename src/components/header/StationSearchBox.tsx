@@ -19,7 +19,7 @@ interface ApiResponse {
   id: string
   name: string
   name_kana: string
-  impl: boolean
+  extra: boolean
   prefecture?: number
 }
 
@@ -152,7 +152,7 @@ const renderSuggestion = (suggestion: StationSuggestion, param: Autosuggest.Rend
         <span className="suggestion-prefecture">{Service.getPrefecture(suggestion.prefecture)}</span>
       ) : null}
       {suggestion.name}
-      {!suggestion.impl ? <span className="suggestion-extra">extra</span> : null}
+      {suggestion.extra ? <span className="suggestion-extra">extra</span> : null}
     </div>
   )
 }

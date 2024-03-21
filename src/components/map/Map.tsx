@@ -232,7 +232,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     <Marker
       visible={selectedStation !== undefined}
       position={selectedStation?.position}
-      icon={selectedStation?.impl ? pin_station : pin_station_extra} >
+      icon={selectedStation?.extra ? pin_station_extra : pin_station} >
     </Marker>
   ), [selectedStation])
 
@@ -243,7 +243,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
         <Marker
           key={i}
           position={s.position}
-          icon={s.impl ? pin_station : pin_station_extra}>
+          icon={s.extra ? pin_station_extra : pin_station}>
         </Marker>
       ))
     } else {
@@ -293,7 +293,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
         <Marker
           key={i}
           position={s.position}
-          icon={s.impl ? pin_station : pin_station_extra}>
+          icon={s.extra ? pin_station_extra : pin_station}>
         </Marker>
       ))
     } else {

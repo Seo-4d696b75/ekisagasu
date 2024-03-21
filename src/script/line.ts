@@ -9,7 +9,7 @@ export interface Line {
   nameKana: string
   stationSize: number
   color: string
-  impl: boolean
+  extra: boolean
 
   detail?: LineDetail
 }
@@ -30,7 +30,7 @@ export interface LineAPIResponse {
   name_kana: string
   station_size: number
   color?: string
-  impl?: boolean
+  extra?: boolean
 }
 
 export interface LineDetailAPIResponse extends LineAPIResponse {
@@ -38,23 +38,23 @@ export interface LineDetailAPIResponse extends LineAPIResponse {
 }
 
 export interface PolylineAPIResponse {
-    type: "FeatureCollection",
-    features: {
-      type: "Feature"
-      geometry: {
-        type: "LineString"
-        coordinates: number[][]
-      },
-      properties: {
-        start: string
-        end: string
-      }
-    }[]
+  type: "FeatureCollection",
+  features: {
+    type: "Feature"
+    geometry: {
+      type: "LineString"
+      coordinates: number[][]
+    },
     properties: {
-      north: number
-      south: number
-      east: number
-      west: number
+      start: string
+      end: string
+    }
+  }[]
+  properties: {
+    north: number
+    south: number
+    east: number
+    west: number
   }
 }
 
@@ -66,7 +66,7 @@ export function parseLine(data: LineAPIResponse): Line {
     nameKana: data.name_kana,
     stationSize: data.station_size,
     color: data.color ?? '#CCCCCC',
-    impl: data.impl === undefined || data.impl
+    extra: !!data.extra,
   }
 }
 
