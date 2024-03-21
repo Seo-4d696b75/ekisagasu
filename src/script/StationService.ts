@@ -2,6 +2,7 @@ import axios, { AxiosResponse } from "axios"
 import { StationKdTree, StationLeafNodeProps, StationNodeProps } from "./kdTree"
 import { Line, LineAPIResponse, LineDetailAPIResponse, PolylineAPIResponse, parseLine, parseLineDetail } from "./line"
 import { LatLng } from "./location"
+import { logger } from "./logger"
 import { DelaunayStation, Station, StationAPIResponse, parseStation } from "./station"
 import { RectBounds } from "./utils"
 
@@ -67,9 +68,9 @@ export class StationService {
   constructor() {
     // APIがコールドスタートのためWebApp起動時にウォームアップしておく
     this.get(`${process.env.REACT_APP_STATION_API_URL}/info`).then(info => {
-      console.log("station api data version:", info)
+      logger.i("station api data version:", info)
     }).catch(e => {
-      console.warn("fail to warm-up api by calling /api/info", e)
+      logger.w("fail to warm-up api by calling /api/info", e)
     })
   }
 
@@ -174,7 +175,7 @@ export class StationService {
           this.prefecture.set(parseInt(cells[0]), cells[1])
         }
       })
-      console.log('service initialized', this)
+      logger.d('service initialized', this)
       this.initialized = true
       return this
     })
@@ -228,11 +229,11 @@ export class StationService {
     this.onGeolocationPositionChangedCallback = undefined
     this.onStationLoadedCallback = undefined
     this.dataLoadingCallback = undefined
-    console.log('service released')
+    logger.d('service released')
   }
 
   setPositionHighAccuracy(value: boolean) {
-    console.log("position accuracy changed", value)
+    logger.d("position accuracy changed", value)
     this.positionOptions.enableHighAccuracy = value
     if (this.navigatorId) {
       this.setWatchCurrentPosition(false)
@@ -244,7 +245,7 @@ export class StationService {
     if (enable) {
       if (navigator.geolocation) {
         if (this.navigatorId) {
-          console.log("already set")
+          logger.d("already set")
           return
         }
         this.navigatorId = navigator.geolocation.watchPosition(
@@ -252,19 +253,19 @@ export class StationService {
             this.onGeolocationPositionChangedCallback?.(pos)
           },
           (err) => {
-            console.log(err)
+            logger.e(err)
           },
           this.positionOptions
         )
-        console.log("start watching position", this.positionOptions)
+        logger.d("start watching position", this.positionOptions)
       } else {
-        console.log("this device does not support Geolocation")
+        logger.w("this device does not support Geolocation")
       }
     } else {
       if (this.navigatorId) {
         navigator.geolocation.clearWatch(this.navigatorId)
         this.navigatorId = null
-        console.log("stop watching position")
+        logger.d("stop watching position")
       }
     }
   }
@@ -359,7 +360,7 @@ export class StationService {
         await this.updateLocation(pos, 1)
         return this.getStationImmediate(code)
       } catch (e) {
-        console.warn("api error. station code:", code, e)
+        logger.w("api error. station code:", code, e)
         return undefined
       }
     })
@@ -446,7 +447,7 @@ export class StationService {
     // be sure to avoid loading the same segment
     return this.runSync(tag, '駅情報を取得しています', async () => {
       const res = await this.get<StationTreeSegmentResponse>(`${this.dataAPI!.baseURL}/out/${this.dataAPI!.type}/tree/${name}.json`)
-      console.log("tree-segment loaded", name)
+      logger.d("tree-segment loaded", name)
       const data = res.data
       const list = data.node_list.map(e => {
         return isStationLeafNode(e) ? null : parseStation(e)

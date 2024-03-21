@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
 import VoronoiWorker from "worker-loader!./../../script/VoronoiWorker"; // eslint-disable-line import/no-webpack-loader-syntax
 import * as Rect from "../../diagram/rect";
-import { LatLng } from "../../script/location";
-import { Station } from "../../script/station";
 import StationService from "../../script/StationService";
+import { LatLng } from "../../script/location";
+import { logger } from "../../script/logger";
+import { Station } from "../../script/station";
 
 export interface HighVoronoiCallback {
   onStart?: (center: Station) => void
@@ -75,7 +76,7 @@ export const useHighVoronoi = (radarK: number) => {
         callback.onComplete?.(station, list)
         callbackRef.current = null
       } else if (data.type === "error") {
-        console.error('fail to calc voronoi', data.err)
+        logger.w('fail to calc voronoi', data.err)
         worker.terminate()
         workerRef.current = null
         setWorkerRunning(false)
@@ -111,7 +112,7 @@ export const useHighVoronoi = (radarK: number) => {
       worker.terminate()
       workerRef.current = null
       setWorkerRunning(false)
-      console.log("worker terminated")
+      logger.d("worker terminated")
       const callback = callbackRef.current
       callback?.onCancel?.()
       callbackRef.current = null

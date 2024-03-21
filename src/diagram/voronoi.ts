@@ -1,3 +1,4 @@
+import { logger } from "../script/logger"
 import * as line from "./line"
 import * as point from "./point"
 import * as triangle from "./triangle"
@@ -481,7 +482,7 @@ export class Voronoi<T extends Point> {
     const polygon = this.traverse(previousPolygon)
     polygon.forEach(node => node.onSolved(index))
 
-    console.log(`execute index:${index} time:${performance.now() - loopTime}`)
+    logger.d(`execute index:${index} time:${performance.now() - loopTime}`)
 
     if (this.callback) {
       this.callback(index, polygon)
@@ -493,7 +494,7 @@ export class Voronoi<T extends Point> {
       )
     } else {
       this.bisectors.forEach(b => b.release())
-      console.log(`execute done. time:${performance.now() - this.time}`)
+      logger.d(`execute done. time:${performance.now() - this.time}`)
 
       this.running = false
 

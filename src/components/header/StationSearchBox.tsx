@@ -5,6 +5,7 @@ import Autosuggest from 'react-autosuggest'
 import { useSelector } from "react-redux"
 import Service from "../../script/StationService"
 import { PropsEvent } from "../../script/event"
+import { logger } from "../../script/logger"
 import { selectMapState } from "../../script/mapState"
 import { useEventEffect, useRefCallback } from "../hooks"
 import "./StationSearchBox.css"
@@ -57,7 +58,7 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
     }
 
     lastRequestIdRef.current = setTimeout(() => {
-      console.log('fetch suggestions', value)
+      logger.d('fetch suggestions', value)
       setLoading(true)
       Promise.all([
         axios.get<ApiResponse[]>(`${process.env.REACT_APP_STATION_API_URL}/station/search?name=${value}&extra=${isDataExtra}`),
@@ -76,7 +77,7 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
         ])
         setLoading(false)
       }).catch(err => {
-        console.log(err)
+        logger.w('Failed to fetch suggestion', err)
         setLoading(false)
       })
     }, 500)

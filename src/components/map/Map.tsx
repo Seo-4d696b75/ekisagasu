@@ -6,6 +6,7 @@ import pin_location from "../../img/map_pin.svg"
 import pin_station from "../../img/map_pin_station.svg"
 import pin_station_extra from "../../img/map_pin_station_extra.svg"
 import StationService from "../../script/StationService"
+import { logger } from "../../script/logger"
 import { RootState } from "../../script/mapState"
 import { CurrentPosDialog } from "../dialog/CurrentPosDialog"
 import { LineDialog } from "../dialog/LineDialog"
@@ -105,7 +106,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
 
   useEffect(() => {
     // componentDidMount
-    console.log("componentDidMount")
+    logger.d("componentDidMount")
     // register callbacks
     StationService.onGeolocationPositionChangedCallback = onGeolocationPositionChanged
     StationService.onStationLoadedCallback = onStationLoaded
@@ -118,7 +119,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     onScreenResized()
     return () => {
       // componentWillUnmount
-      console.log("componentWillUnmount")
+      logger.d("componentWillUnmount")
       StationService.release()
       window.removeEventListener("resize", onScreenResized)
       googleMapRef.current = null

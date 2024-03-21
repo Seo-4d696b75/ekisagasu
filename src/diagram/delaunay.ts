@@ -1,12 +1,13 @@
-import { ObjectSet, ObjectMap } from "./utils"
-import { Point, Edge, Line, Circle, Triangle, Rect, DiagramError } from "./types"
-import * as point from "./point"
+import { logger } from "../script/logger";
+import * as circle from "./circle";
 import * as edge from "./edge";
-import * as triangle from "./triangle"
-import * as line from "./line"
-import * as circle from "./circle"
-import * as rect from "./rect"
+import * as line from "./line";
+import * as point from "./point";
 import { Builder as PolygonBuilder } from "./polygon";
+import * as rect from "./rect";
+import * as triangle from "./triangle";
+import { DiagramError, Edge, Point, Rect, Triangle } from "./types";
+import { ObjectMap, ObjectSet } from "./utils";
 
 
 class TrianglePair {
@@ -121,11 +122,11 @@ export class Delaunay {
     this.trianglePairs.put(ab, new TrianglePair(ab, container.c));
     this.trianglePairs.put(bc, new TrianglePair(bc, container.a));
     this.trianglePairs.put(ca, new TrianglePair(ca, container.b));
-    console.log("calculate delaunay diagram");
+    logger.d("calculate delaunay diagram");
     const progress = {
       percent: "0.00"
     };
-    console.log("progress", progress);
+    logger.d("progress", progress);
     var size = this.points.size();
     var cnt = 0;
     for (let point of this.points) {
@@ -174,7 +175,7 @@ export class Delaunay {
     }
 
 
-    console.log(`time: ${performance.now() - time}ms`);
+    logger.d(`time: ${performance.now() - time}ms`);
   }
 
   isOutSide(next: Triangle, container: Triangle, builder: PolygonBuilder): boolean {

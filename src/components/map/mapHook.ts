@@ -4,6 +4,7 @@ import StationService, { DataType } from "../../script/StationService"
 import * as action from "../../script/actions"
 import { Line } from "../../script/line"
 import { LatLng } from "../../script/location"
+import { logger } from "../../script/logger"
 import { selectMapState } from "../../script/mapState"
 import { Station } from "../../script/station"
 import { AppDispatch } from "../../script/store"
@@ -93,7 +94,7 @@ export const useMapOperator = (
       map.setCenter(latLng)
       dispatch(action.setCurrentLocation(pos))
     } catch (err) {
-      console.warn(err)
+      logger.w(err)
       alert("現在位置を利用できません. ブラウザから位置情報へのアクセスを許可してください.")
       const latLng = { lat: 35.681236, lng: 139.767125 }
       map.setCenter(latLng)
@@ -164,7 +165,7 @@ export const useMapOperator = (
       var props = getZoomProperty(bounds, rect.width, rect.height)
       map.panTo(props.center)
       map.setZoom(props.zoom)
-      console.log('zoom to', props, line)
+      logger.d('zoom to', props, line)
     }
   }
 
@@ -224,7 +225,7 @@ export const useMapOperator = (
     if (!StationService.initialized) return
     if (isStationDialog(nav) && nav.data.showHighVoronoi) return
     StationService.updateLocation(pos, radarK, 0).then(s => {
-      console.log("update location", s)
+      logger.d("update location", s)
       if (s) dispatch(action.requestShowStation(s))
     })
   }

@@ -1,4 +1,5 @@
 import { LatLng } from "./location"
+import { logger } from "./logger"
 
 export interface DelaunayStation {
   code: number
@@ -58,7 +59,7 @@ export function parseStation(data: StationAPIResponse): Station {
       })
       break
     default:
-      console.error("invalid voronoi geometry", geo)
+      logger.e("invalid voronoi geometry", geo)
   }
 
   return {
