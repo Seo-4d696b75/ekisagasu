@@ -1,7 +1,8 @@
 import axios, { AxiosResponse } from "axios"
 import { StationKdTree, StationLeafNodeProps, StationNodeProps } from "./kdTree"
-import { Line, LineAPIResponse, LineDetailAPIResponse, parseLine, parseLineDetail } from "./line"
+import { Line, LineAPIResponse, LineDetailAPIResponse, PolylineAPIResponse, parseLine, parseLineDetail } from "./line"
 import { LatLng } from "./location"
+import { logger } from "./logger"
 import { DelaunayStation, Station, StationAPIResponse, parseStation } from "./station"
 import { RectBounds } from "./utils"
 
@@ -67,9 +68,9 @@ export class StationService {
   constructor() {
     // APIがコールドスタートのためWebApp起動時にウォームアップしておく
     this.get(`${process.env.REACT_APP_STATION_API_URL}/info`).then(info => {
-      console.log("station api data version:", info)
+      logger.i("station api data version:", info)
     }).catch(e => {
-      console.warn("fail to warm-up api by calling /api/info", e)
+      logger.w("fail to warm-up api by calling /api/info", e)
     })
   }
 
@@ -166,7 +167,7 @@ export class StationService {
 
       // load prefecture
       this.prefecture.clear()
-      let prefectureRes = await this.get<string>(process.env.REACT_APP_PREFECTURE_URL)
+      let prefectureRes = await this.get<string>(`${this.dataAPI!.baseURL}/src/prefecture.csv`)
       this.prefecture = new Map()
       prefectureRes.data.split('\n').forEach((line: string) => {
         let cells = line.split(',')
@@ -174,7 +175,7 @@ export class StationService {
           this.prefecture.set(parseInt(cells[0]), cells[1])
         }
       })
-      console.log('service initialized', this)
+      logger.d('service initialized', this)
       this.initialized = true
       return this
     })
@@ -195,7 +196,7 @@ export class StationService {
       }
       this.dataAPI = {
         type: type,
-        baseURL: type === "main" ? process.env.REACT_APP_DATA_BASE_URL : process.env.REACT_APP_DATA_EXTRA_BASE_URL,
+        baseURL: process.env.REACT_APP_DATA_BASE_URL,
       }
       this.stations.clear()
       this.lines.clear()
@@ -206,7 +207,7 @@ export class StationService {
         this.getStationImmediate.bind(this),
         this.getTreeSegment.bind(this),
       ).initialize("root")
-      let lineRes = await this.get<LineAPIResponse[]>(`${this.dataAPI.baseURL}/line.json`)
+      let lineRes = await this.get<LineAPIResponse[]>(`${this.dataAPI.baseURL}/out/${this.dataAPI.type}/line.json`)
       lineRes.data.forEach(d => {
         let line = parseLine(d)
         this.lines.set(line.code, line)
@@ -228,11 +229,11 @@ export class StationService {
     this.onGeolocationPositionChangedCallback = undefined
     this.onStationLoadedCallback = undefined
     this.dataLoadingCallback = undefined
-    console.log('service released')
+    logger.d('service released')
   }
 
   setPositionHighAccuracy(value: boolean) {
-    console.log("position accuracy changed", value)
+    logger.d("position accuracy changed", value)
     this.positionOptions.enableHighAccuracy = value
     if (this.navigatorId) {
       this.setWatchCurrentPosition(false)
@@ -244,7 +245,7 @@ export class StationService {
     if (enable) {
       if (navigator.geolocation) {
         if (this.navigatorId) {
-          console.log("already set")
+          logger.d("already set")
           return
         }
         this.navigatorId = navigator.geolocation.watchPosition(
@@ -252,19 +253,19 @@ export class StationService {
             this.onGeolocationPositionChangedCallback?.(pos)
           },
           (err) => {
-            console.log(err)
+            logger.e(err)
           },
           this.positionOptions
         )
-        console.log("start watching position", this.positionOptions)
+        logger.d("start watching position", this.positionOptions)
       } else {
-        console.log("this device does not support Geolocation")
+        logger.w("this device does not support Geolocation")
       }
     } else {
       if (this.navigatorId) {
         navigator.geolocation.clearWatch(this.navigatorId)
         this.navigatorId = null
-        console.log("stop watching position")
+        logger.d("stop watching position")
       }
     }
   }
@@ -359,7 +360,7 @@ export class StationService {
         await this.updateLocation(pos, 1)
         return this.getStationImmediate(code)
       } catch (e) {
-        console.warn("api error. station code:", code, e)
+        logger.w("api error. station code:", code, e)
         return undefined
       }
     })
@@ -378,7 +379,7 @@ export class StationService {
     return this.runSync("getStationPoint", "図形情報を取得しています", async () => {
       let map = this.stationPoints
       if (!map) {
-        const res = await this.get<DelaunayStation[]>(`${this.dataAPI!.baseURL}/delaunay.json`)
+        const res = await this.get<DelaunayStation[]>(`${this.dataAPI!.baseURL}/out/${this.dataAPI!.type}/delaunay.json`)
         map = new Map()
         this.stationPoints = map
         res.data.forEach(d => {
@@ -423,8 +424,11 @@ export class StationService {
         throw Error(`line not found id:${code}`)
       }
       if (line.detail) return line
-      let res = await this.get<LineDetailAPIResponse>(`${this.dataAPI!.baseURL}/line/${code}.json`)
-      let detail = parseLineDetail(res.data)
+      let res = await Promise.all([
+        this.get<LineDetailAPIResponse>(`${this.dataAPI!.baseURL}/out/${this.dataAPI!.type}/line/${code}.json`),
+        this.get<PolylineAPIResponse>(`${this.dataAPI!.baseURL}/out/${this.dataAPI!.type}/polyline/${code}.json`),
+      ])
+      let detail = parseLineDetail(res[0].data, res[1].data)
       let next: Line = {
         ...line,
         detail: detail
@@ -442,8 +446,8 @@ export class StationService {
     const tag = `getTreeSegment-${name}`
     // be sure to avoid loading the same segment
     return this.runSync(tag, '駅情報を取得しています', async () => {
-      const res = await this.get<StationTreeSegmentResponse>(`${this.dataAPI!.baseURL}/tree/${name}.json`)
-      console.log("tree-segment loaded", name)
+      const res = await this.get<StationTreeSegmentResponse>(`${this.dataAPI!.baseURL}/out/${this.dataAPI!.type}/tree/${name}.json`)
+      logger.d("tree-segment loaded", name)
       const data = res.data
       const list = data.node_list.map(e => {
         return isStationLeafNode(e) ? null : parseStation(e)

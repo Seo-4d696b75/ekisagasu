@@ -1,4 +1,5 @@
 import { LatLng } from "./location"
+import { logger } from "./logger"
 import { Station } from "./station"
 import { isInsideRect, RectBounds } from "./utils"
 
@@ -66,11 +67,11 @@ export class StationNode {
     } else {
       this.station = tree.stationProvider(this.code)
       if (!this.station) {
-        console.error("station not found", this.code)
+        logger.e("station not found", this.code)
         return
       }
       if (!isInsideRect(this.station.position, this.region)) {
-        console.error("station pos out of bounds", this.station, this.region)
+        logger.e("station pos out of bounds", this.station, this.region)
         return
       }
       const x = (this.depth % 2 === 0)
@@ -186,7 +187,7 @@ export class StationKdTree {
       let rootNode = map.get(data.root)
       if (!rootNode) throw Error(`root node not found ${data.root}`)
       this.root = new StationNode(0, rootNode, this, map, region)
-      console.log("Kd-tree initialized.")
+      logger.d("Kd-tree initialized.")
       return this
     })
   }
@@ -215,7 +216,7 @@ export class StationKdTree {
     } else if (!this.root) {
       return Promise.reject('tree root not initialized')
     } else if (this.searchList.length >= k && this.lastPosition && this.lastPosition.lat === position.lat && this.lastPosition.lng === position.lng) {
-      console.log("update skip")
+      logger.d("update skip")
       return this.currentStation
     } else {
       const time = performance.now()
@@ -223,7 +224,7 @@ export class StationKdTree {
       await this.search(this.root, position, k, r)
       this.currentStation = this.searchList[0].station
       this.lastPosition = position
-      console.log(`update done. k=${k} r=${r} time=${performance.now() - time}ms size:${this.searchList.length}`)
+      logger.d(`update done. k=${k} r=${r} time=${performance.now() - time}ms size:${this.searchList.length}`)
       return this.currentStation
     }
   }
@@ -235,7 +236,7 @@ export class StationKdTree {
       const time = performance.now()
       const dst: Station[] = []
       await this.searchRect(this.root, rect, dst, max)
-      console.log(`update region done. time=${performance.now() - time}ms size:${dst.length}`)
+      logger.d(`update region done. time=${performance.now() - time}ms size:${dst.length}`)
       return dst
     }
   }
@@ -248,7 +249,7 @@ export class StationKdTree {
     if (!this.searchList) return []
     if (size < 0) size = 0
     if (size > this.searchList.length) {
-      console.warn("getNearStations size longer than actual", size, this.searchList.length)
+      logger.w("getNearStations size longer than actual", size, this.searchList.length)
       size = this.searchList.length
     }
     return this.searchList.slice(0, size).map(e => e.station)

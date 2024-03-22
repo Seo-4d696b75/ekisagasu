@@ -6,6 +6,7 @@ import StationService from "../../script/StationService"
 import * as action from "../../script/actions"
 import { Line } from "../../script/line"
 import { LatLng } from "../../script/location"
+import { logger } from "../../script/logger"
 import { selectMapState } from "../../script/mapState"
 import { Station } from "../../script/station"
 import { AppDispatch } from "../../script/store"
@@ -57,10 +58,10 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
     }
     const previous = uiEventRef.current
     if (previous && getUIEvent(event).timeStamp - previous.timeStamp > 300) {
-      console.log("map long clicked", pos, event)
+      logger.d("map long clicked", pos, event)
       operator.focusAt(pos)
     } else {
-      console.log("map clicked", event)
+      logger.d("map clicked", event)
       operator.focusAtNearestStation(pos)
     }
   }
@@ -70,7 +71,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       lat: event.latLng.lat(),
       lng: event.latLng.lng()
     }
-    //console.log("right click", pos, event)
+    logger.d("right click", pos, event)
     operator.focusAt(pos)
   }
 
@@ -105,7 +106,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
   const showRadarVoronoiRef = useRefCallback(operator.showRadarVoronoi)
 
   const onMapReady = async (props?: IMapProps, map?: google.maps.Map, event?: any) => {
-    console.log("map ready", props)
+    logger.i("map ready", props)
     if (map) {
 
       map.addListener("mousedown", event => uiEventRef.current = getUIEvent(event))
@@ -138,7 +139,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
             showPolylineRef(result.line)
             return
           } catch (e) {
-            console.warn("fail to show line details. query:", queryLine, e)
+            logger.w("fail to show line details. query:", queryLine, e)
           }
         }
       }
@@ -155,7 +156,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
           }
           return
         } catch (e) {
-          console.warn("fail to show station, query:", queryStation, e)
+          logger.w("fail to show station, query:", queryStation, e)
         }
       }
 

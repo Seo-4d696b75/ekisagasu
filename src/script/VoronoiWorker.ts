@@ -45,7 +45,6 @@ ctx.addEventListener('message', message => {
         type: 'complete',
       }))
     }).catch(e => {
-      console.log(e)
       ctx.postMessage(JSON.stringify({
         type: 'error',
         err: e.message

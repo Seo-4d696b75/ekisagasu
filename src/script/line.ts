@@ -9,7 +9,7 @@ export interface Line {
   nameKana: string
   stationSize: number
   color: string
-  impl: boolean
+  extra: boolean
 
   detail?: LineDetail
 }
@@ -30,30 +30,31 @@ export interface LineAPIResponse {
   name_kana: string
   station_size: number
   color?: string
-  impl?: boolean
+  extra?: boolean
 }
 
 export interface LineDetailAPIResponse extends LineAPIResponse {
   station_list: StationAPIResponse[]
-  polyline_list?: {
-    type: "FeatureCollection",
-    features: {
-      type: "Feature"
-      geometry: {
-        type: "LineString"
-        coordinates: number[][]
-      },
-      properties: {
-        start: string
-        end: string
-      }
-    }[]
+}
+
+export interface PolylineAPIResponse {
+  type: "FeatureCollection",
+  features: {
+    type: "Feature"
+    geometry: {
+      type: "LineString"
+      coordinates: number[][]
+    },
     properties: {
-      north: number
-      south: number
-      east: number
-      west: number
+      start: string
+      end: string
     }
+  }[]
+  properties: {
+    north: number
+    south: number
+    east: number
+    west: number
   }
 }
 
@@ -65,15 +66,14 @@ export function parseLine(data: LineAPIResponse): Line {
     nameKana: data.name_kana,
     stationSize: data.station_size,
     color: data.color ?? '#CCCCCC',
-    impl: data.impl === undefined || data.impl
+    extra: !!data.extra,
   }
 }
 
-export function parseLineDetail(data: LineDetailAPIResponse): LineDetail {
-  const collection = data.polyline_list
+export function parseLineDetail(detail: LineDetailAPIResponse, geo: PolylineAPIResponse): LineDetail {
   return {
-    stations: data.station_list.map(e => parseStation(e)),
-    polylines: collection?.features?.map(e => {
+    stations: detail.station_list.map(e => parseStation(e)),
+    polylines: geo.features.map(e => {
       let points = e.geometry.coordinates.map(p => ({ lat: p[1], lng: p[0] }))
       return {
         points: points,
@@ -81,9 +81,9 @@ export function parseLineDetail(data: LineDetailAPIResponse): LineDetail {
         end: e.properties.end,
       }
     }) ?? [],
-    north: collection?.properties?.north ?? 90,
-    south: collection?.properties?.south ?? -90,
-    east: collection?.properties?.east ?? 180,
-    west: collection?.properties?.west ?? -180,
+    north: geo.properties?.north ?? 90,
+    south: geo.properties?.south ?? -90,
+    east: geo.properties?.east ?? 180,
+    west: geo.properties?.west ?? -180,
   }
 }
