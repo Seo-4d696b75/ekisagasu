@@ -8,29 +8,29 @@ interface Logger {
 
 class DebugLogger implements Logger {
   d(message: any, ...params: any[]) {
-    console.log(message, params)
+    console.log(message, ...params)
   }
   i(message: any, ...params: any[]) {
-    console.info(message, params)
+    console.info(message, ...params)
   }
   w(message: any, ...params: any[]) {
-    console.warn(message, params)
+    console.warn(message, ...params)
   }
   e(message: any, ...params: any[]) {
-    console.error(message, params)
+    console.error(message, ...params)
   }
 }
 
 class ProdLogger implements Logger {
   d(message: any, ...params: any[]) { }
   i(message: any, ...params: any[]) {
-    console.info(message, params)
+    console.info(message, ...params)
   }
   w(message: any, ...params: any[]) {
-    console.warn(message, params)
+    console.warn(message, ...params)
   }
   e(message: any, ...params: any[]) {
-    console.error(message, params)
+    console.error(message, ...params)
   }
 }
 
