@@ -1,4 +1,5 @@
-import { Circle, GoogleAPI, GoogleApiWrapper, Map, Marker, Polygon, Polyline } from "google-maps-react"
+import { GoogleMap, useJsApiLoader } from "@react-google-maps/api"
+import { Circle, Marker, Polygon, Polyline } from "google-maps-react"
 import { FC, useEffect, useMemo, useRef, useState } from "react"
 import { useSelector } from "react-redux"
 import { CSSTransition } from "react-transition-group"
@@ -27,11 +28,8 @@ const VORONOI_COLOR = [
   "#FF0000",
   "#CCCC00"
 ]
-interface MapProps {
-  google: GoogleAPI
-}
 
-const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
+const MapContainer: FC = () => {
 
   /* ===============================
    get state variables and callbacks
@@ -371,52 +369,40 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     </div>
   )
 
-  return (
+  const { isLoaded: isMapLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: process.env.REACT_APP_API_KEY,
+    language: 'ja',
+  })
+
+  return isMapLoaded ? (
     <div className='Map-container' ref={mapElementRef}>
-
-      <Map
-        google={googleAPI}
+      <GoogleMap
+        mapContainerStyle={{ width: '100%', height: '100%' }}
         zoom={14}
-        initialCenter={{ lat: 35.681236, lng: 139.767125 }}
-        onReady={onMapReady}
-        onClick={onMapClicked}
-        onRightclick={onMapRightClicked}
-        onDragstart={onMapDragStart}
-        onIdle={onMapIdle}
-        fullscreenControl={false}
-        streetViewControl={false}
-        zoomControl={true}
-        gestureHandling={"greedy"}
-        mapTypeControl={true}
+        center={{ lat: 35.681236, lng: 139.767125 }}
+        options={{
+          mapTypeControlOptions: {
+            position: google.maps.ControlPosition.TOP_RIGHT,
+            style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
+          },
+          streetViewControl: false,
+          fullscreenControl: false,
+        }}
+        onLoad={(map) => {
 
+        }}
       >
-        {currentPositionMarker}
-        {currentHeadingMarker}
-        {currentAccuracyCircle}
-        {selectedStationMarker}
-        {selectedPosMarker}
-        {lineMarkers}
-        {linePolylines}
-        {voronoiPolygons}
-        {stationMarkers}
-        {highVoronoiPolygons}
-      </Map>
+      </GoogleMap>
 
       {InfoDialog}
       {currentPosDialog}
       {banner}
       <CurrentPosIcon onClick={requestCurrentPosition} />
     </div>
+  ) : (
+    <div className='Map-container'>Map is loading...</div>
   )
 }
 
-const LoadingContainer = (props: any) => (
-  <div className='Map-container'>Map is loading...</div>
-)
-
-export default GoogleApiWrapper({
-  apiKey: process.env.REACT_APP_API_KEY,
-  language: "ja",
-  LoadingContainer: LoadingContainer,
-})(MapContainer)
-
+export default MapContainer
