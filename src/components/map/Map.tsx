@@ -380,7 +380,6 @@ const MapContainer: FC = () => {
       <GoogleMap
         mapContainerStyle={{ width: '100%', height: '100%' }}
         zoom={14}
-        center={{ lat: 35.681236, lng: 139.767125 }}
         options={{
           mapTypeControlOptions: {
             position: google.maps.ControlPosition.TOP_RIGHT,
@@ -388,11 +387,9 @@ const MapContainer: FC = () => {
           },
           streetViewControl: false,
           fullscreenControl: false,
+          clickableIcons: false,
+          gestureHandling: 'greedy',
         }}
-        onLoad={(map) => {
-
-        }}
-      >
       </GoogleMap>
 
       {InfoDialog}

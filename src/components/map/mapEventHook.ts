@@ -112,13 +112,9 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
 
       map.addListener("mousedown", event => uiEventRef.current = getUIEvent(event))
       googleMapRef.current = map
-      map.setOptions({
-        // this option can not be set via props in google-maps-react
-        mapTypeControlOptions: {
-          position: google.maps.ControlPosition.TOP_RIGHT,
-          style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
-        }
-      })
+
+    map.setCenter({ lat: 35.681236, lng: 139.767125 })
+
       dispatch(action.setNavStateIdle())
 
       // extraデータの表示フラグ
