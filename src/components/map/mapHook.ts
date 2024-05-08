@@ -40,7 +40,7 @@ function shouldUpdateBounds(state: HideStationState, zoom: number, rect: RectBou
  */
 export const useMapOperator = (
   progressHandler: (task: Promise<void> | (() => Promise<void>), text: string) => any,
-  googleMapRef: MutableRefObject<google.maps.Map<Element> | null>,
+  googleMapRef: MutableRefObject<google.maps.Map | null>,
   mapElementRef: RefObject<HTMLElement>,
 ) => {
 
@@ -171,8 +171,8 @@ export const useMapOperator = (
 
   const updateBounds = useRefCallback(async (map: google.maps.Map, force?: boolean) => {
     const bounds = map.getBounds()
-    if (!bounds) return
     const zoom = map.getZoom()
+    if (!bounds || !zoom) return
     const ne = bounds.getNorthEast()
     const sw = bounds.getSouthWest()
     const rect = {

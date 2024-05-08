@@ -30,7 +30,7 @@ function getUIEvent(clickEvent: any): UIEvent {
  * @param operator 地図の操作方法を教えてね
  * @returns 
  */
-export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObject<google.maps.Map<Element> | null>, operator: {
+export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObject<google.maps.Map | null>, operator: {
   moveToPosition: (pos: LatLng | null, zoom?: number) => void
   focusAt: (pos: LatLng, zoom?: number) => void
   focusAtNearestStation: (pos: LatLng) => void
@@ -87,12 +87,13 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
     if (StationService.initialized && map) {
       operator.updateBounds(map)
     }
-    if (map) {
-      const pos = map.getCenter()
+    const pos = map?.getCenter()
+    const zoom = map?.getZoom()
+    if (pos && zoom) {
       const payload = {
         lat: pos.lat(),
         lng: pos.lng(),
-        zoom: map.getZoom(),
+        zoom: zoom,
       }
       dispatch(action.setMapCenter(payload))
     }
