@@ -1,5 +1,4 @@
-import { GoogleMap, useJsApiLoader } from "@react-google-maps/api"
-import { Circle, Marker, Polygon, Polyline } from "google-maps-react"
+import { Circle, GoogleMap, Marker, Polygon, Polyline, useJsApiLoader } from "@react-google-maps/api"
 import { FC, useEffect, useMemo, useRef, useState } from "react"
 import { useSelector } from "react-redux"
 import { CSSTransition } from "react-transition-group"
@@ -191,7 +190,7 @@ const MapContainer: FC = () => {
             strokeWeight: 1.2,
             scale: 0.3,
             rotation: currentHeading,
-          }}></Marker>
+          }} />
       )
     } else {
       return null
@@ -206,12 +205,14 @@ const MapContainer: FC = () => {
           visible={currentAccuracy > 10}
           center={currentPosition}
           radius={currentAccuracy}
-          strokeColor="#0088ff"
-          strokeOpacity={0.8}
-          strokeWeight={1}
-          fillColor="#0088ff"
-          fillOpacity={0.2}
-          clickable={false}></Circle>
+          options={{
+            strokeColor: '#0088ff',
+            strokeOpacity: 0.8,
+            strokeWeight: 1,
+            fillColor: '#0088ff',
+            fillOpacity: 0.2,
+            clickable: false,
+          }} />
       )
     } else {
       return null
@@ -219,22 +220,20 @@ const MapContainer: FC = () => {
   }, [showCurrentPosition, currentPosition, currentAccuracy])
 
   const selectedPos = nav.type === NavType.DIALOG_SELECT_POS ? nav.data.dialog.props.position : undefined
-  const selectedPosMarker = useMemo(() => (
+  const selectedPosMarker = useMemo(() => selectedPos ? (
     <Marker
-      visible={selectedPos !== undefined}
       position={selectedPos}
       icon={pin_location} >
     </Marker>
-  ), [selectedPos])
+  ) : null, [selectedPos])
 
   const selectedStation = isStationDialog(nav) ? nav.data.dialog.props.station : undefined
-  const selectedStationMarker = useMemo(() => (
+  const selectedStationMarker = useMemo(() => selectedStation ? (
     <Marker
-      visible={selectedStation !== undefined}
-      position={selectedStation?.position}
-      icon={selectedStation?.extra ? pin_station_extra : pin_station} >
+      position={selectedStation.position}
+      icon={selectedStation.extra ? pin_station_extra : pin_station} >
     </Marker>
-  ), [selectedStation])
+  ) : null, [selectedStation])
 
   const lineData = nav.type === NavType.DIALOG_LINE && nav.data.showPolyline ? nav.data : null
   const lineMarkers = useMemo(() => {
@@ -256,11 +255,12 @@ const MapContainer: FC = () => {
         <Polyline
           key={i}
           path={p.points}
-          strokeColor="#FF0000"
-          strokeWeight={2}
-          strokeOpacity={0.8}
-          fillOpacity={0.0}
-          clickable={false} />
+          options={{
+            strokeColor: '#FF0000',
+            strokeWeight: 2,
+            strokeOpacity: 0.8,
+            clickable: false,
+          }} />
       ))
     } else {
       return null
@@ -275,11 +275,13 @@ const MapContainer: FC = () => {
         <Polygon
           key={i}
           paths={s.voronoiPolygon}
-          strokeColor="#0000FF"
-          strokeWeight={1}
-          strokeOpacity={0.8}
-          fillOpacity={0.0}
-          clickable={false} />
+          options={{
+            strokeColor: '#0000FF',
+            strokeWeight: 1,
+            strokeOpacity: 0.8,
+            fillOpacity: 0,
+            clickable: false,
+          }} />
       ))
     } else {
       return null
@@ -308,11 +310,13 @@ const MapContainer: FC = () => {
         <Polygon
           key={i}
           paths={points}
-          strokeColor={(i === radarK - 1) ? "#000000" : VORONOI_COLOR[i % VORONOI_COLOR.length]}
-          strokeWeight={1}
-          strokeOpacity={0.8}
-          fillOpacity={0.0}
-          clickable={false} />
+          options={{
+            strokeColor: (i === radarK - 1) ? "#000000" : VORONOI_COLOR[i % VORONOI_COLOR.length],
+            strokeWeight: 1,
+            strokeOpacity: 0.8,
+            fillOpacity: 0,
+            clickable: false,
+          }} />
       ))
     } else {
       return null
@@ -398,6 +402,17 @@ const MapContainer: FC = () => {
         onIdle={onMapIdle}
         onMouseDown={onMouseDown}
       >
+        {currentPositionMarker}
+        {currentHeadingMarker}
+        {currentAccuracyCircle}
+        {selectedStationMarker}
+        {selectedPosMarker}
+        {lineMarkers}
+        {linePolylines}
+        {voronoiPolygons}
+        {stationMarkers}
+        {highVoronoiPolygons}
+
       </GoogleMap>
 
       {InfoDialog}
