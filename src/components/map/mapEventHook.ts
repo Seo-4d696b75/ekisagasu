@@ -1,4 +1,3 @@
-import { IMapProps } from "google-maps-react"
 import { MutableRefObject, useRef } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useSearchParams } from "react-router-dom"
@@ -49,14 +48,21 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
 
   const dispatch = useDispatch<AppDispatch>()
 
-  const uiEventRef = useRef<UIEvent | null>(null)
+  const onMouseDownEventRef = useRef<Event | null>(null)
 
-  const onMapClicked = (props?: IMapProps, map?: google.maps.Map, event?: any) => {
+  const onMouseDown = (event: google.maps.MapMouseEvent) => {
+    if (event.domEvent instanceof Event) {
+      onMouseDownEventRef.current = event.domEvent
+    }
+  }
+
+  const onMapClicked = (event: google.maps.MapMouseEvent) => {
+    if (!event.latLng) return
     const pos = {
       lat: event.latLng.lat(),
       lng: event.latLng.lng()
     }
-    const previous = uiEventRef.current
+    const previous = onMouseDownEventRef.current
     if (previous && getUIEvent(event).timeStamp - previous.timeStamp > 300) {
       logger.d("map long clicked", pos, event)
       operator.focusAt(pos)
@@ -66,7 +72,8 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
     }
   }
 
-  const onMapRightClicked = (props?: IMapProps, map?: google.maps.Map, event?: any) => {
+  const onMapRightClicked = (event: google.maps.MapMouseEvent) => {
+    if (!event.latLng) return
     const pos = {
       lat: event.latLng.lat(),
       lng: event.latLng.lng()
@@ -75,7 +82,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
     operator.focusAt(pos)
   }
 
-  const onMapDragStart = (props?: IMapProps, map?: google.maps.Map) => {
+  const onMapDragStart = () => {
     if (isStationDialog(nav) && nav.data.showHighVoronoi) return
     if (nav.type === NavType.DIALOG_LINE && nav.data.showPolyline) return
     if (!screenWide) {
@@ -83,7 +90,8 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
     }
   }
 
-  const onMapIdle = (props?: IMapProps, map?: google.maps.Map, event?: any) => {
+  const onMapIdle = () => {
+    const map = googleMapRef.current
     if (StationService.initialized && map) {
       operator.updateBounds(map)
     }
@@ -106,95 +114,90 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
   const showPolylineRef = useRefCallback(operator.showPolyline)
   const showRadarVoronoiRef = useRefCallback(operator.showRadarVoronoi)
 
-  const onMapReady = async (props?: IMapProps, map?: google.maps.Map, event?: any) => {
-    logger.i("map ready", props)
-    if (map) {
-
-      map.addListener("mousedown", event => uiEventRef.current = getUIEvent(event))
-      googleMapRef.current = map
+  const onMapReady = async (map: google.maps.Map) => {
+    googleMapRef.current = map
 
     map.setCenter({ lat: 35.681236, lng: 139.767125 })
 
-      dispatch(action.setNavStateIdle())
+    dispatch(action.setNavStateIdle())
 
-      // extraデータの表示フラグ
-      const type = parseQueryBoolean(query.get('extra')) ? 'extra' : 'main'
+    // extraデータの表示フラグ
+    const type = parseQueryBoolean(query.get('extra')) ? 'extra' : 'main'
 
-      // データの初期化
-      await StationService.initialize(type)
-      // GlobalMapStateに反映する
-      dispatch(action.setDataType(type))
+    // データの初期化
+    await StationService.initialize(type)
+    // GlobalMapStateに反映する
+    dispatch(action.setDataType(type))
 
-      // 路線情報の表示
-      const queryLine = query.get('line')
-      if (typeof queryLine === 'string') {
-        const line = StationService.getLineById(queryLine)
-        if (line) {
-          try {
-            const result = await dispatch(action.requestShowLine(line)).unwrap()
-            // マップ中心位置を路線ポリラインに合わせる
-            showPolylineRef(result.line)
-            return
-          } catch (e) {
-            logger.w("fail to show line details. query:", queryLine, e)
-          }
-        }
-      }
-
-      // 駅情報の表示
-      const queryStation = query.get('station')
-      if (typeof queryStation === 'string') {
+    // 路線情報の表示
+    const queryLine = query.get('line')
+    if (typeof queryLine === 'string') {
+      const line = StationService.getLineById(queryLine)
+      if (line) {
         try {
-          const result = await dispatch(action.requestShowStationPromise(
-            StationService.getStationById(queryStation)
-          )).unwrap()
-          if (parseQueryBoolean(query.get('voronoi'))) {
-            showRadarVoronoiRef(result.station)
-          }
+          const result = await dispatch(action.requestShowLine(line)).unwrap()
+          // マップ中心位置を路線ポリラインに合わせる
+          showPolylineRef(result.line)
           return
         } catch (e) {
-          logger.w("fail to show station, query:", queryStation, e)
+          logger.w("fail to show line details. query:", queryLine, e)
         }
       }
+    }
 
-      // 指定位置への移動
-      const queryLat = query.get('lat')
-      const queryLng = query.get('lng')
-      if (typeof queryLat === 'string' && typeof queryLng === 'string') {
-        const lat = parseFloat(queryLat)
-        const lng = parseFloat(queryLng)
-        if (20 < lat && lat < 50 && 120 < lng && lng < 150) {
-          const zoom = (() => {
-            const queryZoom = query.get('zoom')
-            if (typeof queryZoom === 'string') {
-              const value = parseFloat(queryZoom)
-              if (10 <= value && value <= 20) {
-                return value
-              }
+    // 駅情報の表示
+    const queryStation = query.get('station')
+    if (typeof queryStation === 'string') {
+      try {
+        const result = await dispatch(action.requestShowStationPromise(
+          StationService.getStationById(queryStation)
+        )).unwrap()
+        if (parseQueryBoolean(query.get('voronoi'))) {
+          showRadarVoronoiRef(result.station)
+        }
+        return
+      } catch (e) {
+        logger.w("fail to show station, query:", queryStation, e)
+      }
+    }
+
+    // 指定位置への移動
+    const queryLat = query.get('lat')
+    const queryLng = query.get('lng')
+    if (typeof queryLat === 'string' && typeof queryLng === 'string') {
+      const lat = parseFloat(queryLat)
+      const lng = parseFloat(queryLng)
+      if (20 < lat && lat < 50 && 120 < lng && lng < 150) {
+        const zoom = (() => {
+          const queryZoom = query.get('zoom')
+          if (typeof queryZoom === 'string') {
+            const value = parseFloat(queryZoom)
+            if (10 <= value && value <= 20) {
+              return value
             }
-          })()
-          if (parseQueryBoolean(query.get('dialog'))) {
-            operator.focusAt({ lat: lat, lng: lng }, zoom)
-          } else {
-            operator.moveToPosition({ lat: lat, lng: lng }, zoom)
           }
-          return
+        })()
+        if (parseQueryBoolean(query.get('dialog'))) {
+          operator.focusAt({ lat: lat, lng: lng }, zoom)
+        } else {
+          operator.moveToPosition({ lat: lat, lng: lng }, zoom)
         }
-      }
-
-      // 現在位置を監視・追尾するフラグ
-      if (parseQueryBoolean(query.get('mylocation'))) {
-        dispatch(action.setWatchCurrentLocation(true))
         return
       }
-
-      // 指定なしの場合は現在位置（取得可能なら）に合わせる
-      operator.setCenterCurrentPosition(map)
-
     }
+
+    // 現在位置を監視・追尾するフラグ
+    if (parseQueryBoolean(query.get('mylocation'))) {
+      dispatch(action.setWatchCurrentLocation(true))
+      return
+    }
+
+    // 指定なしの場合は現在位置（取得可能なら）に合わせる
+    operator.setCenterCurrentPosition(map)
   }
 
   return {
+    onMouseDown,
     onMapClicked,
     onMapRightClicked,
     onMapDragStart,

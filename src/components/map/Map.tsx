@@ -86,6 +86,7 @@ const MapContainer: FC = () => {
 
   // callbacks listening to map events
   const {
+    onMouseDown,
     onMapClicked,
     onMapRightClicked,
     onMapDragStart,
@@ -390,6 +391,13 @@ const MapContainer: FC = () => {
           clickableIcons: false,
           gestureHandling: 'greedy',
         }}
+        onLoad={onMapReady}
+        onClick={onMapClicked}
+        onRightClick={onMapRightClicked}
+        onDragStart={onMapDragStart}
+        onIdle={onMapIdle}
+        onMouseDown={onMouseDown}
+      >
       </GoogleMap>
 
       {InfoDialog}
