@@ -1,4 +1,4 @@
-import { Circle, GoogleAPI, GoogleApiWrapper, Map, Marker, Polygon, Polyline } from "google-maps-react"
+import { Circle, GoogleMap, Marker, Polygon, Polyline, useJsApiLoader } from "@react-google-maps/api"
 import { FC, useEffect, useMemo, useRef, useState } from "react"
 import { useSelector } from "react-redux"
 import { CSSTransition } from "react-transition-group"
@@ -27,11 +27,8 @@ const VORONOI_COLOR = [
   "#FF0000",
   "#CCCC00"
 ]
-interface MapProps {
-  google: GoogleAPI
-}
 
-const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
+const MapContainer: FC = () => {
 
   /* ===============================
    get state variables and callbacks
@@ -88,6 +85,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
 
   // callbacks listening to map events
   const {
+    onMouseDown,
     onMapClicked,
     onMapRightClicked,
     onMapDragStart,
@@ -192,7 +190,7 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
             strokeWeight: 1.2,
             scale: 0.3,
             rotation: currentHeading,
-          }}></Marker>
+          }} />
       )
     } else {
       return null
@@ -207,12 +205,14 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
           visible={currentAccuracy > 10}
           center={currentPosition}
           radius={currentAccuracy}
-          strokeColor="#0088ff"
-          strokeOpacity={0.8}
-          strokeWeight={1}
-          fillColor="#0088ff"
-          fillOpacity={0.2}
-          clickable={false}></Circle>
+          options={{
+            strokeColor: '#0088ff',
+            strokeOpacity: 0.8,
+            strokeWeight: 1,
+            fillColor: '#0088ff',
+            fillOpacity: 0.2,
+            clickable: false,
+          }} />
       )
     } else {
       return null
@@ -220,22 +220,20 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
   }, [showCurrentPosition, currentPosition, currentAccuracy])
 
   const selectedPos = nav.type === NavType.DIALOG_SELECT_POS ? nav.data.dialog.props.position : undefined
-  const selectedPosMarker = useMemo(() => (
+  const selectedPosMarker = useMemo(() => selectedPos ? (
     <Marker
-      visible={selectedPos !== undefined}
       position={selectedPos}
       icon={pin_location} >
     </Marker>
-  ), [selectedPos])
+  ) : null, [selectedPos])
 
   const selectedStation = isStationDialog(nav) ? nav.data.dialog.props.station : undefined
-  const selectedStationMarker = useMemo(() => (
+  const selectedStationMarker = useMemo(() => selectedStation ? (
     <Marker
-      visible={selectedStation !== undefined}
-      position={selectedStation?.position}
-      icon={selectedStation?.extra ? pin_station_extra : pin_station} >
+      position={selectedStation.position}
+      icon={selectedStation.extra ? pin_station_extra : pin_station} >
     </Marker>
-  ), [selectedStation])
+  ) : null, [selectedStation])
 
   const lineData = nav.type === NavType.DIALOG_LINE && nav.data.showPolyline ? nav.data : null
   const lineMarkers = useMemo(() => {
@@ -257,11 +255,12 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
         <Polyline
           key={i}
           path={p.points}
-          strokeColor="#FF0000"
-          strokeWeight={2}
-          strokeOpacity={0.8}
-          fillOpacity={0.0}
-          clickable={false} />
+          options={{
+            strokeColor: '#FF0000',
+            strokeWeight: 2,
+            strokeOpacity: 0.8,
+            clickable: false,
+          }} />
       ))
     } else {
       return null
@@ -276,11 +275,13 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
         <Polygon
           key={i}
           paths={s.voronoiPolygon}
-          strokeColor="#0000FF"
-          strokeWeight={1}
-          strokeOpacity={0.8}
-          fillOpacity={0.0}
-          clickable={false} />
+          options={{
+            strokeColor: '#0000FF',
+            strokeWeight: 1,
+            strokeOpacity: 0.8,
+            fillOpacity: 0,
+            clickable: false,
+          }} />
       ))
     } else {
       return null
@@ -309,11 +310,13 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
         <Polygon
           key={i}
           paths={points}
-          strokeColor={(i === radarK - 1) ? "#000000" : VORONOI_COLOR[i % VORONOI_COLOR.length]}
-          strokeWeight={1}
-          strokeOpacity={0.8}
-          fillOpacity={0.0}
-          clickable={false} />
+          options={{
+            strokeColor: (i === radarK - 1) ? "#000000" : VORONOI_COLOR[i % VORONOI_COLOR.length],
+            strokeWeight: 1,
+            strokeOpacity: 0.8,
+            fillOpacity: 0,
+            clickable: false,
+          }} />
       ))
     } else {
       return null
@@ -371,24 +374,33 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
     </div>
   )
 
-  return (
+  const { isLoaded: isMapLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: process.env.REACT_APP_API_KEY,
+    language: 'ja',
+  })
+
+  return isMapLoaded ? (
     <div className='Map-container' ref={mapElementRef}>
-
-      <Map
-        google={googleAPI}
+      <GoogleMap
+        mapContainerStyle={{ width: '100%', height: '100%' }}
         zoom={14}
-        initialCenter={{ lat: 35.681236, lng: 139.767125 }}
-        onReady={onMapReady}
+        options={{
+          mapTypeControlOptions: {
+            position: google.maps.ControlPosition.TOP_RIGHT,
+            style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
+          },
+          streetViewControl: false,
+          fullscreenControl: false,
+          clickableIcons: false,
+          gestureHandling: 'greedy',
+        }}
+        onLoad={onMapReady}
         onClick={onMapClicked}
-        onRightclick={onMapRightClicked}
-        onDragstart={onMapDragStart}
+        onRightClick={onMapRightClicked}
+        onDragStart={onMapDragStart}
         onIdle={onMapIdle}
-        fullscreenControl={false}
-        streetViewControl={false}
-        zoomControl={true}
-        gestureHandling={"greedy"}
-        mapTypeControl={true}
-
+        onMouseDown={onMouseDown}
       >
         {currentPositionMarker}
         {currentHeadingMarker}
@@ -400,23 +412,17 @@ const MapContainer: FC<MapProps> = ({ google: googleAPI }) => {
         {voronoiPolygons}
         {stationMarkers}
         {highVoronoiPolygons}
-      </Map>
+
+      </GoogleMap>
 
       {InfoDialog}
       {currentPosDialog}
       {banner}
       <CurrentPosIcon onClick={requestCurrentPosition} />
     </div>
+  ) : (
+    <div className='Map-container'>Map is loading...</div>
   )
 }
 
-const LoadingContainer = (props: any) => (
-  <div className='Map-container'>Map is loading...</div>
-)
-
-export default GoogleApiWrapper({
-  apiKey: process.env.REACT_APP_API_KEY,
-  language: "ja",
-  LoadingContainer: LoadingContainer,
-})(MapContainer)
-
+export default MapContainer
