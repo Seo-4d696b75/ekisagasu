@@ -112,8 +112,8 @@ export const requestShowSelectedPosition = createAsyncThunk(
   "map/requestShowPosition",
   async (target: LatLng & { zoom?: number }, thunkAPI) => {
     const { mapState } = thunkAPI.getState() as RootState
-    let station = await StationService.updateLocation(target, mapState.radarK, 0)
-    if (!station) throw Error("fail to find any station near requested position")
+    const list = await makeRadarList(target, mapState.radarK)
+    const station = list[0].station
     let next: NavState = {
       type: NavType.DIALOG_SELECT_POS,
       data: {
@@ -121,7 +121,7 @@ export const requestShowSelectedPosition = createAsyncThunk(
           type: DialogType.SELECT_POSITION,
           props: {
             station: station,
-            radarList: makeRadarList(target, mapState.radarK),
+            radarList: list,
             prefecture: StationService.getPrefecture(station.prefecture),
             position: target,
             dist: measure(station.position, target),
@@ -147,7 +147,6 @@ export const requestShowStationPromise = createAsyncThunk(
   async (stationProvider: Promise<Station>, thunkAPI) => {
     let s = await stationProvider
     const { mapState } = thunkAPI.getState() as RootState
-    await StationService.updateLocation(s.position, mapState.radarK, 0)
     let next: NavState = {
       type: NavType.DIALOG_STATION_POS,
       data: {
@@ -155,7 +154,7 @@ export const requestShowStationPromise = createAsyncThunk(
           type: DialogType.STATION,
           props: {
             station: s,
-            radarList: makeRadarList(s.position, mapState.radarK),
+            radarList: await makeRadarList(s.position, mapState.radarK),
             prefecture: StationService.getPrefecture(s.prefecture),
             lines: s.lines.map(code => StationService.getLine(code)),
           }
@@ -253,8 +252,7 @@ async function checkRadarK(k: number, state: GlobalMapState): Promise<NavState |
     case NavType.DIALOG_STATION_POS:
     case NavType.DIALOG_SELECT_POS: {
       let pos = current.data.dialog.props.station.position
-      await StationService.updateLocation(pos, k)
-      let list = makeRadarList(pos, k)
+      let list = await makeRadarList(pos, k)
       let next = copyNavState(current) as StationDialogNav
       next.data.dialog.props.radarList = list
       return next
@@ -271,15 +269,14 @@ async function checkRadarK(k: number, state: GlobalMapState): Promise<NavState |
   return null
 }
 
-function makeRadarList(pos: LatLng, k: number): RadarStation[] {
+async function makeRadarList(pos: LatLng, k: number): Promise<RadarStation[]> {
   if (!StationService.tree) throw Error("Kd-tree not initialized yet")
-  return StationService.tree.getNearStations(k).map(s => {
-    return {
-      station: s,
-      dist: measure(s.position, pos),
-      lines: s.lines.map(code => StationService.getLine(code).name).join(' '),
-    }
-  })
+  const nearest = await StationService.searchStations(pos, k)
+  return nearest.map(s => ({
+    station: s.station,
+    dist: measure(s.station.position, pos),
+    lines: s.station.lines.map(code => StationService.getLine(code).name).join(' '),
+  }))
 }
 
 
@@ -301,9 +298,8 @@ async function nextIdleNavState(
 }
 
 async function nextIdleNavStateWatchingLocation(pos: LatLng, k: number): Promise<IdleNav> {
-  const station = await StationService.updateLocation(pos, k)
-  if (!station) throw Error("fail to update idle state")
-  const list = makeRadarList(pos, k)
+  const list = await makeRadarList(pos, k)
+  const station = list[0].station
   return {
     type: NavType.IDLE,
     data: {

@@ -199,10 +199,6 @@ export class StationKdTree {
     }
   }
 
-  lastPosition: LatLng | null = null
-  currentStation: Station | null = null
-  searchList: NearStation[] = []
-
   /**
    * 指定した座標の近傍探索. k, r による探索範囲はorで解釈
    * @param {*} position 探索の中心
@@ -210,22 +206,17 @@ export class StationKdTree {
    * @param {*} r 中心からの距離r以内の近傍まで探索
    * @returns {Promise} resolve -> 近い順にソートされた近傍の配列
    */
-  async updateLocation(position: LatLng, k: number, r: number = 0): Promise<Station | null> {
+  async search(position: LatLng, k: number, r: number = 0): Promise<NearStation[]> {
     if (k < 1) {
       return Promise.reject(`invalid k:${k}`)
     } else if (!this.root) {
       return Promise.reject('tree root not initialized')
-    } else if (this.searchList.length >= k && this.lastPosition && this.lastPosition.lat === position.lat && this.lastPosition.lng === position.lng) {
-      logger.d("update skip")
-      return this.currentStation
     } else {
       const time = performance.now()
-      this.searchList = []
-      await this.search(this.root, position, k, r)
-      this.currentStation = this.searchList[0].station
-      this.lastPosition = position
-      logger.d(`update done. k=${k} r=${r} time=${performance.now() - time}ms size:${this.searchList.length}`)
-      return this.currentStation
+      const dst: NearStation[] = []
+      await this._search(this.root, position, k, r, dst)
+      logger.d(`update done. k=${k} r=${r} time=${performance.now() - time}ms size:${dst.length}`)
+      return dst
     }
   }
 
@@ -235,24 +226,10 @@ export class StationKdTree {
     } else {
       const time = performance.now()
       const dst: Station[] = []
-      await this.searchRect(this.root, rect, dst, max)
+      await this._searchRect(this.root, rect, dst, max)
       logger.d(`update region done. time=${performance.now() - time}ms size:${dst.length}`)
       return dst
     }
-  }
-
-  getAllNearStations(): Station[] {
-    return this.searchList.map(e => e.station)
-  }
-
-  getNearStations(size: number): Station[] {
-    if (!this.searchList) return []
-    if (size < 0) size = 0
-    if (size > this.searchList.length) {
-      logger.w("getNearStations size longer than actual", size, this.searchList.length)
-      size = this.searchList.length
-    }
-    return this.searchList.slice(0, size).map(e => e.station)
   }
 
   measure(p1: LatLng, p2: LatLng): number {
@@ -261,7 +238,7 @@ export class StationKdTree {
     return Math.sqrt(lat * lat + lng * lng)
   }
 
-  async search(node: StationNode, position: LatLng, k: number, r: number) {
+  async _search(node: StationNode, position: LatLng, k: number, r: number, dst: NearStation[]) {
     const div: { value: number, threshold: number } = {
       value: 0,
       threshold: 0
@@ -270,11 +247,11 @@ export class StationKdTree {
     const s = await node.get()
     const d = this.measure(position, s.position)
     let index = -1
-    let size = this.searchList.length
-    if (size > 0 && d < this.searchList[size - 1].dist) {
+    let size = dst.length
+    if (size > 0 && d < dst[size - 1].dist) {
       index = size - 1
       while (index > 0) {
-        if (d >= this.searchList[index - 1].dist) break
+        if (d >= dst[index - 1].dist) break
         index -= 1
       }
     } else if (size === 0) {
@@ -285,9 +262,9 @@ export class StationKdTree {
         dist: d,
         station: s
       }
-      this.searchList.splice(index, 0, e)
-      if (size >= k && this.searchList[size].dist > r) {
-        this.searchList.pop()
+      dst.splice(index, 0, e)
+      if (size >= k && dst[size].dist > r) {
+        dst.pop()
       }
     }
     let x = (node.depth % 2 === 0)
@@ -296,19 +273,18 @@ export class StationKdTree {
 
     let next = (div.value < div.threshold) ? node.left : node.right
     if (next) {
-      await this.search(next, position, k, r)
+      await this._search(next, position, k, r, dst)
     }
 
     let value = div.value
     let th = div.threshold
     next = (value < th) ? node.right : node.left
-    let list = this.searchList
-    if (next && Math.abs(value - th) < Math.max(list[list.length - 1].dist, r)) {
-      await this.search(next, position, k, r)
+    if (next && Math.abs(value - th) < Math.max(dst[dst.length - 1].dist, r)) {
+      await this._search(next, position, k, r, dst)
     }
   }
 
-  async searchRect(node: StationNode, rect: RectBounds, dst: Station[], max: number): Promise<void> {
+  async _searchRect(node: StationNode, rect: RectBounds, dst: Station[], max: number): Promise<void> {
     const station = await node.get()
     if (max && dst.length >= max) {
       return
@@ -322,14 +298,14 @@ export class StationKdTree {
       (node.depth % 2 === 0 && rect.west < station.position.lng)
       || (node.depth % 2 === 1 && rect.south < station.position.lat)
     )) {
-      tasks.push(this.searchRect(node.left, rect, dst, max))
+      tasks.push(this._searchRect(node.left, rect, dst, max))
     }
     // check right
     if (node.right && (
       (node.depth % 2 === 0 && station.position.lng < rect.east)
       || (node.depth % 2 === 1 && station.position.lat < rect.north)
     )) {
-      tasks.push(this.searchRect(node.right, rect, dst, max))
+      tasks.push(this._searchRect(node.right, rect, dst, max))
     }
     await Promise.all(tasks)
   }

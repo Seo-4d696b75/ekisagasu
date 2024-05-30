@@ -163,7 +163,7 @@ export const useMapOperator = (
         west: sw.lng() - margin,
         east: ne.lng() + margin,
       }
-      const result = await StationService.updateRect(search, VORONOI_SIZE_TH)
+      const result = await StationService.searchRect(search, VORONOI_SIZE_TH)
       setHideState({
         hide: zoom < ZOOM_TH && result.length >= VORONOI_SIZE_TH,
         zoom: zoom,
@@ -195,9 +195,10 @@ export const useMapOperator = (
   const focusAtNearestStation = (pos: LatLng) => {
     if (!StationService.initialized) return
     if (isStationDialog(nav) && nav.data.showHighVoronoi) return
-    StationService.updateLocation(pos, radarK, 0).then(s => {
-      logger.d("update location", s)
-      if (s) dispatch(action.requestShowStation(s))
+    StationService.searchStations(pos, 1).then(result => {
+      const s = result[0].station
+      logger.d("nearest station found", s)
+      dispatch(action.requestShowStation(s))
     })
   }
 

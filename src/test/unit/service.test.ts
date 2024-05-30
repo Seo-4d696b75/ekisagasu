@@ -160,11 +160,16 @@ describe("StationService", () => {
     let targetData: StationAPIResponse
     let target: Station
     const stations: Station[] = []
-    const mockService = jest.spyOn(service, "updateLocation").mockImplementation(async () => {
+    const mockService = jest.spyOn(service, "searchStations").mockImplementation(async () => {
       // update & load station data
       service.stations.set(target.code, target)
       service.stationsId.set(target.id, target)
-      return target
+      return [
+        {
+          station: target,
+          dist: 0,
+        }
+      ]
     })
     beforeAll(async () => {
       data = await import("./tree-root.json") as StationTreeSegmentResponse

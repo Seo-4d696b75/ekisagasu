@@ -186,8 +186,8 @@ describe("kdTree", () => {
     })
     test("case 1: station(9942506)", async () => {
       let s = stations.get(9942506)!
-      let result = await tree.updateLocation(s.position, 1, 0)
-      expect(result).toBe(s)
+      let result = await tree.search(s.position, 1, 0)
+      expect(result[0].station).toBe(s)
     })
     test("case 2: 東京", async () => {
       let pos = {
@@ -195,8 +195,8 @@ describe("kdTree", () => {
         lng: 139.76720604605077
       }
       let s = findNearestOrderN(pos)
-      let result = await tree.updateLocation(pos, 1, 0)
-      expect(result).toBe(s)
+      let result = await tree.search(pos, 1, 0)
+      expect(result[0].station).toBe(s)
     })
     test("case 3: 名古屋", async () => {
       let pos = {
@@ -204,8 +204,8 @@ describe("kdTree", () => {
         lng: 136.90724090952892,
       }
       let s = findNearestOrderN(pos)
-      let result = await tree.updateLocation(pos, 1, 0)
-      expect(result).toBe(s)
+      let result = await tree.search(pos, 1, 0)
+      expect(result[0].station).toBe(s)
     })
     test("case 4: 大阪", async () => {
       let pos = {
@@ -213,8 +213,8 @@ describe("kdTree", () => {
         lng: 135.50068730795476,
       }
       let s = findNearestOrderN(pos)
-      let result = await tree.updateLocation(pos, 1, 0)
-      expect(result).toBe(s)
+      let result = await tree.search(pos, 1, 0)
+      expect(result[0].station).toBe(s)
     })
   })
 

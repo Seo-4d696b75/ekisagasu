@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from "axios"
-import { StationKdTree, StationLeafNodeProps, StationNodeProps } from "./kdTree"
+import { NearStation, StationKdTree, StationLeafNodeProps, StationNodeProps } from "./kdTree"
 import { Line, LineAPIResponse, LineDetailAPIResponse, PolylineAPIResponse, parseLine, parseLineDetail } from "./line"
 import { LatLng } from "./location"
 import { logger } from "./logger"
@@ -290,23 +290,23 @@ export class StationService {
     })
   }
 
-  async updateLocation(position: LatLng, k: number, r: number = 0): Promise<Station | null> {
+  async searchStations(position: LatLng, k: number, r: number = 0): Promise<NearStation[]> {
     if (!k || k <= 0) k = 1
     if (!r || r < 0) r = 0
     /* kd-tree のNodeデータは探索中に必要になって初めて非同期でロードされるため、
-       同時に update_**を呼び出すと前回の探索が終了する前に別の探索が走る場合があり得る
+       同時に searchを呼び出すと前回の探索が終了する前に別の探索が走る場合があり得る
        KdTreeは内部状態を持つ実装のため挙動が予想できない
     */
     return this.runSync('update-location', '検索中', async () => {
       if (this.tree) {
-        return this.tree.updateLocation(position, k, r)
+        return this.tree.search(position, k, r)
       } else {
         throw Error("tree not initialized")
       }
     })
   }
 
-  async updateRect(rect: RectBounds, max: number = Number.MAX_SAFE_INTEGER): Promise<Station[]> {
+  async searchRect(rect: RectBounds, max: number = Number.MAX_SAFE_INTEGER): Promise<Station[]> {
     if (max < 1) max = 1
     return await this.runSync('update-location', '検索中', async () => {
       if (this.tree) {
@@ -333,7 +333,7 @@ export class StationService {
           lng: res.data.lng,
         }
         // this 'update' operation loads station data as a segment
-        await this.updateLocation(pos, 1)
+        await this.searchStations(pos, 1)
         return this.stationsId.get(id) as Station
       }
       const code = parseInt(id)
@@ -357,7 +357,7 @@ export class StationService {
           lng: res.data.lng,
         }
         // this 'update' operation loads station data as a segment
-        await this.updateLocation(pos, 1)
+        await this.searchStations(pos, 1)
         return this.getStationImmediate(code)
       } catch (e) {
         logger.w("api error. station code:", code, e)
