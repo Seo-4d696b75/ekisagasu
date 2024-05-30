@@ -47,8 +47,6 @@ export const useMapOperator = (
   const {
     radarK,
     nav,
-    watchCurrentLocation,
-    currentLocation,
   } = useSelector(selectMapState)
 
   const [hideState, setHideState] = useState<HideStationState>({
@@ -209,10 +207,10 @@ export const useMapOperator = (
     }
   })
 
-  const closeDialog = () => {
+  const closeDialog = async () => {
     // if any worker is running, terminate it
     cancelHighVoronoi()
-    dispatch(action.setNavStateIdle())
+    await dispatch(action.setNavStateIdle())
   }
 
   const focusAt = (pos: LatLng, zoom?: number) => {
@@ -231,19 +229,10 @@ export const useMapOperator = (
   }
 
   const requestCurrentPosition = () => {
-    dispatch(action.setNavStateIdle())
-    if (watchCurrentLocation) {
-      const pos = currentLocation?.position
-      if (pos) {
-        moveToPosition(pos, 14)
-      }
-    } else {
-      closeDialog()
-      progressHandler(async () => {
-        const pos = await StationService.getCurrentPosition()
-        moveToPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }, 14)
-      }, "現在位置を取得しています")
-    }
+    progressHandler(async () => {
+      await closeDialog()
+      await dispatch(action.requestCurrentLocation())
+    }, "現在位置を取得しています")
   }
 
   const switchDataType = async (type: DataType) => {

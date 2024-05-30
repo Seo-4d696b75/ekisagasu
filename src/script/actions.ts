@@ -3,7 +3,7 @@ import { StationSuggestion } from "../components/header/StationSearchBox";
 import { DialogType, IdleNav, LineDialogNav, LineDialogProps, NavState, NavType, RadarStation, StationDialogNav, copyNavState } from "../components/navState";
 import StationService, { DataType } from "./StationService";
 import { Line } from "./line";
-import { CurrentLocation, LatLng, MapCenter } from "./location";
+import { CurrentLocation, CurrentLocationState, LatLng, MapCenter } from "./location";
 import { GlobalMapState, RootState } from "./mapState";
 import { Station } from "./station";
 import { PolylineProps, measure } from "./utils";
@@ -22,9 +22,15 @@ export const setRadarK = createAsyncThunk(
 
 export const setWatchCurrentLocation = createAsyncThunk(
   "map/setWatchCurrentLocation",
-  async (watch: boolean) => {
+  async (watch: boolean): Promise<CurrentLocationState> => {
     StationService.setWatchCurrentPosition(watch)
-    return watch
+    return watch ? {
+      type: 'watch',
+      autoScroll: true,
+      location: null,
+    } : {
+      type: 'idle',
+    }
   }
 )
 
@@ -44,27 +50,51 @@ export const setHighAccuracyLocation = createAsyncThunk(
   }
 )
 
+export const requestCurrentLocation = createAsyncThunk(
+  "map/requestCurrentLocation",
+  async (_, thunkAPI): Promise<LatLng | undefined> => {
+    const { mapState } = thunkAPI.getState() as RootState
+    if (mapState.currentLocation.type === 'watch') {
+      return undefined
+    } else {
+      const pos = await StationService.getCurrentPosition()
+      return {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+      }
+    }
+  }
+)
+
 export const setCurrentLocation = createAsyncThunk(
   "map/setCurrentLocation",
-  async (loc: GeolocationPosition, thunkAPI) => {
+  async (loc: GeolocationPosition, thunkAPI): Promise<{
+    nav: NavState,
+    location: CurrentLocationState,
+  }> => {
     const { mapState } = thunkAPI.getState() as RootState
-    const coords = loc.coords
-    let location: CurrentLocation = {
-      position: { lat: coords.latitude, lng: coords.longitude },
-      accuracy: coords.accuracy,
-      heading: coords.heading
-    }
-    if (mapState.nav.type === NavType.IDLE && mapState.watchCurrentLocation) {
+    if (mapState.currentLocation.type === 'watch') {
+      const coords = loc.coords
+      let location: CurrentLocation = {
+        position: { lat: coords.latitude, lng: coords.longitude },
+        accuracy: coords.accuracy,
+        heading: coords.heading
+      }
       // 現在地のダイアログを更新
-      let next = await nextIdleNavStateWatchingLocation(location.position, mapState.radarK)
       return {
-        nav: next,
-        location: location,
+        nav: mapState.nav.type === NavType.IDLE
+          ? await nextIdleNavStateWatchingLocation(location.position, mapState.radarK)
+          : mapState.nav,
+        location: {
+          type: 'watch',
+          location: location,
+          autoScroll: mapState.currentLocation.autoScroll,
+        },
       }
     } else {
       return {
         nav: mapState.nav,
-        location: location,
+        location: mapState.currentLocation,
       }
     }
 
@@ -192,7 +222,6 @@ export const setNavStateIdle = createAsyncThunk(
   async (_, thunkAPI) => {
     const { mapState } = thunkAPI.getState() as RootState
     return await nextIdleNavState(
-      mapState.watchCurrentLocation,
       mapState.currentLocation,
       mapState.radarK,
     )
@@ -227,8 +256,8 @@ async function checkRadarK(k: number, state: GlobalMapState): Promise<NavState |
       return next
     }
     case NavType.IDLE: {
-      if (state.watchCurrentLocation && state.currentLocation) {
-        let pos = state.currentLocation.position
+      if (state.currentLocation.type === 'watch' && state.currentLocation.location) {
+        let pos = state.currentLocation.location.position
         return nextIdleNavStateWatchingLocation(pos, k)
       }
       return null
@@ -251,12 +280,11 @@ function makeRadarList(pos: LatLng, k: number): RadarStation[] {
 
 
 async function nextIdleNavState(
-  watchCurrentLocation: boolean,
-  location: CurrentLocation | null,
+  currentLocation: CurrentLocationState,
   k: number,
 ): Promise<IdleNav> {
-  if (watchCurrentLocation && location) {
-    const pos = location.position
+  if (currentLocation.type === 'watch' && currentLocation.location) {
+    const pos = currentLocation.location.position
     return await nextIdleNavStateWatchingLocation(pos, k)
   } else {
     return {

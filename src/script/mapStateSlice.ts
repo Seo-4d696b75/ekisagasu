@@ -1,16 +1,17 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { DialogType, isStationDialog, NavState, NavType } from "../components/navState"
-import { appendLoadedStation, clearLoadedStation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStationPromise, setCurrentLocation, setDataType, setHighAccuracyLocation, setMapCenter, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions"
+import { appendLoadedStation, clearLoadedStation, requestCurrentLocation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStationPromise, setCurrentLocation, setDataType, setHighAccuracyLocation, setMapCenter, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions"
 import { createEvent, createIdleEvent } from "./event"
 import { GlobalMapState } from "./mapState"
 
 const initUserSetting: GlobalMapState = {
   radarK: 18,
-  watchCurrentLocation: false,
   showStationPin: true,
   dataType: null,
   isHighAccuracyLocation: false,
-  currentLocation: null,
+  currentLocation: {
+    type: 'idle',
+  },
   nav: {
     type: NavType.LOADING,
     data: null
@@ -35,7 +36,7 @@ export const userSettingSlice = createSlice({
         state.nav = (action.payload.nav ?? state.nav)
       })
       .addCase(setWatchCurrentLocation.fulfilled, (state, action) => {
-        state.watchCurrentLocation = action.payload
+        state.currentLocation = action.payload
         state.nav = {
           type: NavType.IDLE,
           data: {
@@ -49,14 +50,32 @@ export const userSettingSlice = createSlice({
       .addCase(setHighAccuracyLocation.fulfilled, (state, action) => {
         state.isHighAccuracyLocation = action.payload
       })
+      .addCase(requestCurrentLocation.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.mapFocusRequest = createEvent({ pos: action.payload })
+        }
+        if (state.currentLocation.type === 'watch') {
+          state.currentLocation.autoScroll = true
+        }
+      })
       .addCase(setCurrentLocation.fulfilled, (state, action) => {
         const { nav, location } = action.payload
         state.nav = nav
         state.currentLocation = location
       })
+      .addCase(requestShowSelectedPosition.pending, (state, _) => {
+        if (state.currentLocation.type === 'watch') {
+          state.currentLocation.autoScroll = false
+        }
+      })
       .addCase(requestShowSelectedPosition.fulfilled, (state, action) => {
         state.nav = action.payload.nav
         state.mapFocusRequest = createEvent(action.payload.focus)
+      })
+      .addCase(requestShowStationPromise.pending, (state, _) => {
+        if (state.currentLocation.type === 'watch') {
+          state.currentLocation.autoScroll = false
+        }
       })
       .addCase(requestShowStationPromise.fulfilled, (state, action) => {
         state.nav = action.payload.nav
@@ -79,6 +98,9 @@ export const userSettingSlice = createSlice({
           }
         }
         state.nav = next
+        if (state.currentLocation.type === 'watch') {
+          state.currentLocation.autoScroll = false
+        }
       })
       .addCase(requestShowLine.fulfilled, (state, action) => {
         state.nav = action.payload.nav

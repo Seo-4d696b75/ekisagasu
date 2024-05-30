@@ -1,8 +1,18 @@
 
+export type CurrentLocationState = {
+  type: 'idle'
+} | {
+  type: 'watch',
+  /** 現在位置 */
+  location: CurrentLocation | null,
+  /** 現在位置の更新時に地図の中心位置を自動で移動するかフラグ */
+  autoScroll: boolean,
+}
+
 /**
  * Serializable location data similar with GeoLocationPosition
  */
- export interface CurrentLocation {
+export interface CurrentLocation {
   position: LatLng,
   accuracy: number
   heading: number | null

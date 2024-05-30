@@ -19,7 +19,7 @@ const radarMax = process.env.REACT_APP_RADAR_MAX
 const Header: FC = () => {
   const {
     radarK,
-    watchCurrentLocation,
+    currentLocation,
     showStationPin,
     isHighAccuracyLocation,
     dataType,
@@ -111,12 +111,12 @@ const Header: FC = () => {
         <input id="toggle-position"
           className="toggle-input"
           type='checkbox'
-          checked={watchCurrentLocation}
+          checked={currentLocation.type === 'watch'}
           onChange={(e) => dispatch(action.setWatchCurrentLocation(e.target.checked))} />
         <label htmlFor="toggle-position" className="toggle-label" />
       </div>
     </div>
-  ), [watchCurrentLocation, dispatch])
+  ), [currentLocation.type, dispatch])
 
   const settingAccuracySection = useMemo(() => (
     <div className="switch-container">

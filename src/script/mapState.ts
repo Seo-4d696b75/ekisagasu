@@ -1,7 +1,7 @@
 import { NavState } from "../components/navState"
 import { DataType } from "./StationService"
 import { PropsEvent } from "./event"
-import { CurrentLocation, LatLng, MapCenter } from "./location"
+import { CurrentLocationState, LatLng, MapCenter } from "./location"
 import { Station } from "./station"
 
 export interface GlobalMapState {
@@ -12,17 +12,13 @@ export interface GlobalMapState {
    */
   dataType: DataType | null
   /**
-   * GPSで現在地を監視・取得するフラグ
+   * GPSで現在地を監視する状態
    */
-  watchCurrentLocation: boolean
+  currentLocation: CurrentLocationState
   /**
    * GPSで現在位置を取得するオプション
    */
   isHighAccuracyLocation: boolean
-  /**
-   * GPSで取得した現在位置
-   */
-  currentLocation: CurrentLocation | null
   /**
    * MapのUI状態
    */

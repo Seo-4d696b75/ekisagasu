@@ -36,7 +36,6 @@ const MapContainer: FC = () => {
 
   const {
     radarK,
-    watchCurrentLocation: showCurrentPosition,
     showStationPin,
     nav,
     mapFocusRequest: focus,
@@ -129,13 +128,15 @@ const MapContainer: FC = () => {
   })
 
   // 現在位置が変更されたらMap中心位置を変更する
-  const currentPos = currentLocation?.position
+  const isWatchCurrentPosition = currentLocation.type === 'watch'
+  const currentPosition = isWatchCurrentPosition ? currentLocation.location?.position : undefined
+  const isAutoScroll = isWatchCurrentPosition ? currentLocation.autoScroll : false
   useEffect(() => {
-    if (currentPos && showCurrentPosition && nav.type === NavType.IDLE) {
-      moveToPosition(currentPos)
+    if (currentPosition && isWatchCurrentPosition && isAutoScroll) {
+      moveToPosition(currentPosition)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPos?.lat, currentPos?.lng, showCurrentPosition, nav.type])
+  }, [currentPosition?.lat, currentPosition?.lng, isWatchCurrentPosition, isAutoScroll])
 
   // データ種類が変わったら更新
   useEffect(() => {
@@ -146,15 +147,14 @@ const MapContainer: FC = () => {
   }, [dataType])
 
   // App状態に応じてURLのクエリを動的に更新
-  useQueryEffect(nav, dataType, showCurrentPosition, mapCenter)
+  useQueryEffect(nav, dataType, isWatchCurrentPosition, mapCenter)
 
   /* ===============================
    render section below
   ================================ */
 
-  const currentPosition = currentLocation?.position
   const currentPositionMarker = useMemo(() => {
-    if (showCurrentPosition && currentPosition) {
+    if (isWatchCurrentPosition && currentPosition) {
       return (
         <Marker
           position={currentPosition}
@@ -171,11 +171,11 @@ const MapContainer: FC = () => {
     } else {
       return null
     }
-  }, [showCurrentPosition, currentPosition])
+  }, [isWatchCurrentPosition, currentPosition])
 
-  const currentHeading = currentLocation?.heading
+  const currentHeading = isWatchCurrentPosition ? currentLocation.location?.heading : undefined
   const currentHeadingMarker = useMemo(() => {
-    if (showCurrentPosition && currentPosition && currentHeading && !isNaN(currentHeading)) {
+    if (isWatchCurrentPosition && currentPosition && currentHeading && !isNaN(currentHeading)) {
       return (
         <Marker
           position={currentPosition}
@@ -195,11 +195,11 @@ const MapContainer: FC = () => {
     } else {
       return null
     }
-  }, [showCurrentPosition, currentPosition, currentHeading])
+  }, [isWatchCurrentPosition, currentPosition, currentHeading])
 
-  const currentAccuracy = currentLocation?.accuracy
+  const currentAccuracy = isWatchCurrentPosition ? currentLocation.location?.accuracy : undefined
   const currentAccuracyCircle = useMemo(() => {
-    if (showCurrentPosition && currentPosition && currentAccuracy) {
+    if (isWatchCurrentPosition && currentPosition && currentAccuracy) {
       return (
         <Circle
           visible={currentAccuracy > 10}
@@ -217,7 +217,7 @@ const MapContainer: FC = () => {
     } else {
       return null
     }
-  }, [showCurrentPosition, currentPosition, currentAccuracy])
+  }, [isWatchCurrentPosition, currentPosition, currentAccuracy])
 
   const selectedPos = nav.type === NavType.DIALOG_SELECT_POS ? nav.data.dialog.props.position : undefined
   const selectedPosMarker = useMemo(() => selectedPos ? (
