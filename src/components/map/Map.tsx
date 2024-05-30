@@ -11,12 +11,11 @@ import { RootState } from "../../script/mapState"
 import { CurrentPosDialog } from "../dialog/CurrentPosDialog"
 import { LineDialog } from "../dialog/LineDialog"
 import { StationDialog } from "../dialog/StationDialog"
-import { useEventEffect } from "../hooks"
 import { DialogType, NavType, isInfoDialog, isStationDialog } from "../navState"
 import "./Map.css"
 import { CurrentPosIcon } from "./PositionIcon"
 import { useMapCallback } from "./mapEventHook"
-import { useMapOperator } from "./mapHook"
+import { useMapCenterChangeEffect, useMapOperator } from "./mapHook"
 import { useProgressBanner } from "./progressHook"
 import { useQueryEffect } from "./queryHook"
 import { useServiceCallback } from "./serviceHook"
@@ -38,7 +37,6 @@ const MapContainer: FC = () => {
     radarK,
     showStationPin,
     nav,
-    mapFocusRequest: focus,
     currentLocation,
     stations: voronoi,
     dataType,
@@ -70,7 +68,6 @@ const MapContainer: FC = () => {
     hideStationOnMap,
     showStation,
     showLine,
-    moveToPosition,
     setCenterCurrentPosition,
     showRadarVoronoi,
     showPolyline,
@@ -84,6 +81,7 @@ const MapContainer: FC = () => {
 
   // callbacks listening to map events
   const {
+    isDragRunning,
     onMouseDown,
     onMapClicked,
     onMapRightClicked,
@@ -91,7 +89,6 @@ const MapContainer: FC = () => {
     onMapIdle,
     onMapReady,
   } = useMapCallback(screenWide, googleMapRef, {
-    moveToPosition,
     focusAt,
     focusAtNearestStation,
     closeDialog,
@@ -123,20 +120,11 @@ const MapContainer: FC = () => {
     }
   }, [onGeolocationPositionChanged, onStationLoaded, dataLoadingCallback])
 
-  useEventEffect(focus, target => {
-    moveToPosition(target.pos, target.zoom)
-  })
+  // 現在位置・拡大率が変更されたらMap中心位置を変更する
+  useMapCenterChangeEffect(mapCenter, googleMapRef, isDragRunning)
 
-  // 現在位置が変更されたらMap中心位置を変更する
   const isWatchCurrentPosition = currentLocation.type === 'watch'
   const currentPosition = isWatchCurrentPosition ? currentLocation.location?.position : undefined
-  const isAutoScroll = isWatchCurrentPosition ? currentLocation.autoScroll : false
-  useEffect(() => {
-    if (currentPosition && isWatchCurrentPosition && isAutoScroll) {
-      moveToPosition(currentPosition)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPosition?.lat, currentPosition?.lng, isWatchCurrentPosition, isAutoScroll])
 
   // データ種類が変わったら更新
   useEffect(() => {

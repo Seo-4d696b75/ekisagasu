@@ -1,9 +1,9 @@
-import { MutableRefObject, RefObject, useState } from "react"
+import { MutableRefObject, RefObject, useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import StationService, { DataType } from "../../script/StationService"
 import * as action from "../../script/actions"
 import { Line } from "../../script/line"
-import { LatLng } from "../../script/location"
+import { LatLng, MapCenter } from "../../script/location"
 import { logger } from "../../script/logger"
 import { selectMapState } from "../../script/mapState"
 import { Station } from "../../script/station"
@@ -72,16 +72,7 @@ export const useMapOperator = (
     dispatch(action.requestShowLine(line))
   }
 
-  const moveToPosition = (pos: LatLng | null, zoom?: number) => {
-    const map = googleMapRef.current
-    if (pos && map) {
-      map.panTo(new google.maps.LatLng(pos.lat, pos.lng))
-      if (zoom) {
-        map.setZoom(zoom)
-      }
-    }
-  }
-
+  // TODO use requestCurrentPosition instead
   const setCenterCurrentPosition = async (map: google.maps.Map) => {
     try {
       const pos = await StationService.getCurrentPosition()
@@ -216,7 +207,7 @@ export const useMapOperator = (
   const focusAt = (pos: LatLng, zoom?: number) => {
     if (!StationService.initialized) return
     if (isStationDialog(nav) && nav.data.showHighVoronoi) return
-    dispatch(action.requestShowSelectedPosition({ pos: pos, zoom: zoom }))
+    dispatch(action.requestShowSelectedPosition({ ...pos, zoom: zoom }))
   }
 
   const focusAtNearestStation = (pos: LatLng) => {
@@ -257,7 +248,6 @@ export const useMapOperator = (
     mapElementRef,
     showStation,
     showLine,
-    moveToPosition,
     setCenterCurrentPosition,
     showRadarVoronoi,
     showPolyline,
@@ -268,4 +258,34 @@ export const useMapOperator = (
     requestCurrentPosition,
     switchDataType,
   }
+}
+
+export const useMapCenterChangeEffect = (
+  center: MapCenter,
+  googleMapRef: MutableRefObject<google.maps.Map | null>,
+  isDragRunning: boolean,
+) => {
+  const map = googleMapRef.current
+  const pos = map?.getCenter()
+  const lat = pos?.lat()
+  const lng = pos?.lng()
+  const zoom = map?.getZoom()
+  useEffect(() => {
+    if (!map || isDragRunning) return
+    if (center.lat !== lat || center.lng !== lng) {
+      map.panTo(new google.maps.LatLng(center.lat, center.lng))
+    }
+    if (center.zoom !== zoom) {
+      map.setZoom(center.zoom)
+    }
+  }, [
+    map,
+    isDragRunning,
+    center.lat,
+    center.lng,
+    center.zoom,
+    lat,
+    lng,
+    zoom,
+  ])
 }

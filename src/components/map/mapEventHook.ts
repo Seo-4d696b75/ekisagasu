@@ -1,4 +1,4 @@
-import { MutableRefObject, useRef } from "react"
+import { MutableRefObject, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useSearchParams } from "react-router-dom"
 import StationService from "../../script/StationService"
@@ -30,7 +30,6 @@ function getUIEvent(clickEvent: any): UIEvent {
  * @returns 
  */
 export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObject<google.maps.Map | null>, operator: {
-  moveToPosition: (pos: LatLng | null, zoom?: number) => void
   focusAt: (pos: LatLng, zoom?: number) => void
   focusAtNearestStation: (pos: LatLng) => void
   closeDialog: () => void
@@ -43,6 +42,8 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
   const {
     nav,
   } = useSelector(selectMapState)
+
+  const [isDragRunning, setDragRunning] = useState(false)
 
   const [query,] = useSearchParams()
 
@@ -83,6 +84,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
   }
 
   const onMapDragStart = () => {
+    setDragRunning(true)
     if (isStationDialog(nav) && nav.data.showHighVoronoi) return
     if (nav.type === NavType.DIALOG_LINE && nav.data.showPolyline) return
     if (!screenWide) {
@@ -92,9 +94,6 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
 
   const onMapIdle = () => {
     const map = googleMapRef.current
-    if (StationService.initialized && map) {
-      operator.updateBounds(map)
-    }
     const pos = map?.getCenter()
     const zoom = map?.getZoom()
     if (pos && zoom) {
@@ -105,6 +104,10 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       }
       dispatch(action.setMapCenter(payload))
     }
+    if (StationService.initialized && map) {
+      operator.updateBounds(map)
+    }
+    setDragRunning(false)
   }
 
   /* 非同期関数内からコールバック関数を呼び出す場合、
@@ -117,7 +120,12 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
   const onMapReady = async (map: google.maps.Map) => {
     googleMapRef.current = map
 
-    map.setCenter({ lat: 35.681236, lng: 139.767125 })
+    const initialCenter = {
+      lat: 35.681236,
+      lng: 139.767125,
+      zoom: 14,
+    }
+    dispatch(action.setMapCenter(initialCenter))
 
     dispatch(action.setNavStateIdle())
 
@@ -180,7 +188,12 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
         if (parseQueryBoolean(query.get('dialog'))) {
           operator.focusAt({ lat: lat, lng: lng }, zoom)
         } else {
-          operator.moveToPosition({ lat: lat, lng: lng }, zoom)
+          const center = {
+            lat: lat,
+            lng: lng,
+            zoom: zoom ?? 14,
+          }
+          dispatch(action.setMapCenter(center))
         }
         return
       }
@@ -197,6 +210,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
   }
 
   return {
+    isDragRunning,
     onMouseDown,
     onMapClicked,
     onMapRightClicked,

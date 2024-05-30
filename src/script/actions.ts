@@ -103,9 +103,9 @@ export const setCurrentLocation = createAsyncThunk(
 
 export const requestShowSelectedPosition = createAsyncThunk(
   "map/requestShowPosition",
-  async (target: { pos: LatLng, zoom?: number }, thunkAPI) => {
+  async (target: LatLng & { zoom?: number }, thunkAPI) => {
     const { mapState } = thunkAPI.getState() as RootState
-    let station = await StationService.updateLocation(target.pos, mapState.radarK, 0)
+    let station = await StationService.updateLocation(target, mapState.radarK, 0)
     if (!station) throw Error("fail to find any station near requested position")
     let next: NavState = {
       type: NavType.DIALOG_SELECT_POS,
@@ -114,10 +114,10 @@ export const requestShowSelectedPosition = createAsyncThunk(
           type: DialogType.SELECT_POSITION,
           props: {
             station: station,
-            radarList: makeRadarList(target.pos, mapState.radarK),
+            radarList: makeRadarList(target, mapState.radarK),
             prefecture: StationService.getPrefecture(station.prefecture),
-            position: target.pos,
-            dist: measure(station.position, target.pos),
+            position: target,
+            dist: measure(station.position, target),
             lines: station.lines.map(code => StationService.getLine(code)),
           },
         },
@@ -158,10 +158,7 @@ export const requestShowStationPromise = createAsyncThunk(
     }
     return {
       nav: next,
-      focus: {
-        pos: s.position,
-        zoom: undefined,
-      },
+      focus: s.position,
       station: s,
     }
   }

@@ -1,7 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { DialogType, isStationDialog, NavState, NavType } from "../components/navState"
 import { appendLoadedStation, clearLoadedStation, requestCurrentLocation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStationPromise, setCurrentLocation, setDataType, setHighAccuracyLocation, setMapCenter, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions"
-import { createEvent, createIdleEvent } from "./event"
 import { GlobalMapState } from "./mapState"
 
 const initUserSetting: GlobalMapState = {
@@ -21,7 +20,6 @@ const initUserSetting: GlobalMapState = {
     lng: 139.767125,
     zoom: 14,
   },
-  mapFocusRequest: createIdleEvent(),
   stations: [],
 }
 
@@ -52,7 +50,11 @@ export const userSettingSlice = createSlice({
       })
       .addCase(requestCurrentLocation.fulfilled, (state, action) => {
         if (action.payload) {
-          state.mapFocusRequest = createEvent({ pos: action.payload })
+          state.mapCenter = {
+            lat: action.payload.lat,
+            lng: action.payload.lng,
+            zoom: state.mapCenter.zoom,
+          }
         }
         if (state.currentLocation.type === 'watch') {
           state.currentLocation.autoScroll = true
@@ -70,7 +72,11 @@ export const userSettingSlice = createSlice({
       })
       .addCase(requestShowSelectedPosition.fulfilled, (state, action) => {
         state.nav = action.payload.nav
-        state.mapFocusRequest = createEvent(action.payload.focus)
+        state.mapCenter = {
+          lat: action.payload.focus.lat,
+          lng: action.payload.focus.lng,
+          zoom: action.payload.focus.zoom ?? state.mapCenter.zoom,
+        }
       })
       .addCase(requestShowStationPromise.pending, (state, _) => {
         if (state.currentLocation.type === 'watch') {
@@ -79,7 +85,10 @@ export const userSettingSlice = createSlice({
       })
       .addCase(requestShowStationPromise.fulfilled, (state, action) => {
         state.nav = action.payload.nav
-        state.mapFocusRequest = createEvent(action.payload.focus)
+        state.mapCenter = {
+          ...action.payload.focus,
+          zoom: state.mapCenter.zoom,
+        }
       })
       .addCase(requestShowLine.pending, (state, action) => {
         let line = action.meta.arg
