@@ -68,7 +68,6 @@ const MapContainer: FC = () => {
     hideStationOnMap,
     showStation,
     showLine,
-    setCenterCurrentPosition,
     showRadarVoronoi,
     showPolyline,
     updateBounds,
@@ -95,7 +94,7 @@ const MapContainer: FC = () => {
     updateBounds,
     showPolyline,
     showRadarVoronoi,
-    setCenterCurrentPosition,
+    requestCurrentPosition,
   })
 
   useEffect(() => {

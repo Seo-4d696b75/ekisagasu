@@ -36,7 +36,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
   updateBounds: (map: google.maps.Map) => void
   showPolyline: (line: Line) => void
   showRadarVoronoi: (station: Station) => void
-  setCenterCurrentPosition: (map: google.maps.Map) => Promise<void>
+  requestCurrentPosition: () => void
 }) => {
 
   const {
@@ -206,7 +206,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
     }
 
     // 指定なしの場合は現在位置（取得可能なら）に合わせる
-    operator.setCenterCurrentPosition(map)
+    operator.requestCurrentPosition()
   }
 
   return {

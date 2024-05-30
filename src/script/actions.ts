@@ -4,6 +4,7 @@ import { DialogType, IdleNav, LineDialogNav, LineDialogProps, NavState, NavType,
 import StationService, { DataType } from "./StationService";
 import { Line } from "./line";
 import { CurrentLocation, CurrentLocationState, LatLng, MapCenter } from "./location";
+import { logger } from "./logger";
 import { GlobalMapState, RootState } from "./mapState";
 import { Station } from "./station";
 import { PolylineProps, measure } from "./utils";
@@ -57,10 +58,16 @@ export const requestCurrentLocation = createAsyncThunk(
     if (mapState.currentLocation.type === 'watch') {
       return undefined
     } else {
-      const pos = await StationService.getCurrentPosition()
-      return {
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
+      try {
+        const pos = await StationService.getCurrentPosition()
+        return {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude
+        }
+      } catch (err) {
+        logger.w(err)
+        alert("現在位置を利用できません. ブラウザから位置情報へのアクセスを許可してください.")
+        return undefined
       }
     }
   }
