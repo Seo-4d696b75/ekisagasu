@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { Provider } from "react-redux";
 import { HashRouter, Route, Routes } from 'react-router-dom';
-import { store } from "../script/store";
+import { store } from "../redux/store";
 import './App.css';
 import Header from './header/Header';
 import Help from './help/Help';

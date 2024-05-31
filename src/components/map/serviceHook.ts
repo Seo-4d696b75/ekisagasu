@@ -1,7 +1,7 @@
 import { useDispatch } from "react-redux"
-import * as action from "../../script/actions"
+import * as action from "../../redux/actions"
+import { AppDispatch } from "../../redux/store"
 import { Station } from "../../script/station"
-import { AppDispatch } from "../../script/store"
 import { useRefCallback } from "../hooks"
 
 /**

@@ -1,5 +1,5 @@
-import { GlobalMapState } from "./mapState"
-import { StationDataState } from "./stationState"
+import { GlobalMapState } from "./map/state"
+import { StationDataState } from "./station/state"
 
 export interface RootState {
   mapState: GlobalMapState

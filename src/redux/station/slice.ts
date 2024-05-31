@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { appendLoadedStation, clearLoadedStation, setDataType } from "./actions";
-import { StationDataState } from "./stationState";
+import { appendLoadedStation, clearLoadedStation, setDataType } from "../actions";
+import { StationDataState } from "./state";
 
 const initState: StationDataState = {
   dataType: null,

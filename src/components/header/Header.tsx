@@ -6,10 +6,10 @@ import img_delete from "../../img/ic_delete.png";
 import img_help from "../../img/ic_help.png";
 import img_search from "../../img/ic_search.png";
 import img_setting from "../../img/ic_settings.png";
-import * as action from "../../script/actions";
+import * as action from "../../redux/actions";
+import { selectMapState, selectStationState } from "../../redux/selector";
 import { createEvent, createIdleEvent } from "../../script/event";
 import { logger } from "../../script/logger";
-import { selectMapState, selectStationState } from "../../script/rootState";
 import "./Header.css";
 import StationSearchBox, { StationSuggestion } from "./StationSearchBox";
 

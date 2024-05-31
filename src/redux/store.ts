@@ -1,6 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit"
-import mapStateReducer from "./mapStateSlice"
-import stationStateReducer from "./stationStateSlice"
+import mapStateReducer from "./map/slice"
+import stationStateReducer from "./station/slice"
 
 export const store = configureStore({
   reducer: {

@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit"
-import { DialogType, isStationDialog, NavState, NavType } from "../components/navState"
-import { requestCurrentLocation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStationPromise, setCurrentLocation, setHighAccuracyLocation, setMapCenter, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions"
-import { GlobalMapState } from "./mapState"
+import { DialogType, isStationDialog, NavState, NavType } from "../../components/navState"
+import { requestCurrentLocation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStationPromise, setCurrentLocation, setHighAccuracyLocation, setMapCenter, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "../actions"
+import { GlobalMapState } from "./state"
 
 const initUserSetting: GlobalMapState = {
   radarK: 18,
