@@ -9,7 +9,7 @@ import img_setting from "../../img/ic_settings.png";
 import * as action from "../../script/actions";
 import { createEvent, createIdleEvent } from "../../script/event";
 import { logger } from "../../script/logger";
-import { RootState } from "../../script/mapState";
+import { selectMapState, selectStationState } from "../../script/rootState";
 import "./Header.css";
 import StationSearchBox, { StationSuggestion } from "./StationSearchBox";
 
@@ -22,8 +22,11 @@ const Header: FC = () => {
     currentLocation,
     showStationPin,
     isHighAccuracyLocation,
+  } = useSelector(selectMapState)
+
+  const {
     dataType,
-  } = useSelector((state: RootState) => state.mapState)
+  } = useSelector(selectStationState)
 
   const dispatch = useDispatch()
 

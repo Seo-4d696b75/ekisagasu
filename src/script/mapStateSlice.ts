@@ -1,12 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { DialogType, isStationDialog, NavState, NavType } from "../components/navState"
-import { appendLoadedStation, clearLoadedStation, requestCurrentLocation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStationPromise, setCurrentLocation, setDataType, setHighAccuracyLocation, setMapCenter, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions"
+import { requestCurrentLocation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStationPromise, setCurrentLocation, setHighAccuracyLocation, setMapCenter, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "./actions"
 import { GlobalMapState } from "./mapState"
 
 const initUserSetting: GlobalMapState = {
   radarK: 18,
   showStationPin: true,
-  dataType: null,
   isHighAccuracyLocation: false,
   currentLocation: {
     type: 'idle',
@@ -20,7 +19,6 @@ const initUserSetting: GlobalMapState = {
     lng: 139.767125,
     zoom: 14,
   },
-  stations: [],
 }
 
 export const userSettingSlice = createSlice({
@@ -132,18 +130,6 @@ export const userSettingSlice = createSlice({
       })
       .addCase(setNavStateIdle.fulfilled, (state, action) => {
         state.nav = action.payload
-      })
-      .addCase(appendLoadedStation, (state, action) => {
-        state.stations = [
-          ...state.stations,
-          ...action.payload,
-        ]
-      })
-      .addCase(setDataType, (state, action) => {
-        state.dataType = action.payload
-      })
-      .addCase(clearLoadedStation, (state, action) => {
-        state.stations = []
       })
       .addCase(setMapCenter, (state, action) => {
         state.mapCenter = action.payload

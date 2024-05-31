@@ -5,9 +5,26 @@ import StationService, { DataType } from "./StationService";
 import { Line } from "./line";
 import { CurrentLocation, CurrentLocationState, LatLng, MapCenter } from "./location";
 import { logger } from "./logger";
-import { GlobalMapState, RootState } from "./mapState";
+import { GlobalMapState } from "./mapState";
+import { RootState } from "./rootState";
 import { Station } from "./station";
 import { PolylineProps, measure } from "./utils";
+
+// StationDataState
+
+export const setDataType = createAction<DataType>(
+  "station/setDataExtra",
+)
+
+export const appendLoadedStation = createAction<Station[]>(
+  "station/appendLoadedStation"
+)
+
+export const clearLoadedStation = createAction<void>(
+  "station/clearLoadedStation"
+)
+
+// GlobalMapState
 
 export const setRadarK = createAsyncThunk(
   "map/setRadarK",
@@ -33,10 +50,6 @@ export const setWatchCurrentLocation = createAsyncThunk(
       type: 'idle',
     }
   }
-)
-
-export const setDataType = createAction<DataType>(
-  "map/setDataExtra",
 )
 
 export const setShowStationPin = createAction<boolean>(
@@ -229,14 +242,6 @@ export const setNavStateIdle = createAsyncThunk(
       mapState.radarK,
     )
   }
-)
-
-export const appendLoadedStation = createAction<Station[]>(
-  "map/appendLoadedStation"
-)
-
-export const clearLoadedStation = createAction<void>(
-  "map/clearLoadedStation"
 )
 
 export const setMapCenter = createAction<MapCenter>(

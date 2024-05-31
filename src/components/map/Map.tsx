@@ -7,7 +7,7 @@ import pin_station from "../../img/map_pin_station.svg"
 import pin_station_extra from "../../img/map_pin_station_extra.svg"
 import StationService from "../../script/StationService"
 import { logger } from "../../script/logger"
-import { RootState } from "../../script/mapState"
+import { selectMapState, selectStationState } from "../../script/rootState"
 import { CurrentPosDialog } from "../dialog/CurrentPosDialog"
 import { LineDialog } from "../dialog/LineDialog"
 import { StationDialog } from "../dialog/StationDialog"
@@ -38,10 +38,13 @@ const MapContainer: FC = () => {
     showStationPin,
     nav,
     currentLocation,
-    stations: voronoi,
-    dataType,
     mapCenter,
-  } = useSelector((state: RootState) => state.mapState)
+  } = useSelector(selectMapState)
+
+  const {
+    dataType,
+    stations: voronoi,
+  } = useSelector(selectStationState)
 
   const [screenWide, setScreenWide] = useState(false)
 

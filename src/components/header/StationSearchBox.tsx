@@ -6,7 +6,7 @@ import { useSelector } from "react-redux"
 import Service from "../../script/StationService"
 import { PropsEvent } from "../../script/event"
 import { logger } from "../../script/logger"
-import { selectMapState } from "../../script/mapState"
+import { selectStationState } from "../../script/rootState"
 import { useEventEffect, useRefCallback } from "../hooks"
 import "./StationSearchBox.css"
 
@@ -43,7 +43,7 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
   const inputRef = useRef<Autosuggest>(null)
   const lastRequestIdRef = useRef<NodeJS.Timeout | null>(null)
 
-  const { dataType } = useSelector(selectMapState)
+  const { dataType } = useSelector(selectStationState)
   const isDataExtra = dataType === 'extra'
 
   const onSuggestionsFetchRequested = useRefCallback((request: Autosuggest.SuggestionsFetchRequestedParams) => {
