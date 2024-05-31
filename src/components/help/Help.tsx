@@ -110,16 +110,16 @@ export default class Help extends React.Component {
             <p>右下の<img className='icon header' width="24" alt="search" src={ic_mylocation}></img>アイコンをクリックすると現在位置に移動できます。「現在位置の表示」の設定がOnになっている場合は現在位置が変化すると自動で追従します。</p>
             <img className="image screen" alt="screen shot" src={screen_location} />
 
-            <br/>
+            <br />
 
             <details>
               <summary><b>位置情報の権限に関して</b></summary>
 
-            <p>初回の場合は位置情報の権限を求めるダイアログが表示されるので、「許可する」を選択してください（ブラウザによって権限ダイアログの外観は異なります）。</p>
-            <img className="image screen" alt="screen shot" src={screen_initial_permission} />
+              <p>初回の場合は位置情報の権限を求めるダイアログが表示されるので、「許可する」を選択してください（ブラウザによって権限ダイアログの外観は異なります）。</p>
+              <img className="image screen" alt="screen shot" src={screen_initial_permission} />
 
-            <p>現在位置を取得できず権限ダイアログも表示されない場合は、サイトの権限設定を確認してください。Chromeの場合はアドレスバーの現在位置アイコンから確認できます（ブラウザによって確認方法が異なります）。</p>
-            <img className="image screen" alt="screen shot" src={screen_manage_permission} />
+              <p>現在位置を取得できず権限ダイアログも表示されない場合は、サイトの権限設定を確認してください。Chromeの場合はアドレスバーの現在位置アイコンから確認できます（ブラウザによって確認方法が異なります）。</p>
+              <img className="image screen" alt="screen shot" src={screen_manage_permission} />
 
             </details>
 
@@ -152,6 +152,23 @@ export default class Help extends React.Component {
 
             <p>PC、スマホ、タブレットなど環境の違いによる画面サイズに合わせ表示デザインを最適化します。</p>
             <img className="image screen" alt="screen shot" src={screen_device} />
+
+
+            <h2>プライバシーポリシー</h2>
+
+            <p>アプリが収集するデータの一覧は以下のとおりです</p>
+
+            <h3>⭕ アクセスの統計データ</h3>
+            <p>当サイトではGoogleアナリティクスを使用しています。データの収集のためにCookieを使用していますが、データは匿名で収集されており個人を特定するものではありません。この機能はCookieを無効にすることで収集を拒否することが出来ますので、お使いのブラウザの設定をご確認ください。詳細は<a href="https://marketingplatform.google.com/about/analytics/terms/jp/" target="_blank" rel="noreferrer">Googleアナリティクスサービス利用規約</a>と<a href="https://policies.google.com/technologies/ads?hl=ja" target="_blank" rel="noreferrer">Googleポリシーと規約</a>をご覧ください。</p>
+
+            <h3>⭕ APIリクエストに付随するデータ</h3>
+            <p>検索機能で入力した検索キーワードなど、駅・路線情報を取得するAPIリクエストに含まれるデータがサーバー側でログとして保存されますが、個人を特定する内容は含まれません。保存されたデータは開発目的でのみ使用し、一定期間経過後に自動で削除されます。</p>
+
+            <h3>❌ アプリ上の操作記録</h3>
+            <p>ユーザーがアプリで閲覧した駅・路線の情報は送信されません。</p>
+
+            <h3>❌ 現在位置に関する情報</h3>
+            <p>現在位置の緯度経度・精度・向き・速度など一切の情報は送信されません。</p>
 
 
             <h2>開発環境</h2>
