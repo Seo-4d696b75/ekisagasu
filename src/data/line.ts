@@ -1,4 +1,4 @@
-import { PolylineProps } from "./diagram"
+import { PolylineProps } from "../model/diagram"
 import { parseStation, Station, StationAPIResponse } from "./station"
 
 export interface Line {

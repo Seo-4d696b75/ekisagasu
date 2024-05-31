@@ -1,15 +1,15 @@
 import { MutableRefObject, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useSearchParams } from "react-router-dom"
+import repository from "../../data/StationRepository"
+import { Line } from "../../data/line"
+import { Station } from "../../data/station"
+import { LatLng } from "../../location/location"
 import { logger } from "../../logger"
 import { parseQueryBoolean } from "../../model/diagram"
-import { Line } from "../../model/line"
-import { LatLng } from "../../model/location"
-import { Station } from "../../model/station"
 import * as action from "../../redux/actions"
-import { selectMapState } from "../../redux/selector"
+import { selectMapState, selectStationState } from "../../redux/selector"
 import { AppDispatch } from "../../redux/store"
-import StationService from "../../script/StationService"
 import { useRefCallback } from "../hooks"
 import { NavType, isStationDialog } from "../navState"
 
@@ -42,6 +42,12 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
   const {
     nav,
   } = useSelector(selectMapState)
+
+  const {
+    dataType
+  } = useSelector(selectStationState)
+
+  const dataInitialized = dataType !== null
 
   const [isDragRunning, setDragRunning] = useState(false)
 
@@ -104,7 +110,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       }
       dispatch(action.setMapCenter(payload))
     }
-    if (StationService.initialized && map) {
+    if (dataInitialized && map) {
       operator.updateBounds(map)
     }
     setDragRunning(false)
@@ -133,14 +139,14 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
     const type = parseQueryBoolean(query.get('extra')) ? 'extra' : 'main'
 
     // データの初期化
-    await StationService.initialize(type)
+    await repository.initialize(type)
     // GlobalMapStateに反映する
     dispatch(action.setDataType(type))
 
     // 路線情報の表示
     const queryLine = query.get('line')
     if (typeof queryLine === 'string') {
-      const line = StationService.getLineById(queryLine)
+      const line = repository.getLineById(queryLine)
       if (line) {
         try {
           const result = await dispatch(action.requestShowLine(line)).unwrap()
@@ -158,7 +164,7 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
     if (typeof queryStation === 'string') {
       try {
         const result = await dispatch(action.requestShowStationPromise(
-          StationService.getStationById(queryStation)
+          repository.getStationById(queryStation)
         )).unwrap()
         if (parseQueryBoolean(query.get('voronoi'))) {
           showRadarVoronoiRef(result.station)

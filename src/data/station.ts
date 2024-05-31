@@ -1,5 +1,5 @@
+import { LatLng } from "../location/location"
 import { logger } from "../logger"
-import { LatLng } from "./location"
 
 export interface DelaunayStation {
   code: number
@@ -19,6 +19,8 @@ export interface Station {
   voronoiPolygon: LatLng[]
   extra: boolean
 }
+
+
 
 export interface StationAPIResponse {
   code: number

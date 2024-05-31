@@ -1,5 +1,5 @@
 import { NavState } from "../../components/navState"
-import { CurrentLocationState, MapCenter } from "../../model/location"
+import { CurrentLocationState, MapCenter } from "../../location/location"
 
 export interface GlobalMapState {
   radarK: number

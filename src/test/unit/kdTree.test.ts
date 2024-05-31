@@ -1,22 +1,24 @@
-import { LatLng } from "../../model/location"
-import { Station, StationAPIResponse, parseStation } from "../../model/station"
-import { StationTreeSegmentResponse, isStationLeafNode } from "../../script/StationService"
-import { NodeProps, StationKdTree, StationLeafNodeProps, StationNode, StationTreeSegmentProps } from "../../search/kdTree"
+import { NormalNodeResponse, StationNodeImpl, StationNodeResponse, StationTreeSegmentResponse, initRoot, isSegmentNode } from "../../data/node"
+import { Station, StationAPIResponse, parseStation } from "../../data/station"
+import { LatLng } from "../../location/location"
+import { StationKdTree } from "../../search/kdTree"
+
 
 describe("kdTree", () => {
   let data: StationTreeSegmentResponse
   const stations = new Map<number, Station>()
-  const nodes = new Map<number, NodeProps>()
+  const nodes = new Map<number, StationNodeResponse>()
   const nodeMapSpy = jest.spyOn(nodes, "get")
+
   const stationProviderImpl = (code: number): Station => {
     return stations.get(code)!!
   }
-  const treeSegmentProviderImpl = async (name: string): Promise<StationTreeSegmentProps> => {
+  const treeSegmentProviderImpl = async (name: string): Promise<StationTreeSegmentResponse> => {
     if (name === "root") {
       return data
     }
     // 単一頂点を返す
-    let node = data.node_list.find(d => d?.segment === name) as StationLeafNodeProps
+    let node = data.node_list.find(d => d?.segment === name) as NormalNodeResponse
     return {
       name: name,
       root: node.code,
@@ -30,8 +32,11 @@ describe("kdTree", () => {
       ]
     }
   }
-  const stationProvider = jest.fn(stationProviderImpl)
-  const treeSegmentProvider = jest.fn(treeSegmentProviderImpl)
+  const provider = {
+    station: jest.fn(stationProviderImpl),
+    segment: jest.fn(treeSegmentProviderImpl),
+  }
+
   beforeAll(async () => {
     // load data
     data = await import("./tree-root.json") as StationTreeSegmentResponse
@@ -44,16 +49,16 @@ describe("kdTree", () => {
   beforeEach(() => {
     // clear history of calling mocked function
     nodeMapSpy.mockClear()
-    stationProvider.mockClear()
-    treeSegmentProvider.mockClear()
+    provider.station.mockClear()
+    provider.segment.mockClear()
   })
-  describe("StationNode", () => {
+  describe("StationNodeImpl", () => {
     test("末端", async () => {
       let nodeData = data.node_list.find(d => d.code == 1190533)
       expect(nodeData).not.toBeUndefined()
       if (!nodeData) return
-      expect(isStationLeafNode(nodeData)).toBe(false)
-      if (isStationLeafNode(nodeData)) return
+      expect(isSegmentNode(nodeData)).toBe(false)
+      if (isSegmentNode(nodeData)) return
       expect(nodeData?.left).toBeUndefined()
       expect(nodeData?.right).toBeUndefined()
       let rect = {
@@ -62,70 +67,62 @@ describe("kdTree", () => {
         west: -180,
         east: 180,
       }
-      const tree = new StationKdTree(
-        stationProvider,
-        treeSegmentProvider,
-      )
-      let node = new StationNode(10, nodeData, tree, nodes, rect)
-      expect(node.left).toBe(null)
-      expect(node.right).toBe(null)
+      let node = new StationNodeImpl(10, nodeData, nodes, provider, rect)
+      expect(node._left).toBe(null)
+      expect(node._right).toBe(null)
       let s = stations.get(1190533)
-      expect(node.station).toBe(s)
+      expect(node._station).toBe(s)
       expect(nodeMapSpy.mock.calls.length).toBe(0)
-      expect(stationProvider.mock.calls.length).toBe(1)
-      expect(stationProvider.mock.calls[0][0]).toBe(1190533)
-      expect(treeSegmentProvider.mock.calls.length).toBe(0)
+      expect(provider.station.mock.calls.length).toBe(1)
+      expect(provider.station.mock.calls[0][0]).toBe(1190533)
+      expect(provider.segment.mock.calls.length).toBe(0)
       let nodeSpy = jest.spyOn(node, "build")
-      let station = await node.get()
+      let station = await node.station()
       expect(station).toBe(s)
       expect(nodeSpy.mock.calls.length).toBe(0)
-      expect(stationProvider.mock.calls.length).toBe(1)
-      expect(treeSegmentProvider.mock.calls.length).toBe(0)
+      expect(provider.station.mock.calls.length).toBe(1)
+      expect(provider.segment.mock.calls.length).toBe(0)
     })
 
     test("途中", async () => {
       let nodeData = data.node_list.find(d => d.code == 9991511)
       expect(nodeData).not.toBeUndefined()
       if (!nodeData) return
-      expect(isStationLeafNode(nodeData)).toBe(false)
-      if (isStationLeafNode(nodeData)) return
+      expect(isSegmentNode(nodeData)).toBe(false)
+      if (isSegmentNode(nodeData)) return
       let rect = {
         north: 90,
         south: -90,
         west: -180,
         east: 180,
       }
-      const tree = new StationKdTree(
-        stationProvider,
-        treeSegmentProvider,
-      )
-      let node = new StationNode(10, nodeData, tree, nodes, rect)
-      expect(node.left?.code).toBe(9992111)
-      expect(node.right?.code).toBe(1190533)
+      let node = new StationNodeImpl(10, nodeData, nodes, provider, rect)
+      expect(node._left?.code).toBe(9992111)
+      expect(node._right?.code).toBe(1190533)
       let s = stations.get(9991511)
-      expect(node.station).toBe(s)
+      expect(node._station).toBe(s)
       expect(nodeMapSpy.mock.calls.length).toBe(2)
       expect(nodeMapSpy.mock.calls[0][0]).toBe(9992111)
       expect(nodeMapSpy.mock.calls[1][0]).toBe(1190533)
-      expect(stationProvider.mock.calls.length).toBe(3)
-      expect(stationProvider.mock.calls[0][0]).toBe(9991511)
-      expect(stationProvider.mock.calls[1][0]).toBe(9992111)
-      expect(stationProvider.mock.calls[2][0]).toBe(1190533)
-      expect(treeSegmentProvider.mock.calls.length).toBe(0)
+      expect(provider.station.mock.calls.length).toBe(3)
+      expect(provider.station.mock.calls[0][0]).toBe(9991511)
+      expect(provider.station.mock.calls[1][0]).toBe(9992111)
+      expect(provider.station.mock.calls[2][0]).toBe(1190533)
+      expect(provider.segment.mock.calls.length).toBe(0)
       let nodeSpy = jest.spyOn(node, "build")
-      let station = await node.get()
+      let station = await node.station()
       expect(station).toBe(s)
       expect(nodeSpy.mock.calls.length).toBe(0)
-      expect(stationProvider.mock.calls.length).toBe(3)
-      expect(treeSegmentProvider.mock.calls.length).toBe(0)
+      expect(provider.station.mock.calls.length).toBe(3)
+      expect(provider.segment.mock.calls.length).toBe(0)
     })
 
     test("末端 非同期でsegment読み出し", async () => {
       let nodeData = data.node_list.find(d => d.code == 1192911)
       expect(nodeData).not.toBeUndefined()
       if (!nodeData) return
-      expect(isStationLeafNode(nodeData)).toBe(true)
-      if (!isStationLeafNode(nodeData)) return
+      expect(isSegmentNode(nodeData)).toBe(true)
+      if (!isSegmentNode(nodeData)) return
       expect(nodeData.segment).toBe("segment3")
       let rect = {
         north: 90,
@@ -133,40 +130,33 @@ describe("kdTree", () => {
         west: -180,
         east: 180,
       }
-      const tree = new StationKdTree(
-        stationProvider,
-        treeSegmentProvider,
-      )
-      let node = new StationNode(10, nodeData, tree, nodes, rect)
-      expect(node.left).toBe(null)
-      expect(node.right).toBe(null)
+      let node = new StationNodeImpl(10, nodeData, nodes, provider, rect)
+      expect(node._left).toBe(null)
+      expect(node._right).toBe(null)
       let s = stations.get(1192911)
-      expect(node.station).toBe(null)
+      expect(node._station).toBe(null)
       console.log(nodeMapSpy.mock.calls)
 
       expect(nodeMapSpy.mock.calls.length).toBe(0)
-      expect(stationProvider.mock.calls.length).toBe(0)
-      expect(treeSegmentProvider.mock.calls.length).toBe(0)
+      expect(provider.station.mock.calls.length).toBe(0)
+      expect(provider.segment.mock.calls.length).toBe(0)
       let nodeSpy = jest.spyOn(node, "build")
-      let station = await node.get()
+      let station = await node.station()
       expect(station).toBe(s)
       expect(nodeSpy.mock.calls.length).toBe(1)
-      expect(stationProvider.mock.calls.length).toBe(1)
-      expect(stationProvider.mock.calls[0][0]).toBe(1192911)
-      expect(treeSegmentProvider.mock.calls.length).toBe(1)
-      expect(treeSegmentProvider.mock.calls[0][0]).toBe("segment3")
-      expect(node.left).toBe(null)
-      expect(node.right).toBe(null)
-      expect(node.station).toBe(s)
+      expect(provider.station.mock.calls.length).toBe(1)
+      expect(provider.station.mock.calls[0][0]).toBe(1192911)
+      expect(provider.segment.mock.calls.length).toBe(1)
+      expect(provider.segment.mock.calls[0][0]).toBe("segment3")
+      expect(node._left).toBe(null)
+      expect(node._right).toBe(null)
+      expect(node._station).toBe(s)
     })
 
   })
 
   describe("探索", () => {
-    const tree = new StationKdTree(
-      stationProvider,
-      treeSegmentProvider,
-    )
+
     const findNearestOrderN = (pos: LatLng) => {
       let min = Number.MAX_VALUE
       let s: Station
@@ -179,10 +169,13 @@ describe("kdTree", () => {
       }
       return s!
     }
-    test("初期化", async () => {
-      await tree.initialize("root")
-      expect(treeSegmentProvider.mock.calls.length).toBe(1)
-      expect(treeSegmentProvider.mock.calls[0][0]).toBe("root")
+
+    let tree: StationKdTree
+
+    beforeAll(async () => {
+      // init tree
+      const rootNode = await initRoot(provider)
+      tree = new StationKdTree(rootNode)
     })
     test("case 1: station(9942506)", async () => {
       let s = stations.get(9942506)!

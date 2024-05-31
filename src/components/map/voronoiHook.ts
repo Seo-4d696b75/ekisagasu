@@ -1,10 +1,10 @@
 import { useRef, useState } from "react";
 import VoronoiWorker from "worker-loader!./../../worker/VoronoiWorker"; // eslint-disable-line import/no-webpack-loader-syntax
+import repository from "../../data/StationRepository";
+import { Station } from "../../data/station";
 import * as Rect from "../../diagram/rect";
+import { LatLng } from "../../location/location";
 import { logger } from "../../logger";
-import { LatLng } from "../../model/location";
-import { Station } from "../../model/station";
-import StationService from "../../script/StationService";
 
 export interface HighVoronoiCallback {
   onStart?: (center: Station) => void
@@ -44,9 +44,9 @@ export const useHighVoronoi = (radarK: number) => {
       const data = JSON.parse(message.data)
       if (data.type === 'points') {
         // point provide
-        StationService.getStationPoint(data.code).then(s => {
+        repository.getStationPoint(data.code).then(s => {
           return Promise.all(
-            s.next.map(code => StationService.getStationPoint(code))
+            s.next.map(code => repository.getStationPoint(code))
           )
         }).then(stations => {
           var points = stations.map(s => {

@@ -3,10 +3,10 @@ import axios from "axios"
 import { FC, useCallback, useMemo, useRef, useState } from "react"
 import Autosuggest from 'react-autosuggest'
 import { useSelector } from "react-redux"
+import repository from "../../data/StationRepository"
 import { logger } from "../../logger"
 import { PropsEvent } from "../../model/event"
 import { selectStationState } from "../../redux/selector"
-import Service from "../../script/StationService"
 import { useEventEffect, useRefCallback } from "../hooks"
 import "./StationSearchBox.css"
 
@@ -150,7 +150,7 @@ const renderSuggestion = (suggestion: StationSuggestion, param: Autosuggest.Rend
   return (
     <div>
       {suggestion.prefecture ? (
-        <span className="suggestion-prefecture">{Service.getPrefecture(suggestion.prefecture)}</span>
+        <span className="suggestion-prefecture">{repository.getPrefecture(suggestion.prefecture)}</span>
       ) : null}
       {suggestion.name}
       {suggestion.extra ? <span className="suggestion-extra">extra</span> : null}

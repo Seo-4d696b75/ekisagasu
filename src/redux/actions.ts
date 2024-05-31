@@ -1,12 +1,13 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { StationSuggestion } from "../components/header/StationSearchBox";
 import { DialogType, IdleNav, LineDialogNav, LineDialogProps, NavState, NavType, RadarStation, StationDialogNav, copyNavState } from "../components/navState";
+import stationRepository, { DataType } from "../data/StationRepository";
+import { Line } from "../data/line";
+import { Station } from "../data/station";
+import locationRepository from "../location/LocationRepository";
+import { CurrentLocation, CurrentLocationState, LatLng, MapCenter } from "../location/location";
 import { logger } from "../logger";
 import { PolylineProps, measure } from "../model/diagram";
-import { Line } from "../model/line";
-import { CurrentLocation, CurrentLocationState, LatLng, MapCenter } from "../model/location";
-import { Station } from "../model/station";
-import StationService, { DataType } from "../script/StationService";
 import { GlobalMapState } from "./map/state";
 import { RootState } from "./selector";
 
@@ -41,7 +42,7 @@ export const setRadarK = createAsyncThunk(
 export const setWatchCurrentLocation = createAsyncThunk(
   "map/setWatchCurrentLocation",
   async (watch: boolean): Promise<CurrentLocationState> => {
-    StationService.setWatchCurrentPosition(watch)
+    locationRepository.setWatchCurrentPosition(watch)
     return watch ? {
       type: 'watch',
       autoScroll: true,
@@ -59,7 +60,7 @@ export const setShowStationPin = createAction<boolean>(
 export const setHighAccuracyLocation = createAsyncThunk(
   "map/setHighAccuracyLocation",
   async (high: boolean) => {
-    StationService.setPositionHighAccuracy(high)
+    locationRepository.setPositionHighAccuracy(high)
     return high
   }
 )
@@ -72,11 +73,8 @@ export const requestCurrentLocation = createAsyncThunk(
       return undefined
     } else {
       try {
-        const pos = await StationService.getCurrentPosition()
-        return {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude
-        }
+        const pos = await locationRepository.getCurrentLocation()
+        return pos.position
       } catch (err) {
         logger.w(err)
         alert("現在位置を利用できません. ブラウザから位置情報へのアクセスを許可してください.")
@@ -88,18 +86,12 @@ export const requestCurrentLocation = createAsyncThunk(
 
 export const setCurrentLocation = createAsyncThunk(
   "map/setCurrentLocation",
-  async (loc: GeolocationPosition, thunkAPI): Promise<{
+  async (location: CurrentLocation, thunkAPI): Promise<{
     nav: NavState,
     location: CurrentLocationState,
   }> => {
     const { mapState } = thunkAPI.getState() as RootState
     if (mapState.currentLocation.type === 'watch') {
-      const coords = loc.coords
-      let location: CurrentLocation = {
-        position: { lat: coords.latitude, lng: coords.longitude },
-        accuracy: coords.accuracy,
-        heading: coords.heading
-      }
       // 現在地のダイアログを更新
       return {
         nav: mapState.nav.type === NavType.IDLE
@@ -135,10 +127,10 @@ export const requestShowSelectedPosition = createAsyncThunk(
           props: {
             station: station,
             radarList: list,
-            prefecture: StationService.getPrefecture(station.prefecture),
+            prefecture: stationRepository.getPrefecture(station.prefecture),
             position: target,
             dist: measure(station.position, target),
-            lines: station.lines.map(code => StationService.getLine(code)),
+            lines: station.lines.map(code => stationRepository.getLine(code)),
           },
         },
         showHighVoronoi: false,
@@ -168,8 +160,8 @@ export const requestShowStationPromise = createAsyncThunk(
           props: {
             station: s,
             radarList: await makeRadarList(s.position, mapState.radarK),
-            prefecture: StationService.getPrefecture(s.prefecture),
-            lines: s.lines.map(code => StationService.getLine(code)),
+            prefecture: stationRepository.getPrefecture(s.prefecture),
+            lines: s.lines.map(code => stationRepository.getLine(code)),
           }
         },
         showHighVoronoi: false,
@@ -187,7 +179,7 @@ export const requestShowStationPromise = createAsyncThunk(
 export const requestShowLine = createAsyncThunk(
   "map/requestShowLine",
   async (line: Line) => {
-    let l = await StationService.getLineDetail(line.code)
+    let l = await stationRepository.getLineDetail(line.code)
     let next: LineDialogNav = {
       type: NavType.DIALOG_LINE,
       data: {
@@ -224,10 +216,10 @@ export const requestShowHighVoronoi = createAction<void>(
 export const requestShowStationItem = (item: StationSuggestion) => {
   switch (item.type) {
     case "station": {
-      return requestShowStationPromise(StationService.getStation(item.code))
+      return requestShowStationPromise(stationRepository.getStation(item.code))
     }
     case "line": {
-      let line = StationService.getLine(item.code)
+      let line = stationRepository.getLine(item.code)
       return requestShowLine(line)
     }
   }
@@ -275,12 +267,11 @@ async function checkRadarK(k: number, state: GlobalMapState): Promise<NavState |
 }
 
 async function makeRadarList(pos: LatLng, k: number): Promise<RadarStation[]> {
-  if (!StationService.tree) throw Error("Kd-tree not initialized yet")
-  const nearest = await StationService.searchStations(pos, k)
+  const nearest = await stationRepository.search(pos, k)
   return nearest.map(s => ({
     station: s.station,
     dist: measure(s.station.position, pos),
-    lines: s.station.lines.map(code => StationService.getLine(code).name).join(' '),
+    lines: s.station.lines.map(code => stationRepository.getLine(code).name).join(' '),
   }))
 }
 
@@ -313,10 +304,10 @@ async function nextIdleNavStateWatchingLocation(pos: LatLng, k: number): Promise
         props: {
           station: station,
           radarList: list,
-          prefecture: StationService.getPrefecture(station.prefecture),
+          prefecture: stationRepository.getPrefecture(station.prefecture),
           position: pos,
           dist: measure(station.position, pos),
-          lines: station.lines.map(code => StationService.getLine(code)),
+          lines: station.lines.map(code => stationRepository.getLine(code)),
         }
       },
     },

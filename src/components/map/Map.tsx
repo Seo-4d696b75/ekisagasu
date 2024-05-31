@@ -2,12 +2,13 @@ import { Circle, GoogleMap, Marker, Polygon, Polyline, useJsApiLoader } from "@r
 import { FC, useEffect, useMemo, useRef, useState } from "react"
 import { useSelector } from "react-redux"
 import { CSSTransition } from "react-transition-group"
+import stationRepository from "../../data/StationRepository"
 import pin_location from "../../img/map_pin.svg"
 import pin_station from "../../img/map_pin_station.svg"
 import pin_station_extra from "../../img/map_pin_station_extra.svg"
+import locationRepository from "../../location/LocationRepository"
 import { logger } from "../../logger"
 import { selectMapState, selectStationState } from "../../redux/selector"
-import StationService from "../../script/StationService"
 import { CurrentPosDialog } from "../dialog/CurrentPosDialog"
 import { LineDialog } from "../dialog/LineDialog"
 import { StationDialog } from "../dialog/StationDialog"
@@ -60,10 +61,9 @@ const MapContainer: FC = () => {
 
   // callbacks registered to StationService
   const {
-    onGeolocationPositionChanged,
+    onLocationChanged,
     onStationLoaded,
-    dataLoadingCallback,
-  } = useServiceCallback(showProgressBannerWhile)
+  } = useServiceCallback()
 
   // functions operating the map and its state variables
   const {
@@ -104,9 +104,8 @@ const MapContainer: FC = () => {
     // componentDidMount
     logger.d("componentDidMount")
     // register callbacks
-    StationService.onGeolocationPositionChangedCallback = onGeolocationPositionChanged
-    StationService.onStationLoadedCallback = onStationLoaded
-    StationService.dataLoadingCallback = dataLoadingCallback
+    locationRepository.onLocationChangedCallback = onLocationChanged
+    stationRepository.onStationLoadedCallback = onStationLoaded
     const onScreenResized = () => {
       let wide = window.innerWidth >= 900
       setScreenWide(wide)
@@ -116,11 +115,12 @@ const MapContainer: FC = () => {
     return () => {
       // componentWillUnmount
       logger.d("componentWillUnmount")
-      StationService.release()
+      locationRepository.release()
+      stationRepository.release()
       window.removeEventListener("resize", onScreenResized)
       googleMapRef.current = null
     }
-  }, [onGeolocationPositionChanged, onStationLoaded, dataLoadingCallback])
+  }, [onLocationChanged, onStationLoaded])
 
   // 現在位置・拡大率が変更されたらMap中心位置を変更する
   useMapCenterChangeEffect(mapCenter, googleMapRef, isDragRunning)
@@ -130,7 +130,7 @@ const MapContainer: FC = () => {
 
   // データ種類が変わったら更新
   useEffect(() => {
-    if (dataType && StationService.dataAPI?.type !== dataType) {
+    if (dataType) {
       switchDataType(dataType)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

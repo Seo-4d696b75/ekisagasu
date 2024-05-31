@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 import { useSearchParams } from "react-router-dom"
-import { MapCenter } from "../../model/location"
-import StationService, { DataType } from "../../script/StationService"
+import { DataType } from "../../data/StationRepository"
+import { MapCenter } from "../../location/location"
 import { NavState, NavType } from "../navState"
 
 export const useQueryEffect = (
@@ -11,7 +11,7 @@ export const useQueryEffect = (
   mapCenter: MapCenter,
 ) => {
   const [, setQuery] = useSearchParams()
-  const initialized = StationService.initialized
+  const initialized = dataType !== null
 
   useEffect(() => {
     if (!initialized) {

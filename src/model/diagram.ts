@@ -1,5 +1,5 @@
-import { isLatLng, LatLng } from "./location"
-import { Station } from "./station"
+import { Station } from "../data/station"
+import { isLatLng, LatLng } from "../location/location"
 
 export interface ZoomProps {
   center: LatLng

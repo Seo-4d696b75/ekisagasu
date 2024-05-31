@@ -1,10 +1,10 @@
 import React, { FC, useMemo, useState } from "react";
 import { CSSTransition } from "react-transition-group";
+import { Line } from "../../data/line";
+import { Station } from "../../data/station";
 import img_delete from "../../img/ic_delete.png";
 import img_line from "../../img/ic_line.png";
 import img_station from "../../img/station.png";
-import { Line } from "../../model/line";
-import { Station } from "../../model/station";
 import { useRefCallback } from "../hooks";
 import { LineDialogProps } from "../navState";
 import "./InfoDialog.css";

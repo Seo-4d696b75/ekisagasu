@@ -1,143 +1,17 @@
+import { Station } from "../data/station"
+import { LatLng } from "../location/location"
 import { logger } from "../logger"
 import { isInsideRect, RectBounds } from "../model/diagram"
-import { LatLng } from "../model/location"
-import { Station } from "../model/station"
-
-export interface StationNodeProps {
-  code: number
-  left?: number
-  right?: number
-  segment: undefined
-}
-
-export interface StationLeafNodeProps {
-  code: number
-  segment: string
-}
 
 /**
- * 探索木の部分木のデータ構造
- * [@see api docs](https://api.station.seo4d696b75.com/docs)
+ * kdTreeを構成する頂点
  */
-export interface StationTreeSegmentProps {
-  name: string
-  root: number
-  node_list: NodeProps[]
-}
-
-export type NodeProps = StationNodeProps | StationLeafNodeProps
-
-function isLeafNode(node: NodeProps): node is StationLeafNodeProps {
-  return node.segment !== undefined
-}
-
-/**
- * 探索木の頂点
- * 
- * 各頂点がひとつのデータ点（駅とその座標）を保持する
- * ただし、分割された部分木で初期化されるため、
- * - 有効なデータを持つ頂点：即座に計算
- * - まだデータがない頂点：on-demandでデータを非同期にロードしてから計算
- */
-export class StationNode {
-
+export interface StationNode {
   depth: number
-  code: number
   region: RectBounds
-
-  constructor(depth: number, data: NodeProps, tree: StationKdTree, data_map: Map<number, NodeProps>, region: RectBounds) {
-    this.depth = depth
-    this.code = data.code
-    this.region = region
-    this.build(data, tree, data_map)
-  }
-
-  segmentName: string | null = null
-  tree: StationKdTree | null = null
-
-  station: Station | null = null
-  left: StationNode | null = null
-  right: StationNode | null = null
-
-  build(data: NodeProps, tree: StationKdTree, dataMap: Map<number, NodeProps>) {
-    if (isLeafNode(data)) {
-      this.segmentName = data.segment
-      this.tree = tree
-      this.station = null
-    } else {
-      this.station = tree.stationProvider(this.code)
-      if (!this.station) {
-        logger.e("station not found", this.code)
-        return
-      }
-      if (!isInsideRect(this.station.position, this.region)) {
-        logger.e("station pos out of bounds", this.station, this.region)
-        return
-      }
-      const x = (this.depth % 2 === 0)
-      if (data.left) {
-        const left = dataMap.get(data.left)
-        if (!left) throw Error(`node not found ${data.left}`)
-        const leftRegion = {
-          north: x ? this.region.north : this.station.position.lat,
-          south: this.region.south,
-          east: x ? this.station.position.lng : this.region.east,
-          west: this.region.west
-        }
-        this.left = new StationNode(this.depth + 1, left, tree, dataMap, leftRegion)
-      }
-      if (data.right) {
-        const right = dataMap.get(data.right)
-        if (!right) throw Error(`node not found ${data.right}`)
-        const rightRegion = {
-          north: this.region.north,
-          south: x ? this.region.south : this.station.position.lat,
-          east: this.region.east,
-          west: x ? this.station.position.lng : this.region.west
-        }
-        this.right = new StationNode(this.depth + 1, right, tree, dataMap, rightRegion)
-      }
-    }
-  }
-
-  release() {
-    this.tree = null
-    this.station = null
-    if (this.left) this.left.release()
-    if (this.right) this.right.release()
-    this.left = null
-    this.right = null
-  }
-
-  async get(): Promise<Station> {
-    if (!this.station) {
-      if (!this.tree) throw Error("no tree assigned for initializing")
-      if (!this.segmentName) throw Error("no segment-name not found")
-      const tree = this.tree
-      return tree.treeSegmentProvider(this.segmentName).then(data => {
-        if (data.root !== this.code) {
-          return Promise.reject(`root mismatch. name:${this.segmentName}`)
-        } else {
-          const map = new Map<number, NodeProps>()
-          data.node_list.forEach(element => {
-            map.set(element.code, element)
-          })
-          let rootNode = map.get(this.code)
-          if (!rootNode) throw Error(`root node not found ${this.code}`)
-          this.build(rootNode, tree, map)
-          if (this.station) {
-            return this.station
-          } else {
-            return Promise.reject(`fail to get station:${this.code}`)
-          }
-        }
-      })
-    } else {
-      return Promise.resolve(this.station)
-    }
-
-  }
-
+  station: () => Promise<Station>
+  left: () => StationNode | null
+  right: () => StationNode | null
 }
 
 /**
@@ -151,9 +25,6 @@ export interface NearStation {
   dist: number
 }
 
-export type StationProvider = (code: number) => Station
-export type TreeSegmentProvider = (name: string) => Promise<StationTreeSegmentProps>
-
 /**
  * 駅座標に基づく最近某探索を高速に行うためのkd-treeデータ構造
  * 
@@ -162,41 +33,10 @@ export type TreeSegmentProvider = (name: string) => Promise<StationTreeSegmentPr
  */
 export class StationKdTree {
 
-  root: StationNode | null = null
+  root: StationNode
 
-  stationProvider: StationProvider
-  treeSegmentProvider: TreeSegmentProvider
-
-  constructor(stationProvider: StationProvider, treeSegmentProvider: TreeSegmentProvider) {
-    this.stationProvider = stationProvider
-    this.treeSegmentProvider = treeSegmentProvider
-  }
-
-  async initialize(root_name: string): Promise<StationKdTree> {
-    return this.treeSegmentProvider(root_name).then(data => {
-      const map = new Map<number, NodeProps>()
-      data.node_list.forEach(element => {
-        map.set(element.code, element)
-      })
-      let region = {
-        north: 90,
-        south: -90,
-        east: 180,
-        west: -180,
-      }
-      let rootNode = map.get(data.root)
-      if (!rootNode) throw Error(`root node not found ${data.root}`)
-      this.root = new StationNode(0, rootNode, this, map, region)
-      logger.d("Kd-tree initialized.")
-      return this
-    })
-  }
-
-  release() {
-    if (this.root) {
-      this.root.release()
-      this.root = null
-    }
+  constructor(root: StationNode) {
+    this.root = root
   }
 
   /**
@@ -209,8 +49,6 @@ export class StationKdTree {
   async search(position: LatLng, k: number, r: number = 0): Promise<NearStation[]> {
     if (k < 1) {
       return Promise.reject(`invalid k:${k}`)
-    } else if (!this.root) {
-      return Promise.reject('tree root not initialized')
     } else {
       const time = performance.now()
       const dst: NearStation[] = []
@@ -220,16 +58,12 @@ export class StationKdTree {
     }
   }
 
-  async updateRectRegion(rect: RectBounds, max: number): Promise<Station[]> {
-    if (!this.root) {
-      return Promise.reject('tree root not initialized')
-    } else {
-      const time = performance.now()
-      const dst: Station[] = []
-      await this._searchRect(this.root, rect, dst, max)
-      logger.d(`update region done. time=${performance.now() - time}ms size:${dst.length}`)
-      return dst
-    }
+  async searchRect(rect: RectBounds, max: number): Promise<Station[]> {
+    const time = performance.now()
+    const dst: Station[] = []
+    this._searchRect(this.root, rect, dst, max)
+    logger.d(`update region done. time=${performance.now() - time}ms size:${dst.length}`)
+    return dst
   }
 
   measure(p1: LatLng, p2: LatLng): number {
@@ -244,7 +78,7 @@ export class StationKdTree {
       threshold: 0
     }
 
-    const s = await node.get()
+    const s = await node.station()
     const d = this.measure(position, s.position)
     let index = -1
     let size = dst.length
@@ -271,21 +105,21 @@ export class StationKdTree {
     div.value = (x ? position.lng : position.lat)
     div.threshold = (x ? s.position.lng : s.position.lat)
 
-    let next = (div.value < div.threshold) ? node.left : node.right
+    let next = (div.value < div.threshold) ? node.left() : node.right()
     if (next) {
       await this._search(next, position, k, r, dst)
     }
 
     let value = div.value
     let th = div.threshold
-    next = (value < th) ? node.right : node.left
+    next = (value < th) ? node.right() : node.left()
     if (next && Math.abs(value - th) < Math.max(dst[dst.length - 1].dist, r)) {
       await this._search(next, position, k, r, dst)
     }
   }
 
   async _searchRect(node: StationNode, rect: RectBounds, dst: Station[], max: number): Promise<void> {
-    const station = await node.get()
+    const station = await node.station()
     if (max && dst.length >= max) {
       return
     }
@@ -294,18 +128,20 @@ export class StationKdTree {
     }
     let tasks: Promise<void>[] = []
     // check left
-    if (node.left && (
+    const left = node.left()
+    if (left && (
       (node.depth % 2 === 0 && rect.west < station.position.lng)
       || (node.depth % 2 === 1 && rect.south < station.position.lat)
     )) {
-      tasks.push(this._searchRect(node.left, rect, dst, max))
+      tasks.push(this._searchRect(left, rect, dst, max))
     }
     // check right
-    if (node.right && (
+    const right = node.right()
+    if (right && (
       (node.depth % 2 === 0 && station.position.lng < rect.east)
       || (node.depth % 2 === 1 && station.position.lat < rect.north)
     )) {
-      tasks.push(this._searchRect(node.right, rect, dst, max))
+      tasks.push(this._searchRect(right, rect, dst, max))
     }
     await Promise.all(tasks)
   }

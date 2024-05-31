@@ -1,14 +1,14 @@
 import { MutableRefObject, RefObject, useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
+import repository, { DataType } from "../../data/StationRepository"
+import { Line } from "../../data/line"
+import { Station } from "../../data/station"
+import { LatLng, MapCenter } from "../../location/location"
 import { logger } from "../../logger"
 import { PolylineProps, RectBounds, getBounds, getZoomProperty, isInsideRect } from "../../model/diagram"
-import { Line } from "../../model/line"
-import { LatLng, MapCenter } from "../../model/location"
-import { Station } from "../../model/station"
 import * as action from "../../redux/actions"
-import { selectMapState } from "../../redux/selector"
+import { selectMapState, selectStationState } from "../../redux/selector"
 import { AppDispatch } from "../../redux/store"
-import StationService, { DataType } from "../../script/StationService"
 import { useRefCallback } from "../hooks"
 import { NavType, isStationDialog } from "../navState"
 import { useHighVoronoi } from "./voronoiHook"
@@ -48,6 +48,10 @@ export const useMapOperator = (
     radarK,
     nav,
   } = useSelector(selectMapState)
+
+  const {
+    dataType
+  } = useSelector(selectStationState)
 
   const [hideState, setHideState] = useState<HideStationState>({
     hide: false,
@@ -163,7 +167,7 @@ export const useMapOperator = (
         west: sw.lng() - margin,
         east: ne.lng() + margin,
       }
-      const result = await StationService.searchRect(search, VORONOI_SIZE_TH)
+      const result = await repository.searchRect(search, VORONOI_SIZE_TH)
       setHideState({
         hide: zoom < ZOOM_TH && result.length >= VORONOI_SIZE_TH,
         zoom: zoom,
@@ -187,15 +191,15 @@ export const useMapOperator = (
   }
 
   const focusAt = (pos: LatLng, zoom?: number) => {
-    if (!StationService.initialized) return
+    if (!dataType) return
     if (isStationDialog(nav) && nav.data.showHighVoronoi) return
     dispatch(action.requestShowSelectedPosition({ ...pos, zoom: zoom }))
   }
 
   const focusAtNearestStation = (pos: LatLng) => {
-    if (!StationService.initialized) return
+    if (!dataType) return
     if (isStationDialog(nav) && nav.data.showHighVoronoi) return
-    StationService.searchStations(pos, 1).then(result => {
+    repository.search(pos, 1).then(result => {
       const s = result[0].station
       logger.d("nearest station found", s)
       dispatch(action.requestShowStation(s))
@@ -216,7 +220,7 @@ export const useMapOperator = (
     const map = googleMapRef.current
     if (map) {
       progressHandler(async () => {
-        await StationService.setData(type)
+        await repository.setData(type)
         dispatch(action.clearLoadedStation())
         await updateBounds(map, true)
       }, "駅データを切り替えています")
