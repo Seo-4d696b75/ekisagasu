@@ -1,7 +1,7 @@
+import { logger } from "../logger"
 import { isInsideRect, RectBounds } from "../model/diagram"
 import { LatLng } from "../model/location"
 import { Station } from "../model/station"
-import { logger } from "./logger"
 
 export interface StationNodeProps {
   code: number
@@ -17,7 +17,7 @@ export interface StationLeafNodeProps {
 
 /**
  * 探索木の部分木のデータ構造
- * [@see api docs](https://station-service.herokuapp.com/api/docs)
+ * [@see api docs](https://api.station.seo4d696b75.com/docs)
  */
 export interface StationTreeSegmentProps {
   name: string

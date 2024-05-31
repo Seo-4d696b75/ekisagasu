@@ -1,10 +1,10 @@
 import axios, { AxiosResponse } from "axios"
+import { logger } from "../logger"
 import { RectBounds } from "../model/diagram"
 import { Line, LineAPIResponse, LineDetailAPIResponse, PolylineAPIResponse, parseLine, parseLineDetail } from "../model/line"
 import { LatLng } from "../model/location"
 import { DelaunayStation, Station, StationAPIResponse, parseStation } from "../model/station"
-import { NearStation, StationKdTree, StationLeafNodeProps, StationNodeProps } from "./kdTree"
-import { logger } from "./logger"
+import { NearStation, StationKdTree, StationLeafNodeProps, StationNodeProps } from "../search/kdTree"
 
 type StationNodeResponse = StationAPIResponse & StationNodeProps
 

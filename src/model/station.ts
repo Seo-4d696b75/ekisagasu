@@ -1,4 +1,4 @@
-import { logger } from "../script/logger"
+import { logger } from "../logger"
 import { LatLng } from "./location"
 
 export interface DelaunayStation {

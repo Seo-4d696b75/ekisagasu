@@ -3,10 +3,10 @@ import axios from "axios"
 import { FC, useCallback, useMemo, useRef, useState } from "react"
 import Autosuggest from 'react-autosuggest'
 import { useSelector } from "react-redux"
+import { logger } from "../../logger"
 import { PropsEvent } from "../../model/event"
 import { selectStationState } from "../../redux/selector"
 import Service from "../../script/StationService"
-import { logger } from "../../script/logger"
 import { useEventEffect, useRefCallback } from "../hooks"
 import "./StationSearchBox.css"
 
