@@ -1,5 +1,5 @@
+import { Station } from "../../model/station";
 import { DataType } from "../../script/StationService";
-import { Station } from "../../script/station";
 
 export interface StationDataState {
   /** 

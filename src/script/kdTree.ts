@@ -1,7 +1,7 @@
-import { LatLng } from "./location"
+import { isInsideRect, RectBounds } from "../model/diagram"
+import { LatLng } from "../model/location"
+import { Station } from "../model/station"
 import { logger } from "./logger"
-import { Station } from "./station"
-import { isInsideRect, RectBounds } from "./utils"
 
 export interface StationNodeProps {
   code: number

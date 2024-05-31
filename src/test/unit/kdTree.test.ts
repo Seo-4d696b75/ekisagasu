@@ -1,7 +1,7 @@
+import { LatLng } from "../../model/location"
+import { Station, StationAPIResponse, parseStation } from "../../model/station"
+import { StationTreeSegmentResponse, isStationLeafNode } from "../../script/StationService"
 import { NodeProps, StationKdTree, StationLeafNodeProps, StationNode, StationTreeSegmentProps } from "../../script/kdTree"
-import { LatLng } from "../../script/location"
-import { parseStation, Station, StationAPIResponse } from "../../script/station"
-import { isStationLeafNode, StationTreeSegmentResponse } from "../../script/StationService"
 
 describe("kdTree", () => {
   let data: StationTreeSegmentResponse

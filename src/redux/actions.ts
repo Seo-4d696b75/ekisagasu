@@ -1,12 +1,12 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { StationSuggestion } from "../components/header/StationSearchBox";
 import { DialogType, IdleNav, LineDialogNav, LineDialogProps, NavState, NavType, RadarStation, StationDialogNav, copyNavState } from "../components/navState";
+import { PolylineProps, measure } from "../model/diagram";
+import { Line } from "../model/line";
+import { CurrentLocation, CurrentLocationState, LatLng, MapCenter } from "../model/location";
+import { Station } from "../model/station";
 import StationService, { DataType } from "../script/StationService";
-import { Line } from "../script/line";
-import { CurrentLocation, CurrentLocationState, LatLng, MapCenter } from "../script/location";
 import { logger } from "../script/logger";
-import { Station } from "../script/station";
-import { PolylineProps, measure } from "../script/utils";
 import { GlobalMapState } from "./map/state";
 import { RootState } from "./selector";
 

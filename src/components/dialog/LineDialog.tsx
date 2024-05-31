@@ -3,11 +3,11 @@ import { CSSTransition } from "react-transition-group";
 import img_delete from "../../img/ic_delete.png";
 import img_line from "../../img/ic_line.png";
 import img_station from "../../img/station.png";
-import { Line } from "../../script/line";
-import { Station } from "../../script/station";
+import { Line } from "../../model/line";
+import { Station } from "../../model/station";
 import { useRefCallback } from "../hooks";
-import "./InfoDialog.css";
 import { LineDialogProps } from "../navState";
+import "./InfoDialog.css";
 
 export interface LineInfoProps {
   info: LineDialogProps

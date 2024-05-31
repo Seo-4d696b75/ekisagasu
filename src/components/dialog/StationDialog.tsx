@@ -2,12 +2,12 @@ import { FC, useMemo, useState } from "react";
 import img_delete from "../../img/ic_delete.png";
 import img_radar from "../../img/radar.png";
 import img_voronoi from "../../img/voronoi.png";
-import { Line } from "../../script/line";
-import { Station } from "../../script/station";
-import { StationDetails, StationRadar, StationTitle } from "./DialogSections";
+import { Line } from "../../model/line";
+import { Station } from "../../model/station";
 import { useRefCallback } from "../hooks";
-import "./InfoDialog.css";
 import { StationDialogProps } from "../navState";
+import { StationDetails, StationRadar, StationTitle } from "./DialogSections";
+import "./InfoDialog.css";
 
 interface StationInfoProps {
   info: StationDialogProps
