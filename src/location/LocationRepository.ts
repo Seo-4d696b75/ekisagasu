@@ -1,7 +1,9 @@
 import { logger } from "../logger"
-import { CurrentLocation } from "./location"
+import { setCurrentLocation } from "../redux/actions"
+import { store } from "../redux/store"
+import { Location } from "./location"
 
-function parseLocation(location: GeolocationPosition): CurrentLocation {
+function parseLocation(location: GeolocationPosition): Location {
   return {
     position: {
       lat: location.coords.latitude,
@@ -13,12 +15,6 @@ function parseLocation(location: GeolocationPosition): CurrentLocation {
 }
 
 export class LocationRepository {
-
-  /**
-   * 現在位置を監視している場合に変更された位置情報をコールバックする
-   */
-  onLocationChangedCallback: ((location: CurrentLocation) => void) | undefined = undefined
-
 
   positionOptions: PositionOptions = {
     timeout: 5000,
@@ -48,9 +44,9 @@ export class LocationRepository {
           return
         }
         this.navigatorId = navigator.geolocation.watchPosition(
-          (pos) => {
-            // TODO reduxの状態管理に移行してコールバック排除
-            this.onLocationChangedCallback?.(parseLocation(pos))
+          async (pos) => {
+            const location = parseLocation(pos)
+            await store.dispatch(setCurrentLocation(location))
           },
           (err) => {
             logger.e(err)
@@ -70,7 +66,7 @@ export class LocationRepository {
     }
   }
 
-  getCurrentLocation(): Promise<CurrentLocation> {
+  getCurrentLocation(): Promise<Location> {
     if (navigator.geolocation) {
       return new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(
@@ -89,7 +85,6 @@ export class LocationRepository {
   }
 
   release() {
-    this.onLocationChangedCallback = undefined
     if (this.navigatorId) {
       this.setWatchCurrentPosition(false)
     }

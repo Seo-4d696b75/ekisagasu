@@ -2,6 +2,8 @@ import axios, { AxiosResponse } from "axios"
 import { LatLng } from "../location/location"
 import { logger } from "../logger"
 import { RectBounds } from "../model/diagram"
+import { appendLoadedStation, clearLoadedStation } from "../redux/actions"
+import { store } from "../redux/store"
 import { NearStation, StationKdTree } from "../search/kdTree"
 import { Line, LineAPIResponse, LineDetailAPIResponse, PolylineAPIResponse, parseLine, parseLineDetail } from "./line"
 import { StationNodeImpl, StationTreeSegmentResponse, initRoot, isSegmentNode } from "./node"
@@ -35,13 +37,6 @@ export class StationRepository {
   tree: StationKdTree | null = null
 
   sync = getSynchronizer()
-
-  /**
-   * 新しく読み込まれた駅一覧
-   * 
-   * update**関数による近傍点の探索で新しいtree-segmentをロードしたタイミングで呼ばれる
-   */
-  onStationLoadedCallback: ((list: Station[]) => void) | undefined = undefined
 
   constructor() {
     // APIがコールドスタートのためWebApp起動時にウォームアップしておく
@@ -97,16 +92,27 @@ export class StationRepository {
         // 連続呼び出しの対策
         return
       }
+
+      // API接続先の初期化
       this.dataAPI = {
         type: type,
         baseURL: process.env.REACT_APP_DATA_BASE_URL,
       }
-      this.reset()
+
+      // 内部情報の初期化
+      this.release()
+
+      // 地図上に表示している駅の初期化
+      store.dispatch(clearLoadedStation())
+
+      // kdTree探索木の初期化
       this.root = await initRoot({
         station: this.getStationImmediate.bind(this),
         segment: this.getTreeSegment.bind(this),
       })
       this.tree = new StationKdTree(this.root)
+
+      // 路線情報の初期化
       let lineRes = await this.get<LineAPIResponse[]>(`${this.dataAPI.baseURL}/out/${this.dataAPI.type}/line.json`)
       lineRes.data.forEach(d => {
         let line = parseLine(d)
@@ -234,7 +240,7 @@ export class StationRepository {
         this.stations.set(s.code, s)
         this.stationsId.set(s.id, s)
       })
-      this.onStationLoadedCallback?.(list)
+      store.dispatch(appendLoadedStation(list))
       return data
     })
   }
@@ -273,7 +279,7 @@ export class StationRepository {
     return this.sync("kdTree", this.tree.searchRect(rect, max))
   }
 
-  reset() {
+  release() {
     this.initialized = false
     this.stations.clear()
     this.stationsId.clear()
@@ -282,11 +288,6 @@ export class StationRepository {
     this.stationPoints = undefined
     this.root?.release()
     this.root = null
-  }
-
-  release() {
-    this.reset()
-    this.onStationLoadedCallback = undefined
   }
 }
 

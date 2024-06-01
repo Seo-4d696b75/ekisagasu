@@ -239,7 +239,6 @@ export const useMapOperator = (
         "駅データを切替中",
         async () => {
           await repository.setData(type)
-          dispatch(action.clearLoadedStation())
           await updateBounds(map, true)
         },
       )

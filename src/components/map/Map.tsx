@@ -19,7 +19,6 @@ import { useMapCallback } from "./mapEventHook"
 import { useMapCenterChangeEffect, useMapOperator } from "./mapHook"
 import { useProgressBanner } from "./progressHook"
 import { useQueryEffect } from "./queryHook"
-import { useServiceCallback } from "./serviceHook"
 
 const VORONOI_COLOR = [
   "#0000FF",
@@ -58,12 +57,6 @@ const MapContainer: FC = () => {
     banner,
     showProgressBannerWhile,
   } = useProgressBanner()
-
-  // callbacks registered to StationService
-  const {
-    onLocationChanged,
-    onStationLoaded,
-  } = useServiceCallback()
 
   // functions operating the map and its state variables
   const {
@@ -104,9 +97,7 @@ const MapContainer: FC = () => {
   useEffect(() => {
     // componentDidMount
     logger.d("componentDidMount")
-    // register callbacks
-    locationRepository.onLocationChangedCallback = onLocationChanged
-    stationRepository.onStationLoadedCallback = onStationLoaded
+
     const onScreenResized = () => {
       let wide = window.innerWidth >= 900
       setScreenWide(wide)
@@ -121,7 +112,7 @@ const MapContainer: FC = () => {
       window.removeEventListener("resize", onScreenResized)
       googleMapRef.current = null
     }
-  }, [onLocationChanged, onStationLoaded])
+  }, [])
 
   // 現在位置・拡大率が変更されたらMap中心位置を変更する
   useMapCenterChangeEffect(mapCenter, googleMapRef, isDragRunning)
