@@ -11,23 +11,6 @@ import { PolylineProps, measure } from "../model/diagram";
 import { GlobalMapState } from "./map/state";
 import { RootState } from "./selector";
 
-// MessageState
-
-export const showMessage = createAsyncThunk(
-  "message/showMessage",
-  async (message: string, thunkAPI) => {
-    const { messageState } = thunkAPI.getState() as RootState
-    return {
-      id: messageState.nextId,
-      message: message,
-    }
-  }
-)
-
-export const hideMessage = createAction<number>(
-  "message/hideMessage"
-)
-
 // StationDataState
 
 export const setDataType = createAction<DataType>(

@@ -14,14 +14,12 @@ type AsyncResult<T> = {
 async function impl<T>(
   tag: string,
   tasks: Map<string, Promise<any>>,
-  computation: Promise<T> | (() => Promise<T>),
+  task: Promise<T> | (() => Promise<T>),
 ): Promise<T> {
-  const previous = tasks.get(tag) ?? Promise.resolve()
-
-  // 後続処理に影響を与えないようようAsyncResultでラップしてrejectさせない
-  const task: Promise<AsyncResult<T>> = previous.then(() => {
+  const running = tasks.get(tag) ?? Promise.resolve()
+  const next: Promise<AsyncResult<T>> = running.then(() => {
     // 前段の処理を待機
-    return typeof computation === 'function' ? computation() : computation
+    return typeof task === 'function' ? task() : task
   }).then(result => {
     return {
       type: ResultType.Success,
@@ -33,12 +31,13 @@ async function impl<T>(
       err: err,
     }
   })
-
-  tasks.set(tag, task)
-
-  return task.then(result => {
+  tasks.set(tag, next)
+  // TODO reduxで状態管理する
+  // dataLoadingCallback?.(message, next)
+  // nextはrejectされない
+  return next.then(result => {
     // 後処理
-    if (Object.is(tasks.get(tag), task)) {
+    if (Object.is(tasks.get(tag), next)) {
       tasks.delete(tag)
     }
     if (result.type === ResultType.Success) {
@@ -65,11 +64,12 @@ async function impl<T>(
 export interface Synchronizer {
   <T>(
     tag: string,
+    message: string,
     task: Promise<T> | (() => Promise<T>),
   ): Promise<T>
 }
 
 export function getSynchronizer(): Synchronizer {
   const tasks: Map<string, Promise<any>> = new Map()
-  return (tag, task) => impl(tag, tasks, task)
+  return (tag, message, task) => impl(tag, tasks, task)
 }

@@ -2,8 +2,6 @@ import axios, { AxiosResponse } from "axios"
 import { LatLng } from "../location/location"
 import { logger } from "../logger"
 import { RectBounds } from "../model/diagram"
-import { hideMessage, showMessage } from "../redux/actions"
-import { store } from "../redux/store"
 import { NearStation, StationKdTree } from "../search/kdTree"
 import { Line, LineAPIResponse, LineDetailAPIResponse, PolylineAPIResponse, parseLine, parseLineDetail } from "./line"
 import { StationNodeImpl, StationTreeSegmentResponse, initRoot, isSegmentNode } from "./node"
@@ -36,21 +34,7 @@ export class StationRepository {
   root: StationNodeImpl | null = null
   tree: StationKdTree | null = null
 
-  synchronizer = getSynchronizer()
-
-  async sync<T>(
-    tag: string,
-    message: string,
-    task: Promise<T> | (() => Promise<T>),
-  ): Promise<T> {
-    // メッセージ表示
-    const { id } = await store.dispatch(showMessage(message)).unwrap()
-    try {
-      return await this.synchronizer(tag, task)
-    } finally {
-      store.dispatch(hideMessage(id))
-    }
-  }
+  sync = getSynchronizer()
 
   /**
    * 新しく読み込まれた駅一覧

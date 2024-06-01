@@ -27,7 +27,7 @@ describe("sync", () => {
   test("単独", async () => {
     let result = new Object()
     let task = jest.fn(() => result)
-    let r = await sync(tag, async () => {
+    let r = await sync(tag, '', async () => {
       return task()
     })
     expect(r).toBe(result)
@@ -38,7 +38,7 @@ describe("sync", () => {
     let task = jest.fn(() => {
       throw err
     })
-    await expect(sync(tag, async () => {
+    await expect(sync(tag, '', async () => {
       task()
     })).rejects.toThrowError(err)
     expect(task).toHaveBeenCalled()
@@ -54,8 +54,8 @@ describe("sync", () => {
     let task2 = jest.fn(() => Promise.resolve(result2))
 
     // call sync without async
-    let r1 = sync(tag, task1)
-    let r2 = sync(tag, task2)
+    let r1 = sync(tag, '', task1)
+    let r2 = sync(tag, '', task2)
 
     await Promise.all([
       Promise.resolve().then(async () => {
@@ -86,9 +86,9 @@ describe("sync", () => {
     let task3 = jest.fn(() => Promise.resolve(result3))
 
     // call runSync without async
-    let r1 = sync(tag, task1)
-    let r2 = sync(tag, task2)
-    let r3 = sync(tag, task3)
+    let r1 = sync(tag, '', task1)
+    let r2 = sync(tag, '', task2)
+    let r3 = sync(tag, '', task3)
 
     await Promise.all([
       Promise.resolve().then(async () => {
@@ -121,8 +121,8 @@ describe("sync", () => {
     let task2 = jest.fn(() => Promise.resolve(result2))
 
     // call runSync without async
-    let r1 = sync(tag, task1)
-    let r2 = sync(tag, task2)
+    let r1 = sync(tag, '', task1)
+    let r2 = sync(tag, '', task2)
 
     await Promise.all([
       Promise.resolve().then(async () => {
