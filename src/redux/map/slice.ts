@@ -56,12 +56,27 @@ export const userSettingSlice = createSlice({
         }
         if (state.currentLocation.type === 'watch') {
           state.currentLocation.autoScroll = true
+          if (state.currentLocation.location) {
+            // 直近の位置情報があれば移動する
+            state.mapCenter = {
+              ...state.currentLocation.location.position,
+              zoom: state.mapCenter.zoom,
+            }
+          }
         }
       })
       .addCase(setCurrentLocation.fulfilled, (state, action) => {
-        const { nav, location } = action.payload
+        const { nav, current } = action.payload
         state.nav = nav
-        state.currentLocation = location
+        state.currentLocation = current
+        if (current.type === 'watch' && current.location && current.autoScroll) {
+          // 地図中心位置を自動追従
+          state.mapCenter = {
+            ...current.location.position,
+            zoom: state.mapCenter.zoom,
+          }
+        }
+      })
       })
       .addCase(requestShowSelectedPosition.pending, (state, _) => {
         if (state.currentLocation.type === 'watch') {
