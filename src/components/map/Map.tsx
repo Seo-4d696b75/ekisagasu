@@ -39,6 +39,7 @@ const MapContainer: FC = () => {
     nav,
     currentLocation,
     mapCenter,
+    isUserDragging,
   } = useSelector(selectMapState)
 
   const {
@@ -76,7 +77,6 @@ const MapContainer: FC = () => {
 
   // callbacks listening to map events
   const {
-    isDragRunning,
     onMouseDown,
     onMapClicked,
     onMapRightClicked,
@@ -115,7 +115,7 @@ const MapContainer: FC = () => {
   }, [])
 
   // 現在位置・拡大率が変更されたらMap中心位置を変更する
-  useMapCenterChangeEffect(mapCenter, googleMapRef, isDragRunning)
+  useMapCenterChangeEffect(mapCenter, googleMapRef, isUserDragging)
 
   const isWatchCurrentPosition = currentLocation.type === 'watch'
   const currentPosition = isWatchCurrentPosition ? currentLocation.location?.position : undefined

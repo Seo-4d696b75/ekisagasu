@@ -5,7 +5,7 @@ import stationRepository, { DataType } from "../data/StationRepository";
 import { Line } from "../data/line";
 import { Station } from "../data/station";
 import locationRepository from "../location/LocationRepository";
-import { CurrentLocation, CurrentLocationState, LatLng, MapCenter, isLatLng } from "../location/location";
+import { CurrentLocationState, LatLng, Location, MapCenter, isLatLng } from "../location/location";
 import { logger } from "../logger";
 import { PolylineProps, measure } from "../model/diagram";
 import { GlobalMapState } from "./map/state";
@@ -45,8 +45,8 @@ export const setWatchCurrentLocation = createAsyncThunk(
     locationRepository.setWatchCurrentPosition(watch)
     return watch ? {
       type: 'watch',
-      autoScroll: true,
       location: null,
+      autoScroll: true,
     } : {
       type: 'idle',
     }
@@ -86,9 +86,9 @@ export const requestCurrentLocation = createAsyncThunk(
 
 export const setCurrentLocation = createAsyncThunk(
   "map/setCurrentLocation",
-  async (location: CurrentLocation, thunkAPI): Promise<{
+  async (location: Location, thunkAPI): Promise<{
     nav: NavState,
-    location: CurrentLocationState,
+    current: CurrentLocationState,
   }> => {
     const { mapState } = thunkAPI.getState() as RootState
     if (mapState.currentLocation.type === 'watch') {
@@ -97,7 +97,7 @@ export const setCurrentLocation = createAsyncThunk(
         nav: mapState.nav.type === NavType.IDLE
           ? await nextIdleNavStateWatchingLocation(location.position, mapState.radarK)
           : mapState.nav,
-        location: {
+        current: {
           type: 'watch',
           location: location,
           autoScroll: mapState.currentLocation.autoScroll,
@@ -106,11 +106,14 @@ export const setCurrentLocation = createAsyncThunk(
     } else {
       return {
         nav: mapState.nav,
-        location: mapState.currentLocation,
+        current: mapState.currentLocation,
       }
     }
-
   }
+)
+
+export const setUserDragging = createAction<boolean>(
+  "map/setUserDragging",
 )
 
 export const requestShowSelectedPosition = createAsyncThunk(

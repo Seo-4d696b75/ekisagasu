@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { DialogType, isStationDialog, NavState, NavType } from "../../components/navState"
-import { requestCurrentLocation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStation, setCurrentLocation, setHighAccuracyLocation, setMapCenter, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "../actions"
+import { requestCurrentLocation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStation, setCurrentLocation, setHighAccuracyLocation, setMapCenter, setNavStateIdle, setRadarK, setShowStationPin, setUserDragging, setWatchCurrentLocation } from "../actions"
 import { GlobalMapState } from "./state"
 
 const initUserSetting: GlobalMapState = {
@@ -19,6 +19,7 @@ const initUserSetting: GlobalMapState = {
     lng: 139.767125,
     zoom: 14,
   },
+  isUserDragging: false,
 }
 
 export const userSettingSlice = createSlice({
@@ -77,6 +78,12 @@ export const userSettingSlice = createSlice({
           }
         }
       })
+      .addCase(setUserDragging, (state, action) => {
+        state.isUserDragging = action.payload
+        if (action.payload && state.currentLocation.type === 'watch') {
+          // ユーザー操作が開始したら自動追従は停止する
+          state.currentLocation.autoScroll = false
+        }
       })
       .addCase(requestShowSelectedPosition.pending, (state, _) => {
         if (state.currentLocation.type === 'watch') {

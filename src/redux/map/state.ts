@@ -20,4 +20,8 @@ export interface GlobalMapState {
    * Map中心位置
    */
   mapCenter: MapCenter
+  /**
+   * ユーザー操作による地図の移動中かフラグ
+   */
+  isUserDragging: boolean
 }

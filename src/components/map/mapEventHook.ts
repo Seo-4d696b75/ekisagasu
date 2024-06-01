@@ -1,4 +1,4 @@
-import { MutableRefObject, useRef, useState } from "react"
+import { MutableRefObject, useRef } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useSearchParams } from "react-router-dom"
 import repository from "../../data/StationRepository"
@@ -55,8 +55,6 @@ export const useMapCallback = (
 
   const dataInitialized = dataType !== null
 
-  const [isDragRunning, setDragRunning] = useState(false)
-
   const [query,] = useSearchParams()
 
   const dispatch = useDispatch<AppDispatch>()
@@ -96,7 +94,7 @@ export const useMapCallback = (
   }
 
   const onMapDragStart = () => {
-    setDragRunning(true)
+    dispatch(action.setUserDragging(true))
     if (isStationDialog(nav) && nav.data.showHighVoronoi) return
     if (nav.type === NavType.DIALOG_LINE && nav.data.showPolyline) return
     if (!screenWide) {
@@ -119,7 +117,7 @@ export const useMapCallback = (
     if (dataInitialized && map) {
       operator.updateBounds(map)
     }
-    setDragRunning(false)
+    dispatch(action.setUserDragging(false))
   }
 
   /* 非同期関数内からコールバック関数を呼び出す場合、
@@ -234,7 +232,6 @@ export const useMapCallback = (
   }
 
   return {
-    isDragRunning,
     onMouseDown,
     onMapClicked,
     onMapRightClicked,
