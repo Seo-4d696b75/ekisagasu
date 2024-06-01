@@ -1,7 +1,7 @@
-import { Station, StationAPIResponse } from "../data/station"
+import { RectBounds, isInsideRect } from "../components/map/diagram"
 import { logger } from "../logger"
-import { RectBounds, isInsideRect } from "../model/diagram"
 import { StationNode } from "../search/kdTree"
+import { Station, StationAPIResponse } from "./station"
 
 
 /**

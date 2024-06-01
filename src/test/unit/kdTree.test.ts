@@ -1,7 +1,7 @@
-import { NormalNodeResponse, StationNodeImpl, StationNodeResponse, StationTreeSegmentResponse, initRoot, isSegmentNode } from "../../data/node"
-import { Station, StationAPIResponse, parseStation } from "../../data/station"
 import { LatLng } from "../../location/location"
 import { StationKdTree } from "../../search/kdTree"
+import { NormalNodeResponse, StationNodeImpl, StationNodeResponse, StationTreeSegmentResponse, initRoot, isSegmentNode } from "../../station/node"
+import { Station, StationAPIResponse, parseStation } from "../../station/station"
 
 
 describe("kdTree", () => {

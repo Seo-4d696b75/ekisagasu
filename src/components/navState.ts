@@ -1,7 +1,7 @@
-import { Line } from "../data/line"
-import { Station } from "../data/station"
 import { LatLng } from "../location/location"
-import { PolylineProps } from "../model/diagram"
+import { Line } from "../station/line"
+import { Station } from "../station/station"
+import { PolylineProps } from "./map/diagram"
 
 export interface RadarStation {
   station: Station

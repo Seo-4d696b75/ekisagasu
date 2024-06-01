@@ -1,9 +1,9 @@
 import { FC, useMemo, useState } from "react";
-import { Line } from "../../data/line";
-import { Station } from "../../data/station";
 import img_delete from "../../img/ic_delete.png";
 import img_radar from "../../img/radar.png";
 import img_voronoi from "../../img/voronoi.png";
+import { Line } from "../../station/line";
+import { Station } from "../../station/station";
 import { useRefCallback } from "../hooks";
 import { StationDialogProps } from "../navState";
 import { StationDetails, StationRadar, StationTitle } from "./DialogSections";

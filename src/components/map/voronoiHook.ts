@@ -1,10 +1,10 @@
 import { useRef, useState } from "react";
 import VoronoiWorker from "worker-loader!./../../worker/VoronoiWorker"; // eslint-disable-line import/no-webpack-loader-syntax
-import repository from "../../data/StationRepository";
-import { Station } from "../../data/station";
 import * as Rect from "../../diagram/rect";
 import { LatLng } from "../../location/location";
 import { logger } from "../../logger";
+import repository from "../../station/StationRepository";
+import { Station } from "../../station/station";
 
 export interface HighVoronoiCallback {
   onStart?: (center: Station) => void

@@ -1,7 +1,7 @@
 import axios, { AxiosResponse } from "axios"
+import { RectBounds } from "../components/map/diagram"
 import { LatLng } from "../location/location"
 import { logger } from "../logger"
-import { RectBounds } from "../model/diagram"
 import { appendLoadedStation, clearLoadedStation } from "../redux/actions"
 import { store } from "../redux/store"
 import { NearStation, StationKdTree } from "../search/kdTree"

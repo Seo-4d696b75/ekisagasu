@@ -1,8 +1,8 @@
 import axios from "axios"
 import MockAdapter from "axios-mock-adapter"
-import { StationTreeSegmentResponse } from "../../data/node"
-import { parseStation, Station, StationAPIResponse } from "../../data/station"
-import { StationRepository } from "../../data/StationRepository"
+import { StationTreeSegmentResponse } from "../../station/node"
+import { parseStation, Station, StationAPIResponse } from "../../station/station"
+import { StationRepository } from "../../station/StationRepository"
 
 const mock = new MockAdapter(axios)
 

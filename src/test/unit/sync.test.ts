@@ -1,4 +1,4 @@
-import { getSynchronizer } from "../../data/sync"
+import { getSynchronizer } from "../../station/sync"
 
 
 interface Latch {
