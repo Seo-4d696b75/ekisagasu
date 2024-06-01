@@ -64,12 +64,11 @@ async function impl<T>(
 export interface Synchronizer {
   <T>(
     tag: string,
-    message: string,
     task: Promise<T> | (() => Promise<T>),
   ): Promise<T>
 }
 
 export function getSynchronizer(): Synchronizer {
   const tasks: Map<string, Promise<any>> = new Map()
-  return (tag, message, task) => impl(tag, tasks, task)
+  return (tag, task) => impl(tag, tasks, task)
 }

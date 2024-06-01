@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { DialogType, isStationDialog, NavState, NavType } from "../../components/navState"
-import { requestCurrentLocation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStationPromise, setCurrentLocation, setHighAccuracyLocation, setMapCenter, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "../actions"
+import { requestCurrentLocation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStation, setCurrentLocation, setHighAccuracyLocation, setMapCenter, setNavStateIdle, setRadarK, setShowStationPin, setWatchCurrentLocation } from "../actions"
 import { GlobalMapState } from "./state"
 
 const initUserSetting: GlobalMapState = {
@@ -76,12 +76,12 @@ export const userSettingSlice = createSlice({
           zoom: action.payload.focus.zoom ?? state.mapCenter.zoom,
         }
       })
-      .addCase(requestShowStationPromise.pending, (state, _) => {
+      .addCase(requestShowStation.pending, (state, _) => {
         if (state.currentLocation.type === 'watch') {
           state.currentLocation.autoScroll = false
         }
       })
-      .addCase(requestShowStationPromise.fulfilled, (state, action) => {
+      .addCase(requestShowStation.fulfilled, (state, action) => {
         state.nav = action.payload.nav
         state.mapCenter = {
           ...action.payload.focus,
@@ -90,21 +90,24 @@ export const userSettingSlice = createSlice({
       })
       .addCase(requestShowLine.pending, (state, action) => {
         let line = action.meta.arg
-        let next: NavState = {
-          type: NavType.DIALOG_LINE,
-          data: {
-            dialog: {
-              type: DialogType.LINE,
-              props: {
-                line: line,
-              }
-            },
-            polylineList: [],
-            stationMakers: [],
-            showPolyline: false,
+        if (typeof line === 'object') {
+          // 可能なら詳細無しの路線情報ダイアログを先に表示する
+          let next: NavState = {
+            type: NavType.DIALOG_LINE,
+            data: {
+              dialog: {
+                type: DialogType.LINE,
+                props: {
+                  line: line,
+                }
+              },
+              polylineList: [],
+              stationMakers: [],
+              showPolyline: false,
+            }
           }
+          state.nav = next
         }
-        state.nav = next
         if (state.currentLocation.type === 'watch') {
           state.currentLocation.autoScroll = false
         }

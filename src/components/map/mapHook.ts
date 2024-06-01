@@ -11,6 +11,7 @@ import { selectMapState, selectStationState } from "../../redux/selector"
 import { AppDispatch } from "../../redux/store"
 import { useRefCallback } from "../hooks"
 import { NavType, isStationDialog } from "../navState"
+import { ProgressHandler } from "./progressHook"
 import { useHighVoronoi } from "./voronoiHook"
 
 const ZOOM_TH = 12
@@ -39,7 +40,7 @@ function shouldUpdateBounds(state: HideStationState, zoom: number, rect: RectBou
  * @returns 
  */
 export const useMapOperator = (
-  progressHandler: (task: Promise<void> | (() => Promise<void>), text: string) => any,
+  progressHandler: ProgressHandler,
   googleMapRef: MutableRefObject<google.maps.Map | null>,
   mapElementRef: RefObject<HTMLElement>,
 ) => {
@@ -73,7 +74,11 @@ export const useMapOperator = (
   }
 
   const showLine = (line: Line) => {
-    dispatch(action.requestShowLine(line))
+    // 詳細情報を非同期で取得する
+    progressHandler(
+      "路線情報を取得しています",
+      dispatch(action.requestShowLine(line)).unwrap(),
+    )
   }
 
   // use high-voronoi logic via custom hook
@@ -85,28 +90,31 @@ export const useMapOperator = (
       dispatch(action.setNavStateIdle())
       return
     }
-    progressHandler(new Promise<void>((resolve, reject) => {
-      runHighVoronoi(station, {
-        onStart: (_) => dispatch(action.requestShowHighVoronoi()),
-        onComplete: (station, list) => {
-          resolve()
-          const map = googleMapRef.current
-          const mapElement = mapElementRef.current
-          if (map && mapElement) {
-            var rect = mapElement.getBoundingClientRect()
-            var bounds = getBounds(list[radarK - 1])
-            var props = getZoomProperty(bounds, rect.width, rect.height, ZOOM_TH, station.position, 100)
-            map.panTo(props.center)
-            map.setZoom(props.zoom)
-          }
-        },
-        onError: (e) => {
-          reject(e)
-          dispatch(action.setNavStateIdle())
-        },
-        onCancel: () => reject(),
-      })
-    }), "レーダー範囲を計算中")
+    progressHandler(
+      "レーダー範囲を計算中",
+      new Promise<void>((resolve, reject) => {
+        runHighVoronoi(station, {
+          onStart: (_) => dispatch(action.requestShowHighVoronoi()),
+          onComplete: (station, list) => {
+            resolve()
+            const map = googleMapRef.current
+            const mapElement = mapElementRef.current
+            if (map && mapElement) {
+              var rect = mapElement.getBoundingClientRect()
+              var bounds = getBounds(list[radarK - 1])
+              var props = getZoomProperty(bounds, rect.width, rect.height, ZOOM_TH, station.position, 100)
+              map.panTo(props.center)
+              map.setZoom(props.zoom)
+            }
+          },
+          onError: (e) => {
+            reject(e)
+            dispatch(action.setNavStateIdle())
+          },
+          onCancel: () => reject(new Error("voronoi cancelled")),
+        })
+      }),
+    )
   }
 
   const showPolyline = (line: Line) => {
@@ -144,6 +152,7 @@ export const useMapOperator = (
     }
   }
 
+  //　地図表示範囲の変更時に表示する駅リストを更新する
   const updateBounds = useRefCallback(async (map: google.maps.Map, force?: boolean) => {
     const bounds = map.getBounds()
     const zoom = map.getZoom()
@@ -157,23 +166,28 @@ export const useMapOperator = (
       west: sw.lng(),
     }
     if (force || shouldUpdateBounds(hideState, zoom, rect)) {
-      const margin = Math.min(
-        Math.max(ne.lat() - sw.lat(), ne.lng() - sw.lng()) * 0.5,
-        0.5
+      await progressHandler(
+        "駅を検索中",
+        async () => {
+          const margin = Math.min(
+            Math.max(ne.lat() - sw.lat(), ne.lng() - sw.lng()) * 0.5,
+            0.5
+          )
+          const search = {
+            south: sw.lat() - margin,
+            north: ne.lat() + margin,
+            west: sw.lng() - margin,
+            east: ne.lng() + margin,
+          }
+          const result = await repository.searchRect(search, VORONOI_SIZE_TH)
+          setHideState({
+            hide: zoom < ZOOM_TH && result.length >= VORONOI_SIZE_TH,
+            zoom: zoom,
+            rect: search,
+            stationSize: result.length,
+          })
+        },
       )
-      const search = {
-        south: sw.lat() - margin,
-        north: ne.lat() + margin,
-        west: sw.lng() - margin,
-        east: ne.lng() + margin,
-      }
-      const result = await repository.searchRect(search, VORONOI_SIZE_TH)
-      setHideState({
-        hide: zoom < ZOOM_TH && result.length >= VORONOI_SIZE_TH,
-        zoom: zoom,
-        rect: search,
-        stationSize: result.length,
-      })
     } else {
       setHideState({
         hide: true,
@@ -199,18 +213,20 @@ export const useMapOperator = (
   const focusAtNearestStation = (pos: LatLng) => {
     if (!dataType) return
     if (isStationDialog(nav) && nav.data.showHighVoronoi) return
-    repository.search(pos, 1).then(result => {
-      const s = result[0].station
-      logger.d("nearest station found", s)
-      dispatch(action.requestShowStation(s))
-    })
+    progressHandler(
+      "駅を探しています",
+      dispatch(action.requestShowStation(pos)).unwrap(),
+    )
   }
 
   const requestCurrentPosition = () => {
-    progressHandler(async () => {
-      await closeDialog()
-      await dispatch(action.requestCurrentLocation())
-    }, "現在位置を取得しています")
+    progressHandler(
+      "現在位置を取得しています",
+      async () => {
+        await closeDialog()
+        await dispatch(action.requestCurrentLocation())
+      },
+    )
   }
 
   const switchDataType = async (type: DataType) => {
@@ -219,11 +235,14 @@ export const useMapOperator = (
     // データセット変更時に地図で表示している現在の範囲に合わせて更新＆読み込みする
     const map = googleMapRef.current
     if (map) {
-      progressHandler(async () => {
-        await repository.setData(type)
-        dispatch(action.clearLoadedStation())
-        await updateBounds(map, true)
-      }, "駅データを切り替えています")
+      progressHandler(
+        "駅データを切替中",
+        async () => {
+          await repository.setData(type)
+          dispatch(action.clearLoadedStation())
+          await updateBounds(map, true)
+        },
+      )
     }
   }
 

@@ -54,7 +54,7 @@ export class StationRepository {
 
   initialize(type: DataType): Promise<StationRepository> {
     // 複数呼び出しに対しても初期化処理をただ１回のみ実行する
-    return this.sync('initialize', '駅データを初期化中', async () => {
+    return this.sync('initialize', async () => {
       if (this.initialized) return this
       // load station and line
       await this.setData(type)
@@ -81,7 +81,7 @@ export class StationRepository {
    * @returns 
    */
   get<T>(url: string): Promise<AxiosResponse<T>> {
-    return this.sync(`get-${url}`, 'データを取得中', axios.get<T>(url))
+    return this.sync(`get-${url}`, axios.get<T>(url))
   }
 
   /**
@@ -92,7 +92,7 @@ export class StationRepository {
    * @returns 
    */
   async setData(type: DataType): Promise<void> {
-    return this.sync(`setData-${type}`, '駅データを切替中', async () => {
+    return this.sync(`setData-${type}`, async () => {
       if (this.dataAPI?.type === type) {
         // 連続呼び出しの対策
         return
@@ -121,7 +121,7 @@ export class StationRepository {
   }
 
   async getStationById(id: string): Promise<Station> {
-    return this.sync(`getStationById-${id}`, '駅情報を探しています', async () => {
+    return this.sync(`getStationById-${id}`, async () => {
       if (id.match(/^[0-9a-f]{6}$/)) {
         let s = this.stationsId.get(id)
         if (s) return s
@@ -138,7 +138,7 @@ export class StationRepository {
       if (!isNaN(code)) {
         return await this.getStation(code)
       }
-      throw Error("invalid station arg, not id nor code.")
+      throw Error(`station not found. id:${id}`)
     })
   }
 
@@ -147,7 +147,7 @@ export class StationRepository {
     if (s) return s
     // step 1: get lat/lng of the target station
     // step 2: update neighbor stations
-    return this.sync(`getStationOrNull-${code}`, '駅情報を探しています', async () => {
+    return this.sync(`getStationOrNull-${code}`, async () => {
       try {
         const res = await this.get<StationAPIResponse>(`${process.env.REACT_APP_STATION_API_URL}/station?code=${code}`)
         let pos = {
@@ -181,22 +181,22 @@ export class StationRepository {
     return this.lines.get(code)
   }
 
-  getLineById(id: string): Line | undefined {
+  getLineById(id: string): Line {
     if (id.match(/^[0-9a-f]{6}$/)) {
       let line = this.linesId.get(id)
       if (line) return line
     }
     const code = parseInt(id)
     if (!isNaN(code)) {
-      return this.getLineOrNull(code)
+      return this.getLine(code)
     }
-    return undefined
+    throw Error(`line not found id:${id}`)
   }
 
   async getLineDetail(code: number): Promise<Line> {
     // 単一のupdate_** 呼び出しでも同一segmentが複数から要求される
     const tag = `getLineDetail-${code}`
-    return await this.sync(tag, '路線情報を取得しています', async () => {
+    return await this.sync(tag, async () => {
       const line = this.lines.get(code)
       if (!line) {
         throw Error(`line not found id:${code}`)
@@ -223,7 +223,7 @@ export class StationRepository {
   getTreeSegment(name: string): Promise<StationTreeSegmentResponse> {
     const tag = `getTreeSegment-${name}`
     // be sure to avoid loading the same segment
-    return this.sync(tag, '駅情報を取得しています', async () => {
+    return this.sync(tag, async () => {
       const res = await this.get<StationTreeSegmentResponse>(`${this.dataAPI!.baseURL}/out/${this.dataAPI!.type}/tree/${name}.json`)
       logger.d("tree-segment loaded", name)
       const data = res.data
@@ -240,7 +240,7 @@ export class StationRepository {
   }
 
   getStationPoint(code: number): Promise<DelaunayStation> {
-    return this.sync("getStationPoint", "図形情報を取得しています", async () => {
+    return this.sync("getStationPoint", async () => {
       let map = this.stationPoints
       if (!map) {
         const res = await this.get<DelaunayStation[]>(`${this.dataAPI!.baseURL}/out/${this.dataAPI!.type}/delaunay.json`)
@@ -265,12 +265,12 @@ export class StationRepository {
        同時に searchを呼び出すと前回の探索が終了する前に別の探索が走る場合があり得る
        KdTreeは内部状態を持つ実装のため挙動が予想できない
     */
-    return this.sync("kdTree", "検索中", this.tree.search(position, k))
+    return this.sync("kdTree", this.tree.search(position, k))
   }
 
   async searchRect(rect: RectBounds, max: number): Promise<Station[]> {
     if (!this.tree) throw Error('kdTree not initialized')
-    return this.sync("kdTree", "検索中", this.tree.searchRect(rect, max))
+    return this.sync("kdTree", this.tree.searchRect(rect, max))
   }
 
   reset() {

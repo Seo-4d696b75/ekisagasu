@@ -98,6 +98,7 @@ const MapContainer: FC = () => {
     showPolyline,
     showRadarVoronoi,
     requestCurrentPosition,
+    progressHandler: showProgressBannerWhile,
   })
 
   useEffect(() => {

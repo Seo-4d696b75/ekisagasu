@@ -5,7 +5,7 @@ import stationRepository, { DataType } from "../data/StationRepository";
 import { Line } from "../data/line";
 import { Station } from "../data/station";
 import locationRepository from "../location/LocationRepository";
-import { CurrentLocation, CurrentLocationState, LatLng, MapCenter } from "../location/location";
+import { CurrentLocation, CurrentLocationState, LatLng, MapCenter, isLatLng } from "../location/location";
 import { logger } from "../logger";
 import { PolylineProps, measure } from "../model/diagram";
 import { GlobalMapState } from "./map/state";
@@ -143,14 +143,16 @@ export const requestShowSelectedPosition = createAsyncThunk(
   }
 )
 
-export const requestShowStation = (s: Station) => requestShowStationPromise(
-  Promise.resolve(s)
-)
-
-export const requestShowStationPromise = createAsyncThunk(
+export const requestShowStation = createAsyncThunk(
   "map/requestShowStation",
-  async (stationProvider: Promise<Station>, thunkAPI) => {
-    let s = await stationProvider
+  async (station: Station | LatLng | string | number, thunkAPI) => {
+    const s = (typeof station === 'string')
+      ? await stationRepository.getStationById(station)
+      : (typeof station === 'number')
+        ? await stationRepository.getStation(station)
+        : isLatLng(station)
+          ? (await stationRepository.search(station, 1))[0].station
+          : station
     const { mapState } = thunkAPI.getState() as RootState
     let next: NavState = {
       type: NavType.DIALOG_STATION_POS,
@@ -178,15 +180,18 @@ export const requestShowStationPromise = createAsyncThunk(
 
 export const requestShowLine = createAsyncThunk(
   "map/requestShowLine",
-  async (line: Line) => {
-    let l = await stationRepository.getLineDetail(line.code)
+  async (line: Line | string) => {
+    const l = (typeof line === 'string')
+      ? stationRepository.getLineById(line)
+      : line
+    const detail = await stationRepository.getLineDetail(l.code)
     let next: LineDialogNav = {
       type: NavType.DIALOG_LINE,
       data: {
         dialog: {
           type: DialogType.LINE,
           props: {
-            line: l,
+            line: detail,
           }
         },
         polylineList: [],
@@ -216,7 +221,7 @@ export const requestShowHighVoronoi = createAction<void>(
 export const requestShowStationItem = (item: StationSuggestion) => {
   switch (item.type) {
     case "station": {
-      return requestShowStationPromise(stationRepository.getStation(item.code))
+      return requestShowStation(item.code)
     }
     case "line": {
       let line = stationRepository.getLine(item.code)

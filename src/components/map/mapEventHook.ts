@@ -12,6 +12,7 @@ import { selectMapState, selectStationState } from "../../redux/selector"
 import { AppDispatch } from "../../redux/store"
 import { useRefCallback } from "../hooks"
 import { NavType, isStationDialog } from "../navState"
+import { ProgressHandler } from "./progressHook"
 
 function getUIEvent(clickEvent: any): UIEvent {
   // googlemap onClick などのコールバック関数に渡させるイベントオブジェクトの中にあるUIEventを抽出
@@ -29,15 +30,20 @@ function getUIEvent(clickEvent: any): UIEvent {
  * @param operator 地図の操作方法を教えてね
  * @returns 
  */
-export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObject<google.maps.Map | null>, operator: {
-  focusAt: (pos: LatLng, zoom?: number) => void
-  focusAtNearestStation: (pos: LatLng) => void
-  closeDialog: () => void
-  updateBounds: (map: google.maps.Map) => void
-  showPolyline: (line: Line) => void
-  showRadarVoronoi: (station: Station) => void
-  requestCurrentPosition: () => void
-}) => {
+export const useMapCallback = (
+  screenWide: boolean,
+  googleMapRef: MutableRefObject<google.maps.Map | null>,
+  operator: {
+    focusAt: (pos: LatLng, zoom?: number) => void
+    focusAtNearestStation: (pos: LatLng) => void
+    closeDialog: () => void
+    updateBounds: (map: google.maps.Map) => void
+    showPolyline: (line: Line) => void
+    showRadarVoronoi: (station: Station) => void
+    requestCurrentPosition: () => void
+    progressHandler: ProgressHandler
+  },
+) => {
 
   const {
     nav,
@@ -126,53 +132,65 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
   const onMapReady = async (map: google.maps.Map) => {
     googleMapRef.current = map
 
-    const initialCenter = {
-      lat: 35.681236,
-      lng: 139.767125,
-      zoom: 14,
-    }
-    dispatch(action.setMapCenter(initialCenter))
-
-    dispatch(action.setNavStateIdle())
-
     // extraデータの表示フラグ
     const type = parseQueryBoolean(query.get('extra')) ? 'extra' : 'main'
 
-    // データの初期化
-    await repository.initialize(type)
-    // GlobalMapStateに反映する
-    dispatch(action.setDataType(type))
+    await operator.progressHandler(
+      "駅データを初期化中",
+      async () => {
+        const initialCenter = {
+          lat: 35.681236,
+          lng: 139.767125,
+          zoom: 14,
+        }
+        dispatch(action.setMapCenter(initialCenter))
+        dispatch(action.setNavStateIdle())
+
+        // データの初期化
+        await repository.initialize(type)
+
+        // GlobalMapStateに反映する
+        dispatch(action.setDataType(type))
+      }
+    )
+
+
 
     // 路線情報の表示
     const queryLine = query.get('line')
     if (typeof queryLine === 'string') {
-      const line = repository.getLineById(queryLine)
-      if (line) {
-        try {
-          const result = await dispatch(action.requestShowLine(line)).unwrap()
-          // マップ中心位置を路線ポリラインに合わせる
-          showPolylineRef(result.line)
-          return
-        } catch (e) {
-          logger.w("fail to show line details. query:", queryLine, e)
+      await operator.progressHandler(
+        "路線情報を取得しています",
+        async () => {
+          try {
+            const result = await dispatch(action.requestShowLine(queryLine)).unwrap()
+            // マップ中心位置を路線ポリラインに合わせる
+            showPolylineRef(result.line)
+            return
+          } catch (e) {
+            logger.w("fail to show line details. query:", queryLine, e)
+          }
         }
-      }
+      )
     }
 
     // 駅情報の表示
     const queryStation = query.get('station')
     if (typeof queryStation === 'string') {
-      try {
-        const result = await dispatch(action.requestShowStationPromise(
-          repository.getStationById(queryStation)
-        )).unwrap()
-        if (parseQueryBoolean(query.get('voronoi'))) {
-          showRadarVoronoiRef(result.station)
+      await operator.progressHandler(
+        "駅情報を取得しています",
+        async () => {
+          try {
+            const result = await dispatch(action.requestShowStation(queryStation)).unwrap()
+            if (parseQueryBoolean(query.get('voronoi'))) {
+              showRadarVoronoiRef(result.station)
+            }
+            return
+          } catch (e) {
+            logger.w("fail to show station, query:", queryStation, e)
+          }
         }
-        return
-      } catch (e) {
-        logger.w("fail to show station, query:", queryStation, e)
-      }
+      )
     }
 
     // 指定位置への移動
