@@ -39,7 +39,7 @@ function shouldUpdateBounds(state: HideStationState, zoom: number, rect: RectBou
  * @returns 
  */
 export const useMapOperator = (
-  progressHandler: (task: Promise<void> | (() => Promise<void>), text: string) => any,
+  progressHandler: (message: string, task: Promise<void> | (() => Promise<void>)) => any,
   googleMapRef: MutableRefObject<google.maps.Map | null>,
   mapElementRef: RefObject<HTMLElement>,
 ) => {
@@ -85,28 +85,31 @@ export const useMapOperator = (
       dispatch(action.setNavStateIdle())
       return
     }
-    progressHandler(new Promise<void>((resolve, reject) => {
-      runHighVoronoi(station, {
-        onStart: (_) => dispatch(action.requestShowHighVoronoi()),
-        onComplete: (station, list) => {
-          resolve()
-          const map = googleMapRef.current
-          const mapElement = mapElementRef.current
-          if (map && mapElement) {
-            var rect = mapElement.getBoundingClientRect()
-            var bounds = getBounds(list[radarK - 1])
-            var props = getZoomProperty(bounds, rect.width, rect.height, ZOOM_TH, station.position, 100)
-            map.panTo(props.center)
-            map.setZoom(props.zoom)
-          }
-        },
-        onError: (e) => {
-          reject(e)
-          dispatch(action.setNavStateIdle())
-        },
-        onCancel: () => reject(),
-      })
-    }), "レーダー範囲を計算中")
+    progressHandler(
+      "レーダー範囲を計算中",
+      new Promise<void>((resolve, reject) => {
+        runHighVoronoi(station, {
+          onStart: (_) => dispatch(action.requestShowHighVoronoi()),
+          onComplete: (station, list) => {
+            resolve()
+            const map = googleMapRef.current
+            const mapElement = mapElementRef.current
+            if (map && mapElement) {
+              var rect = mapElement.getBoundingClientRect()
+              var bounds = getBounds(list[radarK - 1])
+              var props = getZoomProperty(bounds, rect.width, rect.height, ZOOM_TH, station.position, 100)
+              map.panTo(props.center)
+              map.setZoom(props.zoom)
+            }
+          },
+          onError: (e) => {
+            reject(e)
+            dispatch(action.setNavStateIdle())
+          },
+          onCancel: () => reject(),
+        })
+      }),
+    )
   }
 
   const showPolyline = (line: Line) => {
@@ -207,10 +210,13 @@ export const useMapOperator = (
   }
 
   const requestCurrentPosition = () => {
-    progressHandler(async () => {
-      await closeDialog()
-      await dispatch(action.requestCurrentLocation())
-    }, "現在位置を取得しています")
+    progressHandler(
+      "現在位置を取得しています",
+      async () => {
+        await closeDialog()
+        await dispatch(action.requestCurrentLocation())
+      },
+    )
   }
 
   const switchDataType = async (type: DataType) => {
@@ -219,11 +225,14 @@ export const useMapOperator = (
     // データセット変更時に地図で表示している現在の範囲に合わせて更新＆読み込みする
     const map = googleMapRef.current
     if (map) {
-      progressHandler(async () => {
-        await repository.setData(type)
-        dispatch(action.clearLoadedStation())
-        await updateBounds(map, true)
-      }, "駅データを切り替えています")
+      progressHandler(
+        "駅データを切り替えています",
+        async () => {
+          await repository.setData(type)
+          dispatch(action.clearLoadedStation())
+          await updateBounds(map, true)
+        },
+      )
     }
   }
 

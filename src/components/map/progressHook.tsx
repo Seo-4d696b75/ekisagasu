@@ -1,6 +1,11 @@
 import { CircularProgress } from "@material-ui/core"
-import { useMemo, useRef, useState } from "react"
+import { useMemo } from "react"
+import { useDispatch, useSelector } from "react-redux"
 import { CSSTransition } from "react-transition-group"
+import { logger } from "../../logger"
+import * as action from "../../redux/actions"
+import { selectMessageState } from "../../redux/selector"
+import { AppDispatch } from "../../redux/store"
 
 interface MessageEntry {
   id: number
@@ -8,15 +13,13 @@ interface MessageEntry {
 }
 
 export const useProgressBanner = () => {
-  const [show, setShow] = useState(false)
-  const [text, setText] = useState("")
-  const queueRef = useRef<MessageEntry[]>([])
-  const idRef = useRef(0)
+
+  const { message } = useSelector(selectMessageState)
 
   const banner = useMemo(() => (
     <div className="progress-banner-container">
       <CSSTransition
-        in={show}
+        in={message !== null}
         className="progress-banner"
         timeout={0}>
         <div className="progress-banner">
@@ -28,33 +31,27 @@ export const useProgressBanner = () => {
               thickness={5.0}
               variant="indeterminate" />
           </div>
-          <div className="progress-message">{text}</div>
+          <div className="progress-message">{message}</div>
         </div>
       </CSSTransition>
     </div>
-  ), [show, text])
+  ), [message])
 
-  const showProgressBannerWhile = async <T,>(computation: Promise<T> | (() => Promise<T>), text: string): Promise<T> => {
-    const id = idRef.current
-    idRef.current = id + 1
-    const queue = queueRef.current
-    queue.push({
-      id: id,
-      text: text
-    })
+  const dispatch = useDispatch<AppDispatch>()
+
+  const showProgressBannerWhile = async <T,>(
+    message: string,
+    computation: Promise<T> | (() => Promise<T>),
+  ): Promise<T> => {
     const task = (typeof computation === "function") ? computation() : computation
+    const { id } = await dispatch(action.showMessage(message)).unwrap()
     try {
-      setText(queue[0].text)
-      setShow(true)
       return await task
+    } catch (e) {
+      logger.w(e)
+      throw e
     } finally {
-      const idx = queue.findIndex(e => e.id === id)
-      queue.splice(idx, 1)
-      if (queue.length === 0) {
-        setShow(false)
-      } else {
-        setText(queue[0].text)
-      }
+      dispatch(action.hideMessage(id))
     }
   }
 
