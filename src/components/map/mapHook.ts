@@ -69,18 +69,6 @@ export const useMapOperator = (
 
   const dispatch = useDispatch<AppDispatch>()
 
-  const showStation = (station: Station) => {
-    dispatch(action.requestShowStation(station))
-  }
-
-  const showLine = (line: Line) => {
-    // 詳細情報を非同期で取得する
-    progressHandler(
-      "路線情報を取得しています",
-      dispatch(action.requestShowLine(line)).unwrap(),
-    )
-  }
-
   // use high-voronoi logic via custom hook
   const { run: runHighVoronoi, cancel: cancelHighVoronoi, highVoronoi } = useHighVoronoi(radarK)
 
@@ -184,6 +172,20 @@ export const useMapOperator = (
     // if any worker is running, terminate it
     cancelHighVoronoi()
     await dispatch(action.setNavStateIdle())
+  }
+
+  const showStation = (station: Station) => {
+    cancelHighVoronoi()
+    dispatch(action.requestShowStation(station))
+  }
+
+  const showLine = (line: Line) => {
+    cancelHighVoronoi()
+    // 詳細情報を非同期で取得する
+    progressHandler(
+      "路線情報を取得しています",
+      dispatch(action.requestShowLine(line)).unwrap(),
+    )
   }
 
   const focusAt = (pos: LatLng, zoom?: number) => {
