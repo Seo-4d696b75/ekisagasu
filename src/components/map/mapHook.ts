@@ -12,7 +12,7 @@ import { useRefCallback } from "../hooks"
 import { NavType, isStationDialog } from "../navState"
 import { PolylineProps, RectBounds, getBounds, getZoomProperty, isInsideRect } from "./diagram"
 import { ProgressHandler } from "./progressHook"
-import { useHighVoronoi } from "./voronoiHook"
+import { useCancelHighVoronoiEffect, useHighVoronoi } from "./voronoiHook"
 
 const ZOOM_TH = 12
 const VORONOI_SIZE_TH = 2000
@@ -71,6 +71,7 @@ export const useMapOperator = (
 
   // use high-voronoi logic via custom hook
   const { run: runHighVoronoi, cancel: cancelHighVoronoi, highVoronoi } = useHighVoronoi(radarK)
+  useCancelHighVoronoiEffect(cancelHighVoronoi)
 
   const showRadarVoronoi = (station: Station) => {
     if (!isStationDialog(nav)) return
@@ -169,18 +170,14 @@ export const useMapOperator = (
   })
 
   const closeDialog = async () => {
-    // if any worker is running, terminate it
-    cancelHighVoronoi()
     await dispatch(action.setNavStateIdle())
   }
 
   const showStation = (station: Station) => {
-    cancelHighVoronoi()
     dispatch(action.requestShowStation(station))
   }
 
   const showLine = (line: Line) => {
-    cancelHighVoronoi()
     // 詳細情報を非同期で取得する
     progressHandler(
       "路線情報を取得しています",
