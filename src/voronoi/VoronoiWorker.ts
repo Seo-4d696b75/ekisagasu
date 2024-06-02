@@ -17,6 +17,7 @@ const state: WorkerState = {
   promise: new Map(),
 }
 
+// Workerで実行するため callback スタイルに変換する
 ctx.addEventListener('message', message => {
   const data = JSON.parse(message.data)
   if (data.type === 'start') {
@@ -40,11 +41,7 @@ ctx.addEventListener('message', message => {
       }))
     }
     state.voronoi = new Voronoi<StationPoint>(data.center, container, provider)
-    state.voronoi.execute(data.k, progress).then(() => {
-      ctx.postMessage(JSON.stringify({
-        type: 'complete',
-      }))
-    }).catch(e => {
+    state.voronoi.execute(data.k, progress).catch(e => {
       ctx.postMessage(JSON.stringify({
         type: 'error',
         err: e.message

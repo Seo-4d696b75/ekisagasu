@@ -66,7 +66,7 @@ export const useProgressBanner = () => {
     } catch (e) {
       // TODO エラー表示が必要？
       // エラーは握りつぶす
-      logger.w(`uncaught error found while progress(message: ${message})`, e)
+      logger.d(`An error while progress (message: ${message})`, e)
     } finally {
       const idx = queue.findIndex(e => e.id === id)
       queue.splice(idx, 1)

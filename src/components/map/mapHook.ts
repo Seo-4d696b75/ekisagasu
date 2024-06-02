@@ -82,7 +82,7 @@ export const useMapOperator = (
   }
 
   // use high-voronoi logic via custom hook
-  const { run: runHighVoronoi, cancel: cancelHighVoronoi, highVoronoi, workerRunning } = useHighVoronoi(radarK)
+  const { run: runHighVoronoi, cancel: cancelHighVoronoi, highVoronoi } = useHighVoronoi(radarK)
 
   const showRadarVoronoi = (station: Station) => {
     if (!isStationDialog(nav)) return
@@ -92,28 +92,10 @@ export const useMapOperator = (
     }
     progressHandler(
       "レーダー範囲を計算中",
-      new Promise<void>((resolve, reject) => {
-        runHighVoronoi(station, {
-          onStart: (_) => dispatch(action.requestShowHighVoronoi()),
-          onComplete: (station, list) => {
-            resolve()
-            const map = googleMapRef.current
-            const mapElement = mapElementRef.current
-            if (map && mapElement) {
-              var rect = mapElement.getBoundingClientRect()
-              var bounds = getBounds(list[radarK - 1])
-              var props = getZoomProperty(bounds, rect.width, rect.height, ZOOM_TH, station.position, 100)
-              map.panTo(props.center)
-              map.setZoom(props.zoom)
-            }
-          },
-          onError: (e) => {
-            reject(e)
-            dispatch(action.setNavStateIdle())
-          },
-          onCancel: () => reject(new Error("voronoi cancelled")),
-        })
-      }),
+      async () => {
+        dispatch(action.requestShowHighVoronoi())
+        await runHighVoronoi(station)
+      }
     )
   }
 
@@ -247,7 +229,6 @@ export const useMapOperator = (
 
   return {
     highVoronoi,
-    workerRunning,
     hideStationOnMap,
     googleMapRef,
     mapElementRef,
