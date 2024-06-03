@@ -95,7 +95,7 @@ export const useMapCallback = (
 
   const onMapDragStart = () => {
     dispatch(action.setUserDragging(true))
-    if (isStationDialog(nav) && nav.data.showHighVoronoi) return
+    if (isStationDialog(nav) && nav.data.highVoronoi) return
     if (nav.type === NavType.DIALOG_LINE && nav.data.showPolyline) return
     if (!screenWide) {
       operator.closeDialog()

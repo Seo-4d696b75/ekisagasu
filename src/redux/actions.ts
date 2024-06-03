@@ -136,7 +136,7 @@ export const requestShowSelectedPosition = createAsyncThunk(
             lines: station.lines.map(code => stationRepository.getLine(code)),
           },
         },
-        showHighVoronoi: false,
+        highVoronoi: null,
       },
     }
     return {
@@ -169,7 +169,7 @@ export const requestShowStation = createAsyncThunk(
             lines: s.lines.map(code => stationRepository.getLine(code)),
           }
         },
-        showHighVoronoi: false,
+        highVoronoi: null,
       }
     }
     return {
@@ -217,8 +217,12 @@ export const requestShowPolyline = createAction<{
   "map/requestShowPolyline"
 )
 
-export const requestShowHighVoronoi = createAction<void>(
-  "map/requestShowHighVoronoi"
+export const startHighVoronoiCalculation = createAction<void>(
+  "map/startHighVoronoiCalculation"
+)
+
+export const setHighVoronoiPolygon = createAction<LatLng[]>(
+  "map/setHighVoronoiPolygon"
 )
 
 export const requestShowStationItem = (item: StationSuggestion) => {

@@ -1,4 +1,4 @@
-import { MutableRefObject, RefObject, useEffect, useState } from "react"
+import { MutableRefObject, RefObject, useEffect, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { LatLng, MapCenter } from "../../location/location"
 import { logger } from "../../logger"
@@ -8,11 +8,11 @@ import { AppDispatch } from "../../redux/store"
 import repository, { DataType } from "../../station/StationRepository"
 import { Line } from "../../station/line"
 import { Station } from "../../station/station"
+import calculation from "../../voronoi/calculation"
 import { useRefCallback } from "../hooks"
 import { NavType, isStationDialog } from "../navState"
 import { PolylineProps, RectBounds, getBounds, getZoomProperty, isInsideRect } from "./diagram"
 import { ProgressHandler } from "./progressHook"
-import { useCancelHighVoronoiEffect, useHighVoronoi } from "./voronoiHook"
 
 const ZOOM_TH = 12
 const VORONOI_SIZE_TH = 2000
@@ -69,22 +69,35 @@ export const useMapOperator = (
 
   const dispatch = useDispatch<AppDispatch>()
 
-  // use high-voronoi logic via custom hook
-  const { run: runHighVoronoi, cancel: cancelHighVoronoi, highVoronoi } = useHighVoronoi(radarK)
-  useCancelHighVoronoiEffect(cancelHighVoronoi)
+  // 高次ボロノイの計算中に他状態に遷移した場合に計算をキャンセルする
+  const previousRef = useRef(false)
+  const previousShowHighVoronoi = previousRef.current
+  const showHighVoronoi = isStationDialog(nav) && nav.data.highVoronoi !== null
 
+  useEffect(() => {
+    if (previousShowHighVoronoi && !showHighVoronoi) {
+      // 高次ボロノイ表示中の駅ダイアログから別状態に遷移したとき
+      calculation.cancel?.()
+    }
+  }, [previousShowHighVoronoi, showHighVoronoi])
+
+  previousRef.current = showHighVoronoi
+
+  // 高次ボロノイの計算開始＆表示
   const showRadarVoronoi = (station: Station) => {
     if (!isStationDialog(nav)) return
-    if (nav.data.showHighVoronoi) {
+    if (nav.data.highVoronoi) {
       dispatch(action.setNavStateIdle())
       return
     }
     progressHandler(
       "レーダー範囲を計算中",
       async () => {
-        dispatch(action.requestShowHighVoronoi())
-        await runHighVoronoi(station)
-      }
+        dispatch(action.startHighVoronoiCalculation())
+        for await (const polygon of calculation.calculate(station, radarK)) {
+          dispatch(action.setHighVoronoiPolygon(polygon))
+        }
+      },
     )
   }
 
@@ -187,13 +200,13 @@ export const useMapOperator = (
 
   const focusAt = (pos: LatLng, zoom?: number) => {
     if (!dataType) return
-    if (isStationDialog(nav) && nav.data.showHighVoronoi) return
+    if (showHighVoronoi) return
     dispatch(action.requestShowSelectedPosition({ ...pos, zoom: zoom }))
   }
 
   const focusAtNearestStation = (pos: LatLng) => {
     if (!dataType) return
-    if (isStationDialog(nav) && nav.data.showHighVoronoi) return
+    if (showHighVoronoi) return
     progressHandler(
       "駅を探しています",
       dispatch(action.requestShowStation(pos)).unwrap(),
@@ -227,7 +240,6 @@ export const useMapOperator = (
   }
 
   return {
-    highVoronoi,
     hideStationOnMap,
     googleMapRef,
     mapElementRef,

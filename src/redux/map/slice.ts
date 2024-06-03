@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { DialogType, isStationDialog, NavState, NavType } from "../../components/navState"
-import { requestCurrentLocation, requestShowHighVoronoi, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStation, setCurrentLocation, setHighAccuracyLocation, setMapCenter, setNavStateIdle, setRadarK, setShowStationPin, setUserDragging, setWatchCurrentLocation } from "../actions"
+import { requestCurrentLocation, requestShowLine, requestShowPolyline, requestShowSelectedPosition, requestShowStation, setCurrentLocation, setHighAccuracyLocation, setHighVoronoiPolygon, setMapCenter, setNavStateIdle, setRadarK, setShowStationPin, setUserDragging, setWatchCurrentLocation, startHighVoronoiCalculation } from "../actions"
 import { GlobalMapState } from "./state"
 
 const initUserSetting: GlobalMapState = {
@@ -148,9 +148,17 @@ export const userSettingSlice = createSlice({
           }
         }
       })
-      .addCase(requestShowHighVoronoi, (state, action) => {
+      .addCase(startHighVoronoiCalculation, (state, _) => {
         if (isStationDialog(state.nav)) {
-          state.nav.data.showHighVoronoi = true
+          state.nav.data.highVoronoi = []
+        }
+      })
+      .addCase(setHighVoronoiPolygon, (state, action) => {
+        if (isStationDialog(state.nav)) {
+          state.nav.data.highVoronoi = [
+            ...state.nav.data.highVoronoi!!,
+            action.payload,
+          ]
         }
       })
       .addCase(setNavStateIdle.fulfilled, (state, action) => {

@@ -1,19 +1,21 @@
 
 
 export interface AsyncIteratorSubject<T> extends AsyncIterable<T> {
-  resolve: (value: T, done?: boolean) => void
+  resolve: (value: T, complete?: boolean) => void
   reject: (error?: any) => void
-  readonly done: boolean
+  complete: () => void
+  readonly completed: boolean
 }
 
-class AsyncGeneratorSubjectImpl<T> implements AsyncIteratorSubject<T> {
+class AsyncIteratorSubjectImpl<T> implements AsyncIteratorSubject<T> {
   callbackQueue: {
-    resolve: (value: T) => void
+    resolve: (result: IteratorResult<T>) => void
     reject: (error?: any) => void
   }[]
-  promiseQueue: Promise<T>[]
+  promiseQueue: Promise<IteratorResult<T>>[]
 
-  done: boolean = false
+  completed: boolean = false
+  hasIteratorReturned: boolean = false
 
   constructor() {
     this.callbackQueue = []
@@ -22,7 +24,7 @@ class AsyncGeneratorSubjectImpl<T> implements AsyncIteratorSubject<T> {
 
   checkQueue() {
     if (this.callbackQueue.length === 0 || this.promiseQueue.length === 0) {
-      const promise = new Promise<T>((resolve, reject) => {
+      const promise = new Promise<IteratorResult<T>>((resolve, reject) => {
         this.callbackQueue.push({
           resolve: resolve,
           reject: reject,
@@ -32,41 +34,55 @@ class AsyncGeneratorSubjectImpl<T> implements AsyncIteratorSubject<T> {
     }
   }
 
-  resolve(value: T, done?: boolean) {
-    if (this.done) {
+  resolve(value: T, complete?: boolean) {
+    if (this.completed) {
       return
     }
     this.checkQueue()
     const callback = this.callbackQueue.shift()!!
-    callback.resolve(value)
-    this.done = (done === true)
+    callback.resolve({ value: value })
+    if (complete === true) {
+      this.complete()
+    }
+  }
+
+  complete() {
+    if (this.completed) {
+      return
+    }
+    this.completed = true
+    this.checkQueue()
+    const callback = this.callbackQueue.shift()!!
+    callback.resolve({
+      done: true,
+      value: undefined,
+    })
   }
 
   reject(error?: any) {
-    if (this.done) {
+    if (this.completed) {
       return
     }
     this.checkQueue()
     const callback = this.callbackQueue.shift()!!
     callback.reject(error)
-    this.done = true
+    this.completed = true
   }
 
   [Symbol.asyncIterator]() {
-    const isDone = () => this.done
-    const getPromise = () => {
-      this.checkQueue()
-      return this.promiseQueue.shift()!!
+    if (this.hasIteratorReturned) {
+      throw Error('multiple subscribers not supported')
     }
-    return async function* () {
-      while (isDone() === false) {
-        const value = await getPromise()
-        yield value
+    this.hasIteratorReturned = true
+    return {
+      next: () => {
+        this.checkQueue()
+        return this.promiseQueue.shift()!!
       }
-    }()
+    }
   }
 }
 
-export function createAsyncIteratorSubject<T>(): AsyncIteratorSubject<T> {
-  return new AsyncGeneratorSubjectImpl<T>()
+export function asyncIteratorSubject<T>(): AsyncIteratorSubject<T> {
+  return new AsyncIteratorSubjectImpl<T>()
 }

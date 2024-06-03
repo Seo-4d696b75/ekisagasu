@@ -61,7 +61,6 @@ const MapContainer: FC = () => {
 
   // functions operating the map and its state variables
   const {
-    highVoronoi,
     hideStationOnMap,
     showStation,
     showLine,
@@ -250,7 +249,7 @@ const MapContainer: FC = () => {
   }, [lineData])
 
 
-  const showVoronoi = !hideStationOnMap && !(isStationDialog(nav) && nav.data.showHighVoronoi)
+  const showVoronoi = !hideStationOnMap && !(isStationDialog(nav) && nav.data.highVoronoi)
   const voronoiPolygons = useMemo(() => {
     if (showVoronoi) {
       return voronoi.map((s, i) => (
@@ -285,9 +284,9 @@ const MapContainer: FC = () => {
     }
   }, [showStationMarker, voronoi])
 
-  const showHighVoronoi = isStationDialog(nav) && nav.data.showHighVoronoi
+  const highVoronoi = isStationDialog(nav) ? nav.data.highVoronoi : null
   const highVoronoiPolygons = useMemo(() => {
-    if (showHighVoronoi) {
+    if (highVoronoi) {
       return highVoronoi.map((points, i) => (
         <Polygon
           key={i}
@@ -303,7 +302,7 @@ const MapContainer: FC = () => {
     } else {
       return null
     }
-  }, [showHighVoronoi, highVoronoi, radarK])
+  }, [highVoronoi, radarK])
 
 
   // ダイアログを閉じる時アニメーションが終了するまえに nav.data.dialog が undefined になる

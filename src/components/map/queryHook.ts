@@ -26,7 +26,7 @@ export const useQueryEffect = (
       query['line'] = nav.data.dialog.props.line.code.toString()
     } else if (nav.type === NavType.DIALOG_STATION_POS) {
       query['station'] = nav.data.dialog.props.station.code.toString()
-      if (nav.data.showHighVoronoi) {
+      if (nav.data.highVoronoi) {
         query['voronoi'] = '1'
       }
     } else if (nav.type === NavType.DIALOG_SELECT_POS) {
