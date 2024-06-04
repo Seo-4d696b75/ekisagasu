@@ -203,7 +203,7 @@ export const requestShowLine = createAsyncThunk(
     }
     return {
       nav: next,
-      line: l,
+      line: detail,
     }
   }
 )
