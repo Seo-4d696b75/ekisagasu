@@ -151,11 +151,11 @@ export const useMapCallback = (
       }
     )
 
-
+    let queryResolved = false
 
     // 路線情報の表示
     const queryLine = query.get('line')
-    if (typeof queryLine === 'string') {
+    if (typeof queryLine === 'string' && !queryResolved) {
       await operator.progressHandler(
         "路線情報を取得しています",
         async () => {
@@ -163,7 +163,7 @@ export const useMapCallback = (
             const result = await dispatch(action.requestShowLine(queryLine)).unwrap()
             // マップ中心位置を路線ポリラインに合わせる
             showPolylineRef(result.line)
-            return
+            queryResolved = true
           } catch (e) {
             logger.w("fail to show line details. query:", queryLine, e)
           }
@@ -173,7 +173,7 @@ export const useMapCallback = (
 
     // 駅情報の表示
     const queryStation = query.get('station')
-    if (typeof queryStation === 'string') {
+    if (typeof queryStation === 'string' && !queryResolved) {
       await operator.progressHandler(
         "駅情報を取得しています",
         async () => {
@@ -182,7 +182,7 @@ export const useMapCallback = (
             if (parseQueryBoolean(query.get('voronoi'))) {
               showRadarVoronoiRef(result.station)
             }
-            return
+            queryResolved = true
           } catch (e) {
             logger.w("fail to show station, query:", queryStation, e)
           }
@@ -193,7 +193,7 @@ export const useMapCallback = (
     // 指定位置への移動
     const queryLat = query.get('lat')
     const queryLng = query.get('lng')
-    if (typeof queryLat === 'string' && typeof queryLng === 'string') {
+    if (typeof queryLat === 'string' && typeof queryLng === 'string' && !queryResolved) {
       const lat = parseFloat(queryLat)
       const lng = parseFloat(queryLng)
       if (20 < lat && lat < 50 && 120 < lng && lng < 150) {
@@ -216,18 +216,20 @@ export const useMapCallback = (
           }
           dispatch(action.setMapCenter(center))
         }
-        return
+        queryResolved = true
       }
     }
 
     // 現在位置を監視・追尾するフラグ
-    if (parseQueryBoolean(query.get('mylocation'))) {
+    if (parseQueryBoolean(query.get('mylocation')) && !queryResolved) {
       dispatch(action.setWatchCurrentLocation(true))
-      return
+      queryResolved = true
     }
 
     // 指定なしの場合は現在位置（取得可能なら）に合わせる
-    operator.requestCurrentPosition()
+    if (!queryResolved) {
+      operator.requestCurrentPosition()
+    }
   }
 
   return {
