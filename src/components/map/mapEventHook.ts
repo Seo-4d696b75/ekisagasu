@@ -207,7 +207,7 @@ export const useMapCallback = (
           }
         })()
         if (parseQueryBoolean(query.get('dialog'))) {
-          operator.focusAt({ lat: lat, lng: lng }, zoom)
+          dispatch(action.requestShowSelectedPosition({ lat: lat, lng: lng }))
         } else {
           const center = {
             lat: lat,
