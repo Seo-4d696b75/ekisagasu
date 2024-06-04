@@ -1,5 +1,4 @@
-import { DataType } from "../../station/StationRepository";
-import { Station } from "../../station/station";
+import { DataType, Station } from "../../station";
 
 export interface StationDataState {
   /** 

@@ -1,4 +1,4 @@
-import { LatLng } from "../location/location"
+import { LatLng } from "../location"
 import { logger } from "../logger"
 
 export interface DelaunayStation {

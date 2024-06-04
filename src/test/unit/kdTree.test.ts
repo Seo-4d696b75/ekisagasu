@@ -1,4 +1,4 @@
-import { LatLng } from "../../location/location"
+import { LatLng } from "../../location"
 import { StationKdTree } from "../../search/kdTree"
 import { NormalNodeResponse, StationNodeImpl, StationNodeResponse, StationTreeSegmentResponse, initRoot, isSegmentNode } from "../../station/node"
 import { Station, StationAPIResponse, parseStation } from "../../station/station"

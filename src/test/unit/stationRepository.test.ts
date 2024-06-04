@@ -13,7 +13,9 @@ describe("StationRepository", () => {
 
   const path = `${process.env.REACT_APP_STATION_API_URL}/info`
   mock.onGet(path).reply(200, { data_version: 20221030 })
-  const repository = new StationRepository()
+  const onStationCleared = jest.fn<void, []>(() => null)
+  const onStationLoaded = jest.fn<void, [Station[]]>((_) => null)
+  const repository = new StationRepository(onStationCleared, onStationLoaded)
 
   describe("駅・路線データ読み出し", () => {
     let data: StationTreeSegmentResponse

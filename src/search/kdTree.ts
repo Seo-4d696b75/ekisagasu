@@ -1,7 +1,7 @@
 import { isInsideRect, RectBounds } from "../components/map/diagram"
-import { LatLng } from "../location/location"
+import { LatLng } from "../location"
 import { logger } from "../logger"
-import { Station } from "../station/station"
+import { Station } from "../station"
 
 /**
  * kdTreeを構成する頂点

@@ -1,9 +1,7 @@
 import axios, { AxiosResponse } from "axios"
 import { RectBounds } from "../components/map/diagram"
-import { LatLng } from "../location/location"
+import { LatLng } from "../location"
 import { logger } from "../logger"
-import { appendLoadedStation, clearLoadedStation } from "../redux/actions"
-import { store } from "../redux/store"
 import { NearStation, StationKdTree } from "../search/kdTree"
 import { Line, LineAPIResponse, LineDetailAPIResponse, PolylineAPIResponse, parseLine, parseLineDetail } from "./line"
 import { StationNodeImpl, StationTreeSegmentResponse, initRoot, isSegmentNode } from "./node"
@@ -38,7 +36,16 @@ export class StationRepository {
 
   sync = getSynchronizer()
 
-  constructor() {
+  onStationCleared: () => void
+  onStationLoaded: (list: Station[]) => void
+
+  constructor(
+    onStationCleared: () => void,
+    onStationLoaded: (list: Station[]) => void
+  ) {
+    this.onStationCleared = onStationCleared
+    this.onStationLoaded = onStationLoaded
+
     // APIがコールドスタートのためWebApp起動時にウォームアップしておく
     this.get(`${process.env.REACT_APP_STATION_API_URL}/info`).then(info => {
       logger.i("station api data version:", info)
@@ -103,7 +110,7 @@ export class StationRepository {
       this.release()
 
       // 地図上に表示している駅の初期化
-      store.dispatch(clearLoadedStation())
+      this.onStationCleared()
 
       // kdTree探索木の初期化
       this.root = await initRoot({
@@ -240,7 +247,7 @@ export class StationRepository {
         this.stations.set(s.code, s)
         this.stationsId.set(s.id, s)
       })
-      store.dispatch(appendLoadedStation(list))
+      this.onStationLoaded(list)
       return data
     })
   }
@@ -290,6 +297,3 @@ export class StationRepository {
     this.root = null
   }
 }
-
-const repository = new StationRepository()
-export default repository

@@ -1,6 +1,4 @@
 import { logger } from "../logger"
-import { setCurrentLocation } from "../redux/actions"
-import { store } from "../redux/store"
 import { Location } from "./location"
 
 function parseLocation(location: GeolocationPosition): Location {
@@ -27,6 +25,14 @@ export class LocationRepository {
    */
   navigatorId: number | null = null
 
+  onCurrentLocationChanged: (Location: Location) => Promise<any>
+
+  constructor(
+    onCurrentLocationChanged: (location: Location) => Promise<any>
+  ) {
+    this.onCurrentLocationChanged = onCurrentLocationChanged
+  }
+
   setPositionHighAccuracy(value: boolean) {
     logger.d("position accuracy changed", value)
     this.positionOptions.enableHighAccuracy = value
@@ -46,7 +52,7 @@ export class LocationRepository {
         this.navigatorId = navigator.geolocation.watchPosition(
           async (pos) => {
             const location = parseLocation(pos)
-            await store.dispatch(setCurrentLocation(location))
+            await this.onCurrentLocationChanged(location)
           },
           (err) => {
             logger.e(err)
@@ -90,7 +96,3 @@ export class LocationRepository {
     }
   }
 }
-
-const repository = new LocationRepository()
-
-export default repository

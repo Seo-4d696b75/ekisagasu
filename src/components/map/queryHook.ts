@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 import { useSearchParams } from "react-router-dom"
-import { MapCenter } from "../../location/location"
-import { DataType } from "../../station/StationRepository"
+import { MapCenter } from "../../location"
+import { DataType } from "../../station"
 import { NavState, NavType } from "../navState"
 
 export const useQueryEffect = (

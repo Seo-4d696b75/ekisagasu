@@ -5,7 +5,7 @@ import Autosuggest from 'react-autosuggest'
 import { useSelector } from "react-redux"
 import { logger } from "../../logger"
 import { selectStationState } from "../../redux/selector"
-import repository from "../../station/StationRepository"
+import repository from "../../station/repository"
 import { PropsEvent } from "../event"
 import { useEventEffect, useRefCallback } from "../hooks"
 import "./StationSearchBox.css"
