@@ -147,6 +147,7 @@ export const userSettingSlice = createSlice({
             stationMakers: action.payload.stations
           }
         }
+        state.mapCenter = action.payload.center
       })
       .addCase(startHighVoronoiCalculation, (state, _) => {
         if (isStationDialog(state.nav)) {

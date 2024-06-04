@@ -212,6 +212,7 @@ export const requestShowPolyline = createAction<{
   dialog: LineDialogProps,
   polylines: PolylineProps[],
   stations: Station[],
+  center: MapCenter,
 }>(
   "map/requestShowPolyline"
 )

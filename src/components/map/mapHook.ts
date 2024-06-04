@@ -1,7 +1,6 @@
 import { MutableRefObject, RefObject, useEffect, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { LatLng, MapCenter } from "../../location"
-import { logger } from "../../logger"
 import * as action from "../../redux/actions"
 import { selectMapState, selectStationState } from "../../redux/selector"
 import { AppDispatch } from "../../redux/store"
@@ -101,8 +100,8 @@ export const useMapOperator = (
   }
 
   const showPolyline = (line: Line) => {
-    const map = googleMapRef.current
-    if (!line.detail || !map) return
+    const element = mapElementRef.current
+    if (!line.detail || !element) return
     if (nav.type !== NavType.DIALOG_LINE) return
     if (nav.data.showPolyline) return
     let polyline: PolylineProps[] = []
@@ -120,19 +119,16 @@ export const useMapOperator = (
       }]
       bounds = data
     }
+
+    const rect = element.getBoundingClientRect()
+    const center = getZoomProperty(bounds, rect.width, rect.height)
+
     dispatch(action.requestShowPolyline({
       dialog: nav.data.dialog,
       polylines: polyline,
       stations: line.detail.stations,
+      center: center
     }))
-    const mapElement = mapElementRef.current
-    if (mapElement) {
-      var rect = mapElement.getBoundingClientRect()
-      var props = getZoomProperty(bounds, rect.width, rect.height)
-      map.panTo(props.center)
-      map.setZoom(props.zoom)
-      logger.d('zoom to', props, line)
-    }
   }
 
   //　地図表示範囲の変更時に表示する駅リストを更新する
@@ -240,8 +236,6 @@ export const useMapOperator = (
 
   return {
     hideStationOnMap,
-    googleMapRef,
-    mapElementRef,
     showStation,
     showLine,
     showRadarVoronoi,

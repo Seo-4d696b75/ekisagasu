@@ -55,7 +55,7 @@ export class LocationRepository {
             await this.onCurrentLocationChanged(location)
           },
           (err) => {
-            logger.e(err)
+            logger.w('failed to watch location', err)
           },
           this.positionOptions
         )

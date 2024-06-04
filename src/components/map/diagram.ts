@@ -1,10 +1,5 @@
-import { isLatLng, LatLng } from "../../location"
+import { isLatLng, LatLng, MapCenter } from "../../location"
 import { Station } from "../../station"
-
-export interface ZoomProps {
-  center: LatLng
-  zoom: number
-}
 
 export interface RectBounds {
   north: number
@@ -19,7 +14,14 @@ export interface PolylineProps {
   end: string
 }
 
-export function getZoomProperty(bounds: RectBounds, width: number, height: number, min_zoom: number = 0, anchor: LatLng | null = null, margin: number = 50): ZoomProps {
+export function getZoomProperty(
+  bounds: RectBounds,
+  width: number,
+  height: number,
+  min_zoom: number = 0,
+  anchor: LatLng | null = null,
+  margin: number = 50,
+): MapCenter {
   let center = {
     lat: (bounds.south + bounds.north) / 2,
     lng: (bounds.east + bounds.west) / 2
@@ -41,7 +43,7 @@ export function getZoomProperty(bounds: RectBounds, width: number, height: numbe
       }
     }
   }
-  return { center: center, zoom: zoom };
+  return { ...center, zoom: zoom };
 }
 
 export function getBounds(list: Array<LatLng | Station>): RectBounds {
