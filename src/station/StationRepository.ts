@@ -83,7 +83,7 @@ export class StationRepository {
    * @returns 
    */
   get<T>(url: string): Promise<AxiosResponse<T>> {
-    return this.sync(`get-${url}`, axios.get<T>(url))
+    return this.sync(`axios-get:${url}`, () => axios.get<T>(url))
   }
 
   /**
@@ -94,7 +94,7 @@ export class StationRepository {
    * @returns 
    */
   async setData(type: DataType): Promise<void> {
-    return this.sync(`setData-${type}`, async () => {
+    return this.sync(`set-data:${type}`, async () => {
       if (this.dataAPI?.type === type) {
         // 連続呼び出しの対策
         return
@@ -273,17 +273,27 @@ export class StationRepository {
   }
 
   async search(position: LatLng, k: number): Promise<NearStation[]> {
-    if (!this.tree) throw Error('kdTree not initialized')
     /* kd-tree のNodeデータは探索中に必要になって初めて非同期でロードされるため、
        同時に searchを呼び出すと前回の探索が終了する前に別の探索が走る場合があり得る
        KdTreeは内部状態を持つ実装のため挙動が予想できない
     */
-    return this.sync("kdTree", this.tree.search(position, k))
+    return this.sync(
+      "kdTree",
+      () => {
+        if (!this.tree) throw Error('kdTree not initialized')
+        return this.tree.search(position, k)
+      },
+    )
   }
 
   async searchRect(rect: RectBounds, max: number): Promise<Station[]> {
-    if (!this.tree) throw Error('kdTree not initialized')
-    return this.sync("kdTree", this.tree.searchRect(rect, max))
+    return this.sync(
+      "kdTree",
+      () => {
+        if (!this.tree) throw Error('kdTree not initialized')
+        return this.tree.searchRect(rect, max)
+      },
+    )
   }
 
   release() {
