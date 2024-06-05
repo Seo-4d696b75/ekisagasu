@@ -6,10 +6,10 @@ import img_delete from "../../img/ic_delete.png";
 import img_help from "../../img/ic_help.png";
 import img_search from "../../img/ic_search.png";
 import img_setting from "../../img/ic_settings.png";
-import * as action from "../../script/actions";
-import { createEvent, createIdleEvent } from "../../script/event";
-import { logger } from "../../script/logger";
-import { RootState } from "../../script/mapState";
+import { logger } from "../../logger";
+import * as action from "../../redux/actions";
+import { selectMapState, selectStationState } from "../../redux/selector";
+import { createEvent, createIdleEvent } from "../event";
 import "./Header.css";
 import StationSearchBox, { StationSuggestion } from "./StationSearchBox";
 
@@ -19,11 +19,14 @@ const radarMax = process.env.REACT_APP_RADAR_MAX
 const Header: FC = () => {
   const {
     radarK,
-    watchCurrentLocation,
+    currentLocation,
     showStationPin,
     isHighAccuracyLocation,
+  } = useSelector(selectMapState)
+
+  const {
     dataType,
-  } = useSelector((state: RootState) => state.mapState)
+  } = useSelector(selectStationState)
 
   const dispatch = useDispatch()
 
@@ -111,12 +114,12 @@ const Header: FC = () => {
         <input id="toggle-position"
           className="toggle-input"
           type='checkbox'
-          checked={watchCurrentLocation}
+          checked={currentLocation.type === 'watch'}
           onChange={(e) => dispatch(action.setWatchCurrentLocation(e.target.checked))} />
         <label htmlFor="toggle-position" className="toggle-label" />
       </div>
     </div>
-  ), [watchCurrentLocation, dispatch])
+  ), [currentLocation.type, dispatch])
 
   const settingAccuracySection = useMemo(() => (
     <div className="switch-container">

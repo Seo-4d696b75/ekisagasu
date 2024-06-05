@@ -1,5 +1,5 @@
+import { PolylineProps } from "../components/map/diagram"
 import { parseStation, Station, StationAPIResponse } from "./station"
-import { PolylineProps } from "./utils"
 
 export interface Line {
 

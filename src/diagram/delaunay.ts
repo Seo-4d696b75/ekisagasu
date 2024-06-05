@@ -1,4 +1,4 @@
-import { logger } from "../script/logger";
+import { logger } from "../logger";
 import * as circle from "./circle";
 import * as edge from "./edge";
 import * as line from "./line";

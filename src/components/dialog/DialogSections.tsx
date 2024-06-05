@@ -5,11 +5,10 @@ import img_location from "../../img/map_pin.svg"
 import img_mylocation from "../../img/pin_mylocation.png"
 import img_radar from "../../img/radar.png"
 import img_station from "../../img/station.png"
-import { Line } from "../../script/line"
-import { Station } from "../../script/station"
+import { Line, Station } from "../../station"
 import { useRefCallback } from "../hooks"
-import "./InfoDialog.css"
 import { DialogType, StationDialogProps } from "../navState"
+import "./InfoDialog.css"
 
 function formatDistance(dist: number): string {
   if (dist < 1000.0) {

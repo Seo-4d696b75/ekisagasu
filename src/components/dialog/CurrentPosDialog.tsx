@@ -3,11 +3,10 @@ import { CSSTransition } from "react-transition-group";
 import img_above from "../../img/ic_above.png";
 import img_delete from "../../img/ic_delete.png";
 import img_radar from "../../img/radar.png";
-import { Line } from "../../script/line";
-import { Station } from "../../script/station";
+import { Line, Station } from "../../station";
+import { CurrentPosDialogProps } from "../navState";
 import { StationDetails, StationRadar, StationTitle } from "./DialogSections";
 import "./InfoDialog.css";
-import { CurrentPosDialogProps } from "../navState";
 
 interface CurrentPosInfoProps {
   info: CurrentPosDialogProps

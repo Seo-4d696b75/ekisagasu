@@ -1,4 +1,4 @@
-import { logger } from "../script/logger"
+import { logger } from "../logger"
 import * as line from "./line"
 import * as point from "./point"
 import * as triangle from "./triangle"

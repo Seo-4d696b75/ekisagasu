@@ -1,17 +1,16 @@
-import { MutableRefObject, RefObject, useState } from "react"
+import { MutableRefObject, RefObject, useEffect, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import StationService, { DataType } from "../../script/StationService"
-import * as action from "../../script/actions"
-import { Line } from "../../script/line"
-import { LatLng } from "../../script/location"
-import { logger } from "../../script/logger"
-import { selectMapState } from "../../script/mapState"
-import { Station } from "../../script/station"
-import { AppDispatch } from "../../script/store"
-import { PolylineProps, RectBounds, getBounds, getZoomProperty, isInsideRect } from "../../script/utils"
+import { LatLng, MapCenter } from "../../location"
+import * as action from "../../redux/actions"
+import { selectMapState, selectStationState } from "../../redux/selector"
+import { AppDispatch } from "../../redux/store"
+import { DataType, Line, Station } from "../../station"
+import repository from "../../station/repository"
+import calculation from "../../voronoi"
 import { useRefCallback } from "../hooks"
 import { NavType, isStationDialog } from "../navState"
-import { useHighVoronoi } from "./voronoiHook"
+import { PolylineProps, RectBounds, getBounds, getZoomProperty, isInsideRect } from "./diagram"
+import { ProgressHandler } from "./progressHook"
 
 const ZOOM_TH = 12
 const VORONOI_SIZE_TH = 2000
@@ -39,7 +38,7 @@ function shouldUpdateBounds(state: HideStationState, zoom: number, rect: RectBou
  * @returns 
  */
 export const useMapOperator = (
-  progressHandler: (task: Promise<void> | (() => Promise<void>), text: string) => any,
+  progressHandler: ProgressHandler,
   googleMapRef: MutableRefObject<google.maps.Map | null>,
   mapElementRef: RefObject<HTMLElement>,
 ) => {
@@ -47,9 +46,11 @@ export const useMapOperator = (
   const {
     radarK,
     nav,
-    watchCurrentLocation,
-    currentLocation,
   } = useSelector(selectMapState)
+
+  const {
+    dataType
+  } = useSelector(selectStationState)
 
   const [hideState, setHideState] = useState<HideStationState>({
     hide: false,
@@ -66,77 +67,41 @@ export const useMapOperator = (
 
   const dispatch = useDispatch<AppDispatch>()
 
-  const showStation = (station: Station) => {
-    dispatch(action.requestShowStation(station))
-  }
+  // 高次ボロノイの計算中に他状態に遷移した場合に計算をキャンセルする
+  const previousRef = useRef(false)
+  const previousShowHighVoronoi = previousRef.current
+  const showHighVoronoi = isStationDialog(nav) && nav.data.highVoronoi !== null
 
-  const showLine = (line: Line) => {
-    dispatch(action.requestShowLine(line))
-  }
-
-  const moveToPosition = (pos: LatLng | null, zoom?: number) => {
-    const map = googleMapRef.current
-    if (pos && map) {
-      map.panTo(new google.maps.LatLng(pos.lat, pos.lng))
-      if (zoom) {
-        map.setZoom(zoom)
-      }
+  useEffect(() => {
+    if (previousShowHighVoronoi && !showHighVoronoi) {
+      // 高次ボロノイ表示中の駅ダイアログから別状態に遷移したとき
+      calculation.cancel?.()
     }
-  }
+  }, [previousShowHighVoronoi, showHighVoronoi])
 
-  const setCenterCurrentPosition = async (map: google.maps.Map) => {
-    try {
-      const pos = await StationService.getCurrentPosition()
-      let latLng = {
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude
-      }
-      map.setCenter(latLng)
-      dispatch(action.setCurrentLocation(pos))
-    } catch (err) {
-      logger.w(err)
-      alert("現在位置を利用できません. ブラウザから位置情報へのアクセスを許可してください.")
-      const latLng = { lat: 35.681236, lng: 139.767125 }
-      map.setCenter(latLng)
-    }
-  }
+  previousRef.current = showHighVoronoi
 
-  // use high-voronoi logic via custom hook
-  const { run: runHighVoronoi, cancel: cancelHighVoronoi, highVoronoi, workerRunning } = useHighVoronoi(radarK)
-
+  // 高次ボロノイの計算開始＆表示
   const showRadarVoronoi = (station: Station) => {
     if (!isStationDialog(nav)) return
-    if (nav.data.showHighVoronoi) {
+    if (nav.data.highVoronoi) {
       dispatch(action.setNavStateIdle())
       return
     }
-    progressHandler(new Promise<void>((resolve, reject) => {
-      runHighVoronoi(station, {
-        onStart: (_) => dispatch(action.requestShowHighVoronoi()),
-        onComplete: (station, list) => {
-          resolve()
-          const map = googleMapRef.current
-          const mapElement = mapElementRef.current
-          if (map && mapElement) {
-            var rect = mapElement.getBoundingClientRect()
-            var bounds = getBounds(list[radarK - 1])
-            var props = getZoomProperty(bounds, rect.width, rect.height, ZOOM_TH, station.position, 100)
-            map.panTo(props.center)
-            map.setZoom(props.zoom)
-          }
-        },
-        onError: (e) => {
-          reject(e)
-          dispatch(action.setNavStateIdle())
-        },
-        onCancel: () => reject(),
-      })
-    }), "レーダー範囲を計算中")
+    progressHandler(
+      "レーダー範囲を計算中",
+      async () => {
+        dispatch(action.startHighVoronoiCalculation())
+        for await (const polygon of calculation.calculate(station, radarK)) {
+          dispatch(action.setHighVoronoiPolygon(polygon))
+        }
+      },
+    )
   }
 
   const showPolyline = (line: Line) => {
-    const map = googleMapRef.current
-    if (!line.detail || !map) return
+    const element = mapElementRef.current
+    if (!line.detail || !element) return
     if (nav.type !== NavType.DIALOG_LINE) return
     if (nav.data.showPolyline) return
     let polyline: PolylineProps[] = []
@@ -154,21 +119,19 @@ export const useMapOperator = (
       }]
       bounds = data
     }
+
+    const rect = element.getBoundingClientRect()
+    const center = getZoomProperty(bounds, rect.width, rect.height)
+
     dispatch(action.requestShowPolyline({
       dialog: nav.data.dialog,
       polylines: polyline,
       stations: line.detail.stations,
+      center: center
     }))
-    const mapElement = mapElementRef.current
-    if (mapElement) {
-      var rect = mapElement.getBoundingClientRect()
-      var props = getZoomProperty(bounds, rect.width, rect.height)
-      map.panTo(props.center)
-      map.setZoom(props.zoom)
-      logger.d('zoom to', props, line)
-    }
   }
 
+  //　地図表示範囲の変更時に表示する駅リストを更新する
   const updateBounds = useRefCallback(async (map: google.maps.Map, force?: boolean) => {
     const bounds = map.getBounds()
     const zoom = map.getZoom()
@@ -182,23 +145,28 @@ export const useMapOperator = (
       west: sw.lng(),
     }
     if (force || shouldUpdateBounds(hideState, zoom, rect)) {
-      const margin = Math.min(
-        Math.max(ne.lat() - sw.lat(), ne.lng() - sw.lng()) * 0.5,
-        0.5
+      await progressHandler(
+        "駅を検索中",
+        async () => {
+          const margin = Math.min(
+            Math.max(ne.lat() - sw.lat(), ne.lng() - sw.lng()) * 0.5,
+            0.5
+          )
+          const search = {
+            south: sw.lat() - margin,
+            north: ne.lat() + margin,
+            west: sw.lng() - margin,
+            east: ne.lng() + margin,
+          }
+          const result = await repository.searchRect(search, VORONOI_SIZE_TH)
+          setHideState({
+            hide: zoom < ZOOM_TH && result.length >= VORONOI_SIZE_TH,
+            zoom: zoom,
+            rect: search,
+            stationSize: result.length,
+          })
+        },
       )
-      const search = {
-        south: sw.lat() - margin,
-        north: ne.lat() + margin,
-        west: sw.lng() - margin,
-        east: ne.lng() + margin,
-      }
-      const result = await StationService.updateRect(search, VORONOI_SIZE_TH)
-      setHideState({
-        hide: zoom < ZOOM_TH && result.length >= VORONOI_SIZE_TH,
-        zoom: zoom,
-        rect: search,
-        stationSize: result.length,
-      })
     } else {
       setHideState({
         hide: true,
@@ -209,41 +177,45 @@ export const useMapOperator = (
     }
   })
 
-  const closeDialog = () => {
-    // if any worker is running, terminate it
-    cancelHighVoronoi()
-    dispatch(action.setNavStateIdle())
+  const closeDialog = async () => {
+    await dispatch(action.setNavStateIdle())
+  }
+
+  const showStation = (station: Station) => {
+    dispatch(action.requestShowStation(station))
+  }
+
+  const showLine = (line: Line) => {
+    // 詳細情報を非同期で取得する
+    progressHandler(
+      "路線情報を取得しています",
+      dispatch(action.requestShowLine(line)).unwrap(),
+    )
   }
 
   const focusAt = (pos: LatLng, zoom?: number) => {
-    if (!StationService.initialized) return
-    if (isStationDialog(nav) && nav.data.showHighVoronoi) return
-    dispatch(action.requestShowSelectedPosition({ pos: pos, zoom: zoom }))
+    if (!dataType) return
+    if (showHighVoronoi) return
+    dispatch(action.requestShowSelectedPosition({ ...pos, zoom: zoom }))
   }
 
   const focusAtNearestStation = (pos: LatLng) => {
-    if (!StationService.initialized) return
-    if (isStationDialog(nav) && nav.data.showHighVoronoi) return
-    StationService.updateLocation(pos, radarK, 0).then(s => {
-      logger.d("update location", s)
-      if (s) dispatch(action.requestShowStation(s))
-    })
+    if (!dataType) return
+    if (showHighVoronoi) return
+    progressHandler(
+      "駅を探しています",
+      dispatch(action.requestShowStation(pos)).unwrap(),
+    )
   }
 
   const requestCurrentPosition = () => {
-    dispatch(action.setNavStateIdle())
-    if (watchCurrentLocation) {
-      const pos = currentLocation?.position
-      if (pos) {
-        moveToPosition(pos, 14)
-      }
-    } else {
-      closeDialog()
-      progressHandler(async () => {
-        const pos = await StationService.getCurrentPosition()
-        moveToPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }, 14)
-      }, "現在位置を取得しています")
-    }
+    progressHandler(
+      "現在位置を取得しています",
+      async () => {
+        await closeDialog()
+        await dispatch(action.requestCurrentLocation())
+      },
+    )
   }
 
   const switchDataType = async (type: DataType) => {
@@ -252,24 +224,20 @@ export const useMapOperator = (
     // データセット変更時に地図で表示している現在の範囲に合わせて更新＆読み込みする
     const map = googleMapRef.current
     if (map) {
-      progressHandler(async () => {
-        await StationService.setData(type)
-        dispatch(action.clearLoadedStation())
-        await updateBounds(map, true)
-      }, "駅データを切り替えています")
+      progressHandler(
+        "駅データを切替中",
+        async () => {
+          await repository.setData(type)
+          await updateBounds(map, true)
+        },
+      )
     }
   }
 
   return {
-    highVoronoi,
-    workerRunning,
     hideStationOnMap,
-    googleMapRef,
-    mapElementRef,
     showStation,
     showLine,
-    moveToPosition,
-    setCenterCurrentPosition,
     showRadarVoronoi,
     showPolyline,
     updateBounds,
@@ -279,4 +247,34 @@ export const useMapOperator = (
     requestCurrentPosition,
     switchDataType,
   }
+}
+
+export const useMapCenterChangeEffect = (
+  center: MapCenter,
+  googleMapRef: MutableRefObject<google.maps.Map | null>,
+  isDragRunning: boolean,
+) => {
+  const map = googleMapRef.current
+  const pos = map?.getCenter()
+  const lat = pos?.lat()
+  const lng = pos?.lng()
+  const zoom = map?.getZoom()
+  useEffect(() => {
+    if (!map || isDragRunning) return
+    if (center.lat !== lat || center.lng !== lng) {
+      map.panTo(new google.maps.LatLng(center.lat, center.lng))
+    }
+    if (center.zoom !== zoom) {
+      map.setZoom(center.zoom)
+    }
+  }, [
+    map,
+    isDragRunning,
+    center.lat,
+    center.lng,
+    center.zoom,
+    lat,
+    lng,
+    zoom,
+  ])
 }

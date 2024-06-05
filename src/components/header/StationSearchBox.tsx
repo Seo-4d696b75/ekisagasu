@@ -3,10 +3,10 @@ import axios from "axios"
 import { FC, useCallback, useMemo, useRef, useState } from "react"
 import Autosuggest from 'react-autosuggest'
 import { useSelector } from "react-redux"
-import Service from "../../script/StationService"
-import { PropsEvent } from "../../script/event"
-import { logger } from "../../script/logger"
-import { selectMapState } from "../../script/mapState"
+import { logger } from "../../logger"
+import { selectStationState } from "../../redux/selector"
+import repository from "../../station/repository"
+import { PropsEvent } from "../event"
 import { useEventEffect, useRefCallback } from "../hooks"
 import "./StationSearchBox.css"
 
@@ -43,7 +43,7 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
   const inputRef = useRef<Autosuggest>(null)
   const lastRequestIdRef = useRef<NodeJS.Timeout | null>(null)
 
-  const { dataType } = useSelector(selectMapState)
+  const { dataType } = useSelector(selectStationState)
   const isDataExtra = dataType === 'extra'
 
   const onSuggestionsFetchRequested = useRefCallback((request: Autosuggest.SuggestionsFetchRequestedParams) => {
@@ -150,7 +150,7 @@ const renderSuggestion = (suggestion: StationSuggestion, param: Autosuggest.Rend
   return (
     <div>
       {suggestion.prefecture ? (
-        <span className="suggestion-prefecture">{Service.getPrefecture(suggestion.prefecture)}</span>
+        <span className="suggestion-prefecture">{repository.getPrefecture(suggestion.prefecture)}</span>
       ) : null}
       {suggestion.name}
       {suggestion.extra ? <span className="suggestion-extra">extra</span> : null}

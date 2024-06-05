@@ -1,17 +1,17 @@
 import { MutableRefObject, useRef } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useSearchParams } from "react-router-dom"
-import StationService from "../../script/StationService"
-import * as action from "../../script/actions"
-import { Line } from "../../script/line"
-import { LatLng } from "../../script/location"
-import { logger } from "../../script/logger"
-import { selectMapState } from "../../script/mapState"
-import { Station } from "../../script/station"
-import { AppDispatch } from "../../script/store"
-import { parseQueryBoolean } from "../../script/utils"
+import { LatLng } from "../../location"
+import { logger } from "../../logger"
+import * as action from "../../redux/actions"
+import { selectMapState, selectStationState } from "../../redux/selector"
+import { AppDispatch } from "../../redux/store"
+import { Line, Station } from "../../station"
+import repository from "../../station/repository"
 import { useRefCallback } from "../hooks"
 import { NavType, isStationDialog } from "../navState"
+import { parseQueryBoolean } from "./diagram"
+import { ProgressHandler } from "./progressHook"
 
 function getUIEvent(clickEvent: any): UIEvent {
   // googlemap onClick などのコールバック関数に渡させるイベントオブジェクトの中にあるUIEventを抽出
@@ -29,20 +29,30 @@ function getUIEvent(clickEvent: any): UIEvent {
  * @param operator 地図の操作方法を教えてね
  * @returns 
  */
-export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObject<google.maps.Map | null>, operator: {
-  moveToPosition: (pos: LatLng | null, zoom?: number) => void
-  focusAt: (pos: LatLng, zoom?: number) => void
-  focusAtNearestStation: (pos: LatLng) => void
-  closeDialog: () => void
-  updateBounds: (map: google.maps.Map) => void
-  showPolyline: (line: Line) => void
-  showRadarVoronoi: (station: Station) => void
-  setCenterCurrentPosition: (map: google.maps.Map) => Promise<void>
-}) => {
+export const useMapCallback = (
+  screenWide: boolean,
+  googleMapRef: MutableRefObject<google.maps.Map | null>,
+  operator: {
+    focusAt: (pos: LatLng, zoom?: number) => void
+    focusAtNearestStation: (pos: LatLng) => void
+    closeDialog: () => void
+    updateBounds: (map: google.maps.Map) => void
+    showPolyline: (line: Line) => void
+    showRadarVoronoi: (station: Station) => void
+    requestCurrentPosition: () => void
+    progressHandler: ProgressHandler
+  },
+) => {
 
   const {
     nav,
   } = useSelector(selectMapState)
+
+  const {
+    dataType
+  } = useSelector(selectStationState)
+
+  const dataInitialized = dataType !== null
 
   const [query,] = useSearchParams()
 
@@ -83,7 +93,8 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
   }
 
   const onMapDragStart = () => {
-    if (isStationDialog(nav) && nav.data.showHighVoronoi) return
+    dispatch(action.setUserDragging(true))
+    if (isStationDialog(nav) && nav.data.highVoronoi) return
     if (nav.type === NavType.DIALOG_LINE && nav.data.showPolyline) return
     if (!screenWide) {
       operator.closeDialog()
@@ -92,9 +103,6 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
 
   const onMapIdle = () => {
     const map = googleMapRef.current
-    if (StationService.initialized && map) {
-      operator.updateBounds(map)
-    }
     const pos = map?.getCenter()
     const zoom = map?.getZoom()
     if (pos && zoom) {
@@ -105,6 +113,10 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
       }
       dispatch(action.setMapCenter(payload))
     }
+    if (dataInitialized && map) {
+      operator.updateBounds(map)
+    }
+    dispatch(action.setUserDragging(false))
   }
 
   /* 非同期関数内からコールバック関数を呼び出す場合、
@@ -117,54 +129,71 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
   const onMapReady = async (map: google.maps.Map) => {
     googleMapRef.current = map
 
-    map.setCenter({ lat: 35.681236, lng: 139.767125 })
-
-    dispatch(action.setNavStateIdle())
-
     // extraデータの表示フラグ
     const type = parseQueryBoolean(query.get('extra')) ? 'extra' : 'main'
 
-    // データの初期化
-    await StationService.initialize(type)
-    // GlobalMapStateに反映する
-    dispatch(action.setDataType(type))
+    await operator.progressHandler(
+      "駅データを初期化中",
+      async () => {
+        const initialCenter = {
+          lat: 35.681236,
+          lng: 139.767125,
+          zoom: 14,
+        }
+        dispatch(action.setMapCenter(initialCenter))
+        dispatch(action.setNavStateIdle())
+
+        // データの初期化
+        await repository.initialize(type)
+
+        // GlobalMapStateに反映する
+        dispatch(action.setDataType(type))
+      }
+    )
+
+    let queryResolved = false
 
     // 路線情報の表示
     const queryLine = query.get('line')
-    if (typeof queryLine === 'string') {
-      const line = StationService.getLineById(queryLine)
-      if (line) {
-        try {
-          const result = await dispatch(action.requestShowLine(line)).unwrap()
-          // マップ中心位置を路線ポリラインに合わせる
-          showPolylineRef(result.line)
-          return
-        } catch (e) {
-          logger.w("fail to show line details. query:", queryLine, e)
+    if (typeof queryLine === 'string' && !queryResolved) {
+      await operator.progressHandler(
+        "路線情報を取得しています",
+        async () => {
+          try {
+            const result = await dispatch(action.requestShowLine(queryLine)).unwrap()
+            // マップ中心位置を路線ポリラインに合わせる
+            showPolylineRef(result.line)
+            queryResolved = true
+          } catch (e) {
+            logger.w("fail to show line details. query:", queryLine, e)
+          }
         }
-      }
+      )
     }
 
     // 駅情報の表示
     const queryStation = query.get('station')
-    if (typeof queryStation === 'string') {
-      try {
-        const result = await dispatch(action.requestShowStationPromise(
-          StationService.getStationById(queryStation)
-        )).unwrap()
-        if (parseQueryBoolean(query.get('voronoi'))) {
-          showRadarVoronoiRef(result.station)
+    if (typeof queryStation === 'string' && !queryResolved) {
+      await operator.progressHandler(
+        "駅情報を取得しています",
+        async () => {
+          try {
+            const result = await dispatch(action.requestShowStation(queryStation)).unwrap()
+            if (parseQueryBoolean(query.get('voronoi'))) {
+              showRadarVoronoiRef(result.station)
+            }
+            queryResolved = true
+          } catch (e) {
+            logger.w("fail to show station, query:", queryStation, e)
+          }
         }
-        return
-      } catch (e) {
-        logger.w("fail to show station, query:", queryStation, e)
-      }
+      )
     }
 
     // 指定位置への移動
     const queryLat = query.get('lat')
     const queryLng = query.get('lng')
-    if (typeof queryLat === 'string' && typeof queryLng === 'string') {
+    if (typeof queryLat === 'string' && typeof queryLng === 'string' && !queryResolved) {
       const lat = parseFloat(queryLat)
       const lng = parseFloat(queryLng)
       if (20 < lat && lat < 50 && 120 < lng && lng < 150) {
@@ -178,22 +207,29 @@ export const useMapCallback = (screenWide: boolean, googleMapRef: MutableRefObje
           }
         })()
         if (parseQueryBoolean(query.get('dialog'))) {
-          operator.focusAt({ lat: lat, lng: lng }, zoom)
+          dispatch(action.requestShowSelectedPosition({ lat: lat, lng: lng }))
         } else {
-          operator.moveToPosition({ lat: lat, lng: lng }, zoom)
+          const center = {
+            lat: lat,
+            lng: lng,
+            zoom: zoom ?? 14,
+          }
+          dispatch(action.setMapCenter(center))
         }
-        return
+        queryResolved = true
       }
     }
 
     // 現在位置を監視・追尾するフラグ
-    if (parseQueryBoolean(query.get('mylocation'))) {
+    if (parseQueryBoolean(query.get('mylocation')) && !queryResolved) {
       dispatch(action.setWatchCurrentLocation(true))
-      return
+      queryResolved = true
     }
 
     // 指定なしの場合は現在位置（取得可能なら）に合わせる
-    operator.setCenterCurrentPosition(map)
+    if (!queryResolved) {
+      operator.requestCurrentPosition()
+    }
   }
 
   return {

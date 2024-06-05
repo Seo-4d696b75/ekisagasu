@@ -5,21 +5,20 @@ import { CSSTransition } from "react-transition-group"
 import pin_location from "../../img/map_pin.svg"
 import pin_station from "../../img/map_pin_station.svg"
 import pin_station_extra from "../../img/map_pin_station_extra.svg"
-import StationService from "../../script/StationService"
-import { logger } from "../../script/logger"
-import { RootState } from "../../script/mapState"
+import locationRepository from "../../location/repository"
+import { logger } from "../../logger"
+import { selectMapState, selectStationState } from "../../redux/selector"
+import stationRepository from "../../station/repository"
 import { CurrentPosDialog } from "../dialog/CurrentPosDialog"
 import { LineDialog } from "../dialog/LineDialog"
 import { StationDialog } from "../dialog/StationDialog"
-import { useEventEffect } from "../hooks"
 import { DialogType, NavType, isInfoDialog, isStationDialog } from "../navState"
 import "./Map.css"
 import { CurrentPosIcon } from "./PositionIcon"
 import { useMapCallback } from "./mapEventHook"
-import { useMapOperator } from "./mapHook"
+import { useMapCenterChangeEffect, useMapOperator } from "./mapHook"
 import { useProgressBanner } from "./progressHook"
 import { useQueryEffect } from "./queryHook"
-import { useServiceCallback } from "./serviceHook"
 
 const VORONOI_COLOR = [
   "#0000FF",
@@ -36,15 +35,17 @@ const MapContainer: FC = () => {
 
   const {
     radarK,
-    watchCurrentLocation: showCurrentPosition,
     showStationPin,
     nav,
-    mapFocusRequest: focus,
     currentLocation,
-    stations: voronoi,
-    dataType,
     mapCenter,
-  } = useSelector((state: RootState) => state.mapState)
+    isUserDragging,
+  } = useSelector(selectMapState)
+
+  const {
+    dataType,
+    stations: voronoi,
+  } = useSelector(selectStationState)
 
   const [screenWide, setScreenWide] = useState(false)
 
@@ -58,21 +59,11 @@ const MapContainer: FC = () => {
     showProgressBannerWhile,
   } = useProgressBanner()
 
-  // callbacks registered to StationService
-  const {
-    onGeolocationPositionChanged,
-    onStationLoaded,
-    dataLoadingCallback,
-  } = useServiceCallback(showProgressBannerWhile)
-
   // functions operating the map and its state variables
   const {
-    highVoronoi,
     hideStationOnMap,
     showStation,
     showLine,
-    moveToPosition,
-    setCenterCurrentPosition,
     showRadarVoronoi,
     showPolyline,
     updateBounds,
@@ -92,23 +83,20 @@ const MapContainer: FC = () => {
     onMapIdle,
     onMapReady,
   } = useMapCallback(screenWide, googleMapRef, {
-    moveToPosition,
     focusAt,
     focusAtNearestStation,
     closeDialog,
     updateBounds,
     showPolyline,
     showRadarVoronoi,
-    setCenterCurrentPosition,
+    requestCurrentPosition,
+    progressHandler: showProgressBannerWhile,
   })
 
   useEffect(() => {
     // componentDidMount
     logger.d("componentDidMount")
-    // register callbacks
-    StationService.onGeolocationPositionChangedCallback = onGeolocationPositionChanged
-    StationService.onStationLoadedCallback = onStationLoaded
-    StationService.dataLoadingCallback = dataLoadingCallback
+
     const onScreenResized = () => {
       let wide = window.innerWidth >= 900
       setScreenWide(wide)
@@ -118,43 +106,36 @@ const MapContainer: FC = () => {
     return () => {
       // componentWillUnmount
       logger.d("componentWillUnmount")
-      StationService.release()
+      locationRepository.release()
+      stationRepository.release()
       window.removeEventListener("resize", onScreenResized)
       googleMapRef.current = null
     }
-  }, [onGeolocationPositionChanged, onStationLoaded, dataLoadingCallback])
+  }, [])
 
-  useEventEffect(focus, target => {
-    moveToPosition(target.pos, target.zoom)
-  })
+  // 現在位置・拡大率が変更されたらMap中心位置を変更する
+  useMapCenterChangeEffect(mapCenter, googleMapRef, isUserDragging)
 
-  // 現在位置が変更されたらMap中心位置を変更する
-  const currentPos = currentLocation?.position
-  useEffect(() => {
-    if (currentPos && showCurrentPosition && nav.type === NavType.IDLE) {
-      moveToPosition(currentPos)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPos?.lat, currentPos?.lng, showCurrentPosition, nav.type])
+  const isWatchCurrentPosition = currentLocation.type === 'watch'
+  const currentPosition = isWatchCurrentPosition ? currentLocation.location?.position : undefined
 
   // データ種類が変わったら更新
   useEffect(() => {
-    if (dataType && StationService.dataAPI?.type !== dataType) {
+    if (dataType) {
       switchDataType(dataType)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataType])
 
   // App状態に応じてURLのクエリを動的に更新
-  useQueryEffect(nav, dataType, showCurrentPosition, mapCenter)
+  useQueryEffect(nav, dataType, isWatchCurrentPosition, mapCenter)
 
   /* ===============================
    render section below
   ================================ */
 
-  const currentPosition = currentLocation?.position
   const currentPositionMarker = useMemo(() => {
-    if (showCurrentPosition && currentPosition) {
+    if (isWatchCurrentPosition && currentPosition) {
       return (
         <Marker
           position={currentPosition}
@@ -171,11 +152,11 @@ const MapContainer: FC = () => {
     } else {
       return null
     }
-  }, [showCurrentPosition, currentPosition])
+  }, [isWatchCurrentPosition, currentPosition])
 
-  const currentHeading = currentLocation?.heading
+  const currentHeading = isWatchCurrentPosition ? currentLocation.location?.heading : undefined
   const currentHeadingMarker = useMemo(() => {
-    if (showCurrentPosition && currentPosition && currentHeading && !isNaN(currentHeading)) {
+    if (isWatchCurrentPosition && currentPosition && currentHeading && !isNaN(currentHeading)) {
       return (
         <Marker
           position={currentPosition}
@@ -195,11 +176,11 @@ const MapContainer: FC = () => {
     } else {
       return null
     }
-  }, [showCurrentPosition, currentPosition, currentHeading])
+  }, [isWatchCurrentPosition, currentPosition, currentHeading])
 
-  const currentAccuracy = currentLocation?.accuracy
+  const currentAccuracy = isWatchCurrentPosition ? currentLocation.location?.accuracy : undefined
   const currentAccuracyCircle = useMemo(() => {
-    if (showCurrentPosition && currentPosition && currentAccuracy) {
+    if (isWatchCurrentPosition && currentPosition && currentAccuracy) {
       return (
         <Circle
           visible={currentAccuracy > 10}
@@ -217,7 +198,7 @@ const MapContainer: FC = () => {
     } else {
       return null
     }
-  }, [showCurrentPosition, currentPosition, currentAccuracy])
+  }, [isWatchCurrentPosition, currentPosition, currentAccuracy])
 
   const selectedPos = nav.type === NavType.DIALOG_SELECT_POS ? nav.data.dialog.props.position : undefined
   const selectedPosMarker = useMemo(() => selectedPos ? (
@@ -268,7 +249,7 @@ const MapContainer: FC = () => {
   }, [lineData])
 
 
-  const showVoronoi = !hideStationOnMap && !(isStationDialog(nav) && nav.data.showHighVoronoi)
+  const showVoronoi = !hideStationOnMap && !(isStationDialog(nav) && nav.data.highVoronoi)
   const voronoiPolygons = useMemo(() => {
     if (showVoronoi) {
       return voronoi.map((s, i) => (
@@ -303,9 +284,9 @@ const MapContainer: FC = () => {
     }
   }, [showStationMarker, voronoi])
 
-  const showHighVoronoi = isStationDialog(nav) && nav.data.showHighVoronoi
+  const highVoronoi = isStationDialog(nav) ? nav.data.highVoronoi : null
   const highVoronoiPolygons = useMemo(() => {
-    if (showHighVoronoi) {
+    if (highVoronoi) {
       return highVoronoi.map((points, i) => (
         <Polygon
           key={i}
@@ -321,7 +302,7 @@ const MapContainer: FC = () => {
     } else {
       return null
     }
-  }, [showHighVoronoi, highVoronoi, radarK])
+  }, [highVoronoi, radarK])
 
 
   // ダイアログを閉じる時アニメーションが終了するまえに nav.data.dialog が undefined になる

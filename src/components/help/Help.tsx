@@ -10,15 +10,21 @@ import screen_current from "../../img/screen_current.png";
 import screen_default from "../../img/screen_default.png";
 import screen_device from "../../img/screen_device.png";
 import screen_extra from "../../img/screen_extra.png";
+import screen_initial_permission from "../../img/screen_initial_permission.png";
 import screen_line from "../../img/screen_line.png";
+import screen_location from "../../img/screen_location.png";
+import screen_manage_permission from "../../img/screen_manage_permission.png";
 import screen_point from "../../img/screen_point.png";
 import screen_polyline from "../../img/screen_polyline.png";
 import screen_radar from "../../img/screen_radar.png";
 import screen_search from "../../img/screen_search.png";
+import screen_setting_pin from "../../img/screen_setting_pin.png";
+import screen_setting_radar from "../../img/screen_setting_radar.png";
 import screen_station from "../../img/screen_station.png";
 import screen_voronoi from "../../img/screen_voronoi.png";
 
 import ic_line from "../../img/ic_line.png";
+import ic_mylocation from "../../img/ic_mylocation.png";
 import ic_search from "../../img/ic_search.png";
 import ic_setting from "../../img/ic_settings.png";
 import ic_radar from "../../img/radar.png";
@@ -47,10 +53,12 @@ export default class Help extends React.Component {
 
             <h1>「駅メモ！」<br />支援ツールサイト</h1>
 
-            <h2>駅メモとは？</h2>
+            <h2>概要</h2>
             <img className="image screen" alt="ekimemo" src="https://user-images.githubusercontent.com/25225028/76631346-e7f67a80-6584-11ea-9f6b-5e8885887363.png" />
 
-            <p><a href="https://ekimemo.com/">全国の鉄道駅の座標位置を対象にした位置ゲー</a>であり、ユーザは現在地から最も近い駅へアクセスできます。しかし他の位置ゲーと異なり、プレイ画面で現在位置が地図上に描画されることもなく、現在位置からアクセスできるスポット（ここでは駅）もほぼ表示されず、正直プレイしにくい。このような動機より、アクセスできる駅の範囲を地図上に視覚化するツールが有志によって多く開発されてきました。</p>
+            <p><a href="https://ekimemo.com/">「駅メモ！」は全国の鉄道駅の座標位置を対象にしたスマートフォン向け位置ゲーム</a>です。ユーザーの現在地から最も近い駅へのチェックインが最も基本的な操作になります。しかし他の位置ゲームと異なり、プレイ画面上で現在位置が地図上に表示されない・現在位置からチェックイン or アイテムによりアクセスできる駅を簡単に確認する方法が少ないなど、快適なプレイが難しいのが現状です。</p>
+
+            <p>このような動機より様々なツールアプリが有志によって開発されてきました。本Webアプリもチェックイン可能な駅を地図上に可視化する基本機能に加え、いくつかの便利な独自機能をサポートしています。</p>
 
 
             <h2>何が出来るの？</h2>
@@ -59,7 +67,6 @@ export default class Help extends React.Component {
             <p>チェックインできる駅の範囲を地図上に表示します。</p>
 
             <img className="image screen" alt="screen shot" src={screen_default} /><br />
-            <p>アプリのデフォルトの表示画面です。</p>
 
             <h4>駅の情報を表示</h4>
 
@@ -68,25 +75,25 @@ export default class Help extends React.Component {
 
             <h4>駅からレーダーでアクセス</h4>
 
-            <p>駅情報のダイアログにおいて、<img className='icon' width="24" alt="radar" src={ic_radar} />アイコンをクリックすると、その駅から近い順に一覧表示します。</p>
+            <p>駅情報のダイアログにおいて<img className='icon' width="24" alt="radar" src={ic_radar} />アイコンをクリックすると、その駅から近い順に一覧表示します。</p>
             <img className="image screen" alt="screen shot" src={screen_radar} /><br />
 
             <h4>任意の地点からレーダー</h4>
 
-            <p>選択したい地点を右クリック（スマホではロングタップ）すると、選択地点の最寄り駅に関するダイアログが開きます。そのダイアログの<img className='icon' width="24" alt="radar" src={ic_radar} />アイコンをクリックします。</p>
+            <p>選択したい地点を右クリック（スマホではロングタップ）すると、選択地点の最寄り駅に関するダイアログが開きます。<img className='icon' width="24" alt="radar" src={ic_radar} />アイコンをクリックすればレーダーでアクセスできる駅一覧を確認できます。</p>
             <img className="image screen" alt="screen shot" src={screen_point} /><br />
 
             <h4>レーダでアクセスできる範囲を表示</h4>
 
-            <p>対象の駅のダイアログにおいて、<img className='icon' width="24" alt="voronoi" src={ic_voronoi} />アイコンをクリックするとアクセス範囲を表示します。内側から描画される各ポリゴンがレーダーで１,２,３...番目にアクセスできる範囲を表します。つまり一番外側の黒いポリゴンの内側なら、その駅までレーダーが届きます。</p>
+            <p>対象の駅のダイアログにおいて、<img className='icon' width="24" alt="voronoi" src={ic_voronoi} />アイコンをクリックするとアクセス範囲を表示します。内側から描画される各ポリゴンがレーダーで１,２,３...番目にアクセスできる範囲を表します。つまり一番外側の黒いポリゴンの内側なら、対象の駅までレーダーが届きます。</p>
             <img className="image screen" alt="screen shot" src={screen_voronoi} /><br />
 
             <h4>路線情報の確認</h4>
 
-            <p>駅情報のダイアログでは、その駅が登録されている路線一覧が表示されます。その各項目をクリックすると路線情報のダイアログが開きます。</p>
+            <p>駅情報のダイアログでは駅が登録されている路線一覧を確認できます。各路線をクリックすると路線情報のダイアログが開きます。路線ダイアログでは登録駅一覧を確認でき、各駅をクリックすると駅ダイアログが開きます。</p>
+
             <img className="image screen" alt="screen shot" src={screen_line} />
 
-            <p>登録駅一覧に表示される各駅をクリックすると、その駅のダイアログが開きます。</p>
 
             <h4>路線を地図上に表示</h4>
 
@@ -95,30 +102,74 @@ export default class Help extends React.Component {
 
             <h4>駅・路線を検索</h4>
 
-            <p>ヘッダーの<img className='icon header' width="24" alt="search" src={ic_search}></img>アイコンをクリックすると検索モーダルが開きます。</p>
+            <p>ヘッダーの<img className='icon header' width="24" alt="search" src={ic_search}></img>アイコンをクリックすると検索バーが開きます（駅名の末尾に付与された重複防止用の都道府県・鉄道会社名は検索にヒットしません）。</p>
             <img className="image screen" alt="screen shot" src={screen_search} />
 
-            <p>注意：駅名の末尾に付与された重複防止用の都道府県・鉄道会社名は検索にヒットしません。</p>
+            <h4>現在位置への移動</h4>
 
+            <p>右下の<img className='icon header' width="24" alt="search" src={ic_mylocation}></img>アイコンをクリックすると現在位置に移動できます。「現在位置の表示」の設定がOnになっている場合は現在位置が変化すると自動で追従します。</p>
+            <img className="image screen" alt="screen shot" src={screen_location} />
+
+            <br />
+
+            <details>
+              <summary><b>位置情報の権限に関して</b></summary>
+
+              <p>初回の場合は位置情報の権限を求めるダイアログが表示されるので、「許可する」を選択してください（ブラウザによって権限ダイアログの外観は異なります）。</p>
+              <img className="image screen" alt="screen shot" src={screen_initial_permission} />
+
+              <p>現在位置を取得できず権限ダイアログも表示されない場合は、サイトの権限設定を確認してください。Chromeの場合はアドレスバーの現在位置アイコンから確認できます（ブラウザによって確認方法が異なります）。</p>
+              <img className="image screen" alt="screen shot" src={screen_manage_permission} />
+
+            </details>
+
+            <h2>アプリの設定</h2>
+
+            <p>ヘッダーの<img className='icon header' width="24" alt="search" src={ic_setting}></img>アイコンから設定モーダルを開くと、各種設定値を変更できます。</p>
+
+            <h4>レーダー検知数の変更</h4>
+
+            <p>駅・選択地点からのレーダー駅一覧、レーダーによる対象駅へのアクセス範囲に影響します。新駅イベントのレーダー検知数アップなどに合わせて活用してください。</p>
+            <img className="image screen" alt="screen shot" src={screen_setting_radar} />
 
             <h4>現在位置の表示</h4>
 
-            <p>ヘッダーの<img className='icon header' width="24" alt="search" src={ic_setting}></img>アイコンから設定モーダルを開き「現在位置の表示」をOnにすると、現在位置のピンが地図上に同時に表示されます。</p>
+            <p>「現在位置の表示」をOnにすると現在位置のピンが地図上に表示されます。</p>
             <img className="image screen" alt="screen shot" src={screen_current} />
 
+            <h4>ピンの非表示</h4>
+
+            <p>低倍率で広範囲を表示するとき、駅のピンが邪魔な場合は「地図上で駅の座標にピンを表示」をOffにできます。</p>
+            <img className="image screen" alt="screen shot" src={screen_setting_pin} />
 
             <h4>廃駅の表示</h4>
 
-            <p>ヘッダーの<img className='icon header' width="24" alt="search" src={ic_setting}></img>アイコンから設定モーダルを開き「extraデータを表示」をOnにすると、駅メモ以外の廃駅も表示できます。</p>
+            <p>「extraデータを表示」をOnにすると駅メモ以外の廃駅も表示できます（追加された廃駅は灰色のアイコンで表示されます）。</p>
             <img className="image screen" alt="screen shot" src={screen_extra} />
 
-            <p>追加された廃駅は灰色のアイコンで表示されます。</p>
 
-
-            <h4>レスポンシブなデザイン</h4>
+            <h2>レスポンシブなデザイン</h2>
 
             <p>PC、スマホ、タブレットなど環境の違いによる画面サイズに合わせ表示デザインを最適化します。</p>
             <img className="image screen" alt="screen shot" src={screen_device} />
+
+
+            <h2>プライバシーポリシー</h2>
+
+            <p>アプリが収集するデータの一覧は以下のとおりです</p>
+
+            <h3>⭕ アクセスの統計データ</h3>
+            <p>当サイトではGoogleアナリティクスを使用しています。データの収集のためにCookieを使用していますが、データは匿名で収集されており個人を特定するものではありません。この機能はCookieを無効にすることで収集を拒否することが出来ますので、お使いのブラウザの設定をご確認ください。詳細は<a href="https://marketingplatform.google.com/about/analytics/terms/jp/" target="_blank" rel="noreferrer">Googleアナリティクスサービス利用規約</a>と<a href="https://policies.google.com/technologies/ads?hl=ja" target="_blank" rel="noreferrer">Googleポリシーと規約</a>をご覧ください。</p>
+
+            <h3>⭕ APIリクエストに付随するデータ</h3>
+            <p>検索機能で入力した検索キーワードなど、駅・路線情報を取得するAPIリクエストに含まれるデータがサーバー側でログとして保存されますが、個人を特定する内容は含まれません。保存されたデータは開発目的でのみ使用し、一定期間経過後に自動で削除されます。</p>
+
+            <h3>❌ アプリ上の操作記録</h3>
+            <p>ユーザーがアプリで閲覧した駅・路線の情報は送信されません。</p>
+
+            <h3>❌ 現在位置に関する情報</h3>
+            <p>現在位置の緯度経度・精度・向き・速度など一切の情報は送信されません。</p>
+
 
             <h2>開発環境</h2>
             <div className="Tool-title">Google Maps API × React.js</div>

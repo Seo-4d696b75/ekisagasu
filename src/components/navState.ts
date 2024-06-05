@@ -1,7 +1,6 @@
-import { Line } from "../script/line"
-import { LatLng } from "../script/location"
-import { Station } from "../script/station"
-import { PolylineProps } from "../script/utils"
+import { LatLng } from "../location"
+import { Line, Station } from "../station"
+import { PolylineProps } from "./map/diagram"
 
 export interface RadarStation {
   station: Station
@@ -95,12 +94,12 @@ export function isInfoDialog(nav: NavState): nav is InfoDialogNav {
 
 export type StationPosDialogNav = NavStateBase<NavType.DIALOG_STATION_POS, {
   dialog: StationPosDialogProps,
-  showHighVoronoi: boolean
+  highVoronoi: LatLng[][] | null,
 }>
 
 export type SelectPosDialogNav = NavStateBase<NavType.DIALOG_SELECT_POS, {
   dialog: SelectPosDialogProps,
-  showHighVoronoi: boolean
+  highVoronoi: LatLng[][] | null,
 }>
 
 export type LineDialogNav = NavStateBase<NavType.DIALOG_LINE, {
@@ -146,7 +145,9 @@ export function copyNavState(state: NavState): NavState {
         type: state.type,
         data: {
           dialog: copyDialogProps(state.data.dialog),
-          showHighVoronoi: state.data.showHighVoronoi,
+          highVoronoi: state.data.highVoronoi
+            ? state.data.highVoronoi.map((points) => [...points])
+            : null,
         }
       } as StationDialogNav
     }
