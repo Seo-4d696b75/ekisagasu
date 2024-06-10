@@ -17,6 +17,7 @@ import "./Map.css"
 import { CurrentPosIcon } from "./PositionIcon"
 import { useMapCallback } from "./mapEventHook"
 import { useMapCenterChangeEffect, useMapOperator } from "./mapHook"
+import { useStationMarkers } from "./markerHook"
 import { useProgressBanner } from "./progressHook"
 import { useQueryEffect } from "./queryHook"
 
@@ -35,7 +36,6 @@ const MapContainer: FC = () => {
 
   const {
     radarK,
-    showStationPin,
     nav,
     currentLocation,
     mapCenter,
@@ -44,7 +44,7 @@ const MapContainer: FC = () => {
 
   const {
     dataType,
-    stations: voronoi,
+    stations,
   } = useSelector(selectStationState)
 
   const [screenWide, setScreenWide] = useState(false)
@@ -133,6 +133,8 @@ const MapContainer: FC = () => {
   /* ===============================
    render section below
   ================================ */
+
+  useStationMarkers(googleMapRef.current)
 
   const currentPositionMarker = useMemo(() => {
     if (isWatchCurrentPosition && currentPosition) {
@@ -252,7 +254,7 @@ const MapContainer: FC = () => {
   const showVoronoi = !hideStationOnMap && !(isStationDialog(nav) && nav.data.highVoronoi)
   const voronoiPolygons = useMemo(() => {
     if (showVoronoi) {
-      return voronoi.map((s, i) => (
+      return stations.map((s, i) => (
         <Polygon
           key={i}
           paths={s.voronoiPolygon}
@@ -267,22 +269,7 @@ const MapContainer: FC = () => {
     } else {
       return null
     }
-  }, [showVoronoi, voronoi])
-
-  const showStationMarker = !hideStationOnMap && showStationPin && nav.type === NavType.IDLE && showVoronoi
-  const stationMarkers = useMemo(() => {
-    if (showStationMarker) {
-      return voronoi.map((s, i) => (
-        <Marker
-          key={i}
-          position={s.position}
-          icon={s.extra ? pin_station_extra : pin_station}>
-        </Marker>
-      ))
-    } else {
-      return null
-    }
-  }, [showStationMarker, voronoi])
+  }, [showVoronoi, stations])
 
   const highVoronoi = isStationDialog(nav) ? nav.data.highVoronoi : null
   const highVoronoiPolygons = useMemo(() => {
@@ -391,7 +378,6 @@ const MapContainer: FC = () => {
         {lineMarkers}
         {linePolylines}
         {voronoiPolygons}
-        {stationMarkers}
         {highVoronoiPolygons}
 
       </GoogleMap>
