@@ -1,7 +1,7 @@
 
 // TODO Marker実装は本家のgooglemaps apiを直接使っている
 
-import { MarkerClusterer } from "@googlemaps/markerclusterer";
+import { Cluster, ClusterStats, MarkerClusterer, Renderer } from "@googlemaps/markerclusterer";
 import { useEffect, useRef, useState } from "react";
 
 import { useSelector } from "react-redux";
@@ -33,7 +33,9 @@ export const useStationMarkers = (
   // 初期化
   useEffect(() => {
     if (map) {
-      setClusterer(new MarkerClusterer({}))
+      setClusterer(new MarkerClusterer({
+        renderer: new CustomClusterRenderer()
+      }))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map])
@@ -65,4 +67,35 @@ export const useStationMarkers = (
       markers.clear()
     }
   }, [map, stations, clusterer, showMarker, markers])
+}
+
+// see DefaultRenderer implementation
+// https://googlemaps.github.io/js-markerclusterer/classes/DefaultRenderer.html
+class CustomClusterRenderer implements Renderer {
+  render(cluster: Cluster, stats: ClusterStats, map: google.maps.Map): google.maps.Marker {
+    const count = cluster.count
+    // change color if this cluster has more markers than the mean cluster
+    const color =
+      count > Math.max(10, stats.clusters.markers.mean)
+        ? "#0000EE"
+        : "#4444FF";
+
+    // create svg url with fill color
+    const svg = window.btoa(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="45px" height="45px">
+  <g fill="${color}">
+  <circle cx="120" cy="120" opacity=".6" r="70" />
+  <circle cx="120" cy="120" opacity=".3" r="90" />
+  <circle cx="120" cy="120" opacity=".2" r="110" />
+  <circle cx="120" cy="120" opacity=".1" r="130" />
+  </g>
+  <text x="50%" y="50%" fill="#EEE" text-anchor="middle" alignment-baseline="middle" font-size="60">${count}</text>
+</svg>`);
+
+    // create marker using svg icon
+    return new google.maps.Marker({
+      position: cluster.position,
+      icon: `data:image/svg+xml;base64,${svg}`,
+    });
+  }
 }
