@@ -28,7 +28,6 @@ export const useStationMarkers = (
   const [clusterer, setClusterer] = useState<MarkerClusterer | null>(null)
 
   const markersRef = useRef(new Map<number, google.maps.Marker>())
-  const markers = markersRef.current
 
   // 初期化
   useEffect(() => {
@@ -38,12 +37,12 @@ export const useStationMarkers = (
         // see: https://www.npmjs.com/package/supercluster
         algorithm: new SuperClusterAlgorithm({
           // zoom 13 以上ではクラスタリング表示しない
-          maxZoom: 12,  
-           // マーカー4個未満のクラスターは生成しない 
-           // voronoi分割の境界線を接する駅集合は2〜３個程度
+          maxZoom: 12,
+          // マーカー4個未満のクラスターは生成しない 
+          // voronoi分割の境界線を接する駅集合は2〜３個程度
           minPoints: 4,
           // クラスターの密度
-          radius: 80, 
+          radius: 80,
         }),
       }))
     }
@@ -53,11 +52,19 @@ export const useStationMarkers = (
   // マーカー更新
   useEffect(() => {
     if (!clusterer || !map) return
+
     if (showMarker) {
-      // 描画対象は増加のみと仮定
-      const added = stations
-        .filter(s => !markers.get(s.code))
-        .map(s => {
+      // MarkerClusterの仕様上、差分を検出する必要がある
+      const exists = markersRef.current
+      const next = new Map<number, google.maps.Marker>()
+      const added: google.maps.Marker[] = []
+
+      for (const s of stations) {
+        const m = exists.get(s.code)
+        if (m) {
+          exists.delete(s.code)
+          next.set(s.code, m)
+        } else {
           // TODO AdvancedMarkerElementへの移行
           // https://developers.google.com/maps/documentation/javascript/advanced-markers/migration?hl=ja
           const marker = new google.maps.Marker({
@@ -65,18 +72,28 @@ export const useStationMarkers = (
             position: s.position,
             icon: s.extra ? pin_station_extra : pin_station,
           })
-          markers.set(s.code, marker)
-          return marker
-        })
+          next.set(s.code, marker)
+          added.push(marker)
+        }
+      }
+
+      // データセット切替時に減少する場合もある
+      const removed = Array.from(exists.values())
+      removed.forEach(m => m.setMap(null))
+
+      next.forEach(m => m.setMap(map))
       clusterer.setMap(map)
+
+      clusterer.removeMarkers(removed)
       clusterer.addMarkers(added)
+      markersRef.current = next
     } else {
       clusterer.setMap(null)
-      clusterer.clearMarkers(true)
-      markers.forEach(m => m.setMap(null))
-      markers.clear()
+      clusterer.clearMarkers()
+      markersRef.current.forEach(m => m.setMap(null))
+      markersRef.current.clear()
     }
-  }, [map, stations, clusterer, showMarker, markers])
+  }, [map, stations, clusterer, showMarker, markersRef])
 }
 
 // see DefaultRenderer implementation
