@@ -1,4 +1,4 @@
-import { MutableRefObject, RefObject, useEffect, useRef, useState } from "react"
+import { MutableRefObject, RefObject, useEffect, useRef } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { LatLng, MapCenter } from "../../location"
 import * as action from "../../redux/actions"
@@ -11,25 +11,6 @@ import { useRefCallback } from "../hooks"
 import { NavType, isStationDialog } from "../navState"
 import { PolylineProps, RectBounds, getBounds, getZoomProperty, isInsideRect } from "./diagram"
 import { ProgressHandler } from "./progressHook"
-
-const ZOOM_TH = 12
-const VORONOI_SIZE_TH = 2000
-
-type HideStationState = {
-  hide: boolean
-  zoom: number
-  rect: RectBounds
-  stationSize: number
-}
-
-function shouldUpdateBounds(state: HideStationState, zoom: number, rect: RectBounds): boolean {
-  if (!state.hide) {
-    return zoom >= ZOOM_TH || state.stationSize < VORONOI_SIZE_TH
-  }
-  if (zoom > state.zoom) return true
-  if (!isInsideRect(rect, state.rect)) return true
-  return false
-}
 
 /**
  * 地図の操作する関数と状態変数を取得する
@@ -51,19 +32,6 @@ export const useMapOperator = (
   const {
     dataType
   } = useSelector(selectStationState)
-
-  const [hideState, setHideState] = useState<HideStationState>({
-    hide: false,
-    zoom: 0,
-    rect: {
-      south: -90,
-      north: 90,
-      west: -180,
-      east: 180,
-    },
-    stationSize: 0,
-  })
-  const hideStationOnMap = hideState.hide
 
   const dispatch = useDispatch<AppDispatch>()
 
@@ -131,6 +99,15 @@ export const useMapOperator = (
     }))
   }
 
+  // 直近の探索範囲
+  const lastSearchRectRef = useRef<RectBounds>({
+    north: 35,
+    south: 35,
+    west: 135,
+    east: 135,
+  })
+  const lastSearchRect = lastSearchRectRef.current
+
   //　地図表示範囲の変更時に表示する駅リストを更新する
   const updateBounds = useRefCallback(async (map: google.maps.Map, force?: boolean) => {
     const bounds = map.getBounds()
@@ -144,7 +121,7 @@ export const useMapOperator = (
       south: sw.lat(),
       west: sw.lng(),
     }
-    if (force || shouldUpdateBounds(hideState, zoom, rect)) {
+    if (force || !isInsideRect(rect, lastSearchRect)) {
       await progressHandler(
         "駅を検索中",
         async () => {
@@ -158,22 +135,10 @@ export const useMapOperator = (
             west: sw.lng() - margin,
             east: ne.lng() + margin,
           }
-          const result = await repository.searchRect(search, VORONOI_SIZE_TH)
-          setHideState({
-            hide: zoom < ZOOM_TH && result.length >= VORONOI_SIZE_TH,
-            zoom: zoom,
-            rect: search,
-            stationSize: result.length,
-          })
+          await repository.searchRect(search, 2000)
+          lastSearchRectRef.current = search
         },
       )
-    } else {
-      setHideState({
-        hide: true,
-        zoom: zoom,
-        rect: hideState.rect,
-        stationSize: hideState.stationSize,
-      })
     }
   })
 
@@ -235,7 +200,6 @@ export const useMapOperator = (
   }
 
   return {
-    hideStationOnMap,
     showStation,
     showLine,
     showRadarVoronoi,

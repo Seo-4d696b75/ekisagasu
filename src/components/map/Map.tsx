@@ -18,6 +18,7 @@ import { CurrentPosIcon } from "./PositionIcon"
 import { useMapCallback } from "./mapEventHook"
 import { useMapCenterChangeEffect, useMapOperator } from "./mapHook"
 import { useStationMarkers } from "./markerHook"
+import { useVoronoiPolygons } from "./polygonHook"
 import { useProgressBanner } from "./progressHook"
 import { useQueryEffect } from "./queryHook"
 
@@ -61,7 +62,6 @@ const MapContainer: FC = () => {
 
   // functions operating the map and its state variables
   const {
-    hideStationOnMap,
     showStation,
     showLine,
     showRadarVoronoi,
@@ -251,25 +251,7 @@ const MapContainer: FC = () => {
   }, [lineData])
 
 
-  const showVoronoi = !hideStationOnMap && !(isStationDialog(nav) && nav.data.highVoronoi)
-  const voronoiPolygons = useMemo(() => {
-    if (showVoronoi) {
-      return stations.map((s, i) => (
-        <Polygon
-          key={i}
-          paths={s.voronoiPolygon}
-          options={{
-            strokeColor: '#0000FF',
-            strokeWeight: 1,
-            strokeOpacity: 0.8,
-            fillOpacity: 0,
-            clickable: false,
-          }} />
-      ))
-    } else {
-      return null
-    }
-  }, [showVoronoi, stations])
+  const voronoiPolygons = useVoronoiPolygons()
 
   const highVoronoi = isStationDialog(nav) ? nav.data.highVoronoi : null
   const highVoronoiPolygons = useMemo(() => {
