@@ -18,7 +18,6 @@ import { CurrentPosIcon } from "./PositionIcon"
 import { useMapCallback } from "./mapEventHook"
 import { useMapCenterChangeEffect, useMapOperator } from "./mapHook"
 import { useStationMarkers } from "./markerHook"
-import { useVoronoiPolygons } from "./polygonHook"
 import { useProgressBanner } from "./progressHook"
 import { useQueryEffect } from "./queryHook"
 
@@ -251,7 +250,26 @@ const MapContainer: FC = () => {
   }, [lineData])
 
 
-  const voronoiPolygons = useVoronoiPolygons()
+  const showVoronoi = !(isStationDialog(nav) && nav.data.highVoronoi)
+  const voronoiPolygons = useMemo(() => {
+    if (!showVoronoi) return null
+
+    // 現在のzoomで大きさ 50 pixel^2 以上の図形のみ描画する
+    return stations
+      .filter(s => s.voronoiArea * Math.pow(2, mapCenter.zoom * 2) > 50)
+      .map(s => (
+        <Polygon
+          key={s.code}
+          paths={s.voronoiPolygon}
+          options={{
+            strokeColor: '#0000FF',
+            strokeWeight: 1,
+            strokeOpacity: 0.8,
+            fillOpacity: 0,
+            clickable: false,
+          }} />
+      ))
+  }, [showVoronoi, stations, mapCenter.zoom])
 
   const highVoronoi = isStationDialog(nav) ? nav.data.highVoronoi : null
   const highVoronoiPolygons = useMemo(() => {
