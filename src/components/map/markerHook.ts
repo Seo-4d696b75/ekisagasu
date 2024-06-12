@@ -1,7 +1,7 @@
 
 // TODO Marker実装は本家のgooglemaps apiを直接使っている
 
-import { Cluster, ClusterStats, MarkerClusterer, Renderer } from "@googlemaps/markerclusterer";
+import { Cluster, ClusterStats, MarkerClusterer, Renderer, SuperClusterAlgorithm } from "@googlemaps/markerclusterer";
 import { useEffect, useRef, useState } from "react";
 
 import { useSelector } from "react-redux";
@@ -34,7 +34,17 @@ export const useStationMarkers = (
   useEffect(() => {
     if (map) {
       setClusterer(new MarkerClusterer({
-        renderer: new CustomClusterRenderer()
+        renderer: new CustomClusterRenderer(),
+        // see: https://www.npmjs.com/package/supercluster
+        algorithm: new SuperClusterAlgorithm({
+          // zoom 13 以上ではクラスタリング表示しない
+          maxZoom: 12,  
+           // マーカー4個未満のクラスターは生成しない 
+           // voronoi分割の境界線を接する駅集合は2〜３個程度
+          minPoints: 4,
+          // クラスターの密度
+          radius: 80, 
+        }),
       }))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
