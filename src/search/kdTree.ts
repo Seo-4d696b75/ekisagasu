@@ -61,7 +61,7 @@ export class StationKdTree {
   async searchRect(rect: RectBounds, max: number): Promise<Station[]> {
     const time = performance.now()
     const dst: Station[] = []
-    this._searchRect(this.root, rect, dst, max)
+    await this._searchRect(this.root, rect, dst, max)
     logger.d(`update region done. time=${performance.now() - time}ms size:${dst.length}`)
     return dst
   }

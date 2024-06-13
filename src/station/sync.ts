@@ -14,12 +14,12 @@ type AsyncResult<T> = {
 async function impl<T>(
   tag: string,
   tasks: Map<string, Promise<any>>,
-  task: Promise<T> | (() => Promise<T>),
+  task: () => Promise<T>,
 ): Promise<T> {
   const running = tasks.get(tag) ?? Promise.resolve()
   const next: Promise<AsyncResult<T>> = running.then(() => {
     // 前段の処理を待機
-    return typeof task === 'function' ? task() : task
+    return task()
   }).then(result => {
     return {
       type: ResultType.Success,
@@ -64,7 +64,7 @@ async function impl<T>(
 export interface Synchronizer {
   <T>(
     tag: string,
-    task: Promise<T> | (() => Promise<T>),
+    task: () => Promise<T>,
   ): Promise<T>
 }
 

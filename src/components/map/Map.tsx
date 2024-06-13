@@ -17,6 +17,7 @@ import "./Map.css"
 import { CurrentPosIcon } from "./PositionIcon"
 import { useMapCallback } from "./mapEventHook"
 import { useMapCenterChangeEffect, useMapOperator } from "./mapHook"
+import { useStationMarkers } from "./markerHook"
 import { useProgressBanner } from "./progressHook"
 import { useQueryEffect } from "./queryHook"
 
@@ -35,7 +36,6 @@ const MapContainer: FC = () => {
 
   const {
     radarK,
-    showStationPin,
     nav,
     currentLocation,
     mapCenter,
@@ -44,7 +44,7 @@ const MapContainer: FC = () => {
 
   const {
     dataType,
-    stations: voronoi,
+    stations,
   } = useSelector(selectStationState)
 
   const [screenWide, setScreenWide] = useState(false)
@@ -61,7 +61,6 @@ const MapContainer: FC = () => {
 
   // functions operating the map and its state variables
   const {
-    hideStationOnMap,
     showStation,
     showLine,
     showRadarVoronoi,
@@ -133,6 +132,8 @@ const MapContainer: FC = () => {
   /* ===============================
    render section below
   ================================ */
+
+  useStationMarkers(googleMapRef.current)
 
   const currentPositionMarker = useMemo(() => {
     if (isWatchCurrentPosition && currentPosition) {
@@ -249,12 +250,16 @@ const MapContainer: FC = () => {
   }, [lineData])
 
 
-  const showVoronoi = !hideStationOnMap && !(isStationDialog(nav) && nav.data.highVoronoi)
+  const showVoronoi = !(isStationDialog(nav) && nav.data.highVoronoi)
   const voronoiPolygons = useMemo(() => {
-    if (showVoronoi) {
-      return voronoi.map((s, i) => (
+    if (!showVoronoi) return null
+
+    // 現在のzoomで大きさ 50 pixel^2 以上の図形のみ描画する
+    return stations
+      .filter(s => s.voronoiArea * Math.pow(2, mapCenter.zoom * 2) > 50)
+      .map(s => (
         <Polygon
-          key={i}
+          key={s.code}
           paths={s.voronoiPolygon}
           options={{
             strokeColor: '#0000FF',
@@ -264,25 +269,7 @@ const MapContainer: FC = () => {
             clickable: false,
           }} />
       ))
-    } else {
-      return null
-    }
-  }, [showVoronoi, voronoi])
-
-  const showStationMarker = !hideStationOnMap && showStationPin && nav.type === NavType.IDLE && showVoronoi
-  const stationMarkers = useMemo(() => {
-    if (showStationMarker) {
-      return voronoi.map((s, i) => (
-        <Marker
-          key={i}
-          position={s.position}
-          icon={s.extra ? pin_station_extra : pin_station}>
-        </Marker>
-      ))
-    } else {
-      return null
-    }
-  }, [showStationMarker, voronoi])
+  }, [showVoronoi, stations, mapCenter.zoom])
 
   const highVoronoi = isStationDialog(nav) ? nav.data.highVoronoi : null
   const highVoronoiPolygons = useMemo(() => {
@@ -391,7 +378,6 @@ const MapContainer: FC = () => {
         {lineMarkers}
         {linePolylines}
         {voronoiPolygons}
-        {stationMarkers}
         {highVoronoiPolygons}
 
       </GoogleMap>
