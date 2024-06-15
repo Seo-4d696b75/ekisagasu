@@ -116,7 +116,7 @@ class CustomClusterRenderer implements Renderer {
   <circle cx="120" cy="120" opacity=".2" r="110" />
   <circle cx="120" cy="120" opacity=".1" r="130" />
   </g>
-  <text x="50%" y="50%" fill="#EEE" text-anchor="middle" alignment-baseline="middle" font-size="60">${count}</text>
+  <text x="50%" y="50%" fill="#EEE" text-anchor="middle" alignment-baseline="middle" font-size="60" font-family="Menlo, Monaco, 'Courier New', Consolas, monospace">${count}</text>
 </svg>`);
 
     // create marker using svg icon
