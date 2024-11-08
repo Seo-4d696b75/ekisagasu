@@ -66,10 +66,10 @@ describe("CurrentPosDialog", () => {
     />)
     userEvent.click(screen.getByText(line.name))
     expect(onLineSelected).toHaveBeenCalled()
-    expect(onLineSelected.mock.lastCall[0]).toBe(line)
+    expect(onLineSelected.mock.lastCall?.[0]).toBe(line)
     userEvent.click(screen.getByText(new RegExp(`${station.name}\\s*${line.name}`)))
     expect(onStationSelected).toHaveBeenCalled()
-    expect(onStationSelected.mock.lastCall[0]).toBe(station)
+    expect(onStationSelected.mock.lastCall?.[0]).toBe(station)
   })
   test("ボタン-showDetail", () => {
     render(<CurrentPosDialog

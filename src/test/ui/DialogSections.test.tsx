@@ -134,7 +134,7 @@ describe("StationDetail", () => {
     stationPosDialogProps.props.lines.forEach(line => {
       userEvent.click(screen.getByText(line.name))
       expect(onLineSelected).toHaveBeenCalled()
-      expect(onLineSelected.mock.lastCall[0]).toBe(line)
+      expect(onLineSelected.mock.lastCall?.[0]).toBe(line)
     })
   })
 })
@@ -163,7 +163,7 @@ describe("StationRadar", () => {
       onClose={onClose} />)
     radarList.forEach(e => {
       userEvent.click(screen.getByText(new RegExp(e.station.name)))
-      expect(onStationSelected.mock.lastCall[0]).toBe(e.station)
+      expect(onStationSelected.mock.lastCall?.[0]).toBe(e.station)
     })
     userEvent.click(screen.getByAltText("close radar"))
     expect(onClose).toHaveBeenCalledTimes(1)
