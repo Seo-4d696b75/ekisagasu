@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useMemo, useState } from "react";
+import React, { FC, useCallback, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { CSSTransition } from "react-transition-group";
@@ -57,14 +57,16 @@ const Header: FC = () => {
     setShowSearchBox(false)
   }, [dispatch])
 
+  const searchBoxTransitionRef = useRef<HTMLDivElement>(null)
   const searchBoxSection = useMemo(() => {
     return (
       <CSSTransition
+        nodeRef={searchBoxTransitionRef}
         in={showSearchBox}
         className="search-box"
         timeout={300}
         onEntered={() => setInputFocusRequest(createEvent<void>(undefined))}>
-        <div className="search-box">
+        <div ref={searchBoxTransitionRef} className="search-box">
           <StationSearchBox
             inputFocusRequested={inputFocusRequest}
             onSuggestionSelected={showStationItem} />
@@ -178,6 +180,8 @@ const Header: FC = () => {
     </div>
   ), [dataType, dispatch])
 
+  const settingTransitionRef = useRef<HTMLDivElement>(null)
+
   return (
     <div className='Map-header'>
       <div className="Header-frame">
@@ -187,10 +191,11 @@ const Header: FC = () => {
       </div>
       <div className="setting container">
         <CSSTransition
+          nodeRef={settingTransitionRef}
           in={showSetting}
           className="setting modal"
           timeout={400}>
-          <div className="setting modal">
+          <div ref={settingTransitionRef} className="setting modal">
             <img
               src={img_delete}
               alt="close dialog"

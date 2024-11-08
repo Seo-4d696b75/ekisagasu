@@ -29,13 +29,15 @@ export const useProgressBanner = () => {
   const queueRef = useRef<MessageEntry[]>([])
   const idRef = useRef(0)
 
+  const transitionNodeRef = useRef<HTMLDivElement>(null)
   const banner = useMemo(() => (
     <div className="progress-banner-container">
       <CSSTransition
+        nodeRef={transitionNodeRef}
         in={show}
         className="progress-banner"
         timeout={0}>
-        <div className="progress-banner">
+        <div ref={transitionNodeRef} className="progress-banner">
           <div className="progress-container">
             <CircularProgress
               value={100}

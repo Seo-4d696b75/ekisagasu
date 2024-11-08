@@ -1,4 +1,4 @@
-import { FC, useMemo, useState } from "react";
+import { FC, useMemo, useRef, useState } from "react";
 import { CSSTransition } from "react-transition-group";
 import img_above from "../../img/ic_above.png";
 import img_delete from "../../img/ic_delete.png";
@@ -51,6 +51,8 @@ export const CurrentPosDialog: FC<CurrentPosInfoProps> = ({ info, onLineSelected
     </div>
   ), [showDetails])
 
+  const transitionNodeRef = useRef<HTMLDivElement>(null)
+
   return (
     <div className="info-dialog">
       <div className="container-main station-title">
@@ -58,10 +60,11 @@ export const CurrentPosDialog: FC<CurrentPosInfoProps> = ({ info, onLineSelected
         {actionButtonSection}
       </div>
       <CSSTransition
+        nodeRef={transitionNodeRef}
         in={showDetails}
         className="container-expand station-detail"
         timeout={400}>
-        <div className="container-expand station-detail">
+        <div ref={transitionNodeRef} className="container-expand station-detail">
           <StationDetails
             info={info}
             onLineSelected={onLineSelected} />

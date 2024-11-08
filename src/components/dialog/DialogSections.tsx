@@ -1,4 +1,4 @@
-import { FC, useMemo } from "react"
+import { FC, useMemo, useRef } from "react"
 import { CSSTransition } from "react-transition-group"
 import img_above from "../../img/ic_above.png"
 import img_location from "../../img/map_pin.svg"
@@ -129,9 +129,10 @@ export const StationRadar: FC<StationRadarProps> = ({ info, show, onStationSelec
   const onStationSelectedRef = useRefCallback(onStationSelected)
   const onCloseRef = useRefCallback(onClose)
 
+  const transitionNodeRef = useRef<HTMLDivElement>(null)
   const content = useMemo(() => {
     return (
-      <div className="container-expand radar">
+      <div ref={transitionNodeRef} className="container-expand radar">
         <div className="horizontal-container radar-title">
           <img src={img_radar} alt="icon-radar" className="icon-radar" />
           <div className="radar-k">x{radarList.length}</div>
@@ -167,6 +168,7 @@ export const StationRadar: FC<StationRadarProps> = ({ info, show, onStationSelec
   return (
     <div className={`container-main radar ${info.type === DialogType.STATION ? "" : "position"}`}>
       <CSSTransition
+        nodeRef={transitionNodeRef}
         in={show}
         className="container-expand radar"
         timeout={400}>
