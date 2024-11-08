@@ -9,6 +9,8 @@ import img_setting from "../../img/ic_settings.png";
 import { logger } from "../../logger";
 import * as action from "../../redux/actions";
 import { selectMapState, selectStationState } from "../../redux/selector";
+import { AppDispatch } from "../../redux/store";
+import repository from "../../station/repository";
 import { createEvent, createIdleEvent } from "../event";
 import "./Header.css";
 import StationSearchBox, { StationSuggestion } from "./StationSearchBox";
@@ -28,7 +30,7 @@ const Header: FC = () => {
     dataType,
   } = useSelector(selectStationState)
 
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
 
   const [showSetting, setShowSetting] = useState(false)
   const [showSearchBox, setShowSearchBox] = useState(false)
@@ -41,7 +43,17 @@ const Header: FC = () => {
   }, [dispatch]) // dispatch reference is stable, but redux doesn't know it
 
   const showStationItem = useCallback((item: StationSuggestion) => {
-    dispatch(action.requestShowStationItem(item))
+    switch (item.type) {
+      case 'station': {
+        dispatch(action.requestShowStation(item.code))
+        break
+      }
+      case 'line': {
+        const line = repository.getLine(item.code)
+        dispatch(action.requestShowLine(line))
+        break
+      }
+    }
     setShowSearchBox(false)
   }, [dispatch])
 
@@ -55,7 +67,7 @@ const Header: FC = () => {
         <div className="search-box">
           <StationSearchBox
             inputFocusRequested={inputFocusRequest}
-            onSuggestionSelected={showStationItem}> </StationSearchBox>
+            onSuggestionSelected={showStationItem} />
         </div>
       </CSSTransition>
     )
