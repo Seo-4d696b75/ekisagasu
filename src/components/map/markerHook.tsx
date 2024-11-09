@@ -51,7 +51,9 @@ export const useStationMarkers = () => {
 // see DefaultRenderer implementation
 // https://googlemaps.github.io/js-markerclusterer/classes/DefaultRenderer.html
 class CustomClusterRenderer implements Renderer {
-  render(cluster: Cluster, stats: ClusterStats, map: google.maps.Map): google.maps.Marker {
+  parser = new DOMParser()
+
+  render(cluster: Cluster, stats: ClusterStats, map: google.maps.Map): google.maps.marker.AdvancedMarkerElement {
     const count = cluster.count
     // change color if this cluster has more markers than the mean cluster
     const color =
@@ -60,8 +62,9 @@ class CustomClusterRenderer implements Renderer {
         : "#4444FF";
 
     // create svg url with fill color
-    const svg = window.btoa(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="45px" height="45px">
+    // see https://developers.google.com/maps/documentation/javascript/advanced-markers/graphic-markers?hl=ja&_gl=1*yney1h*_up*MQ..*_ga*MjE0NzQzNzg5MS4xNzMxMTU2ODky*_ga_NRWSTWS78N*MTczMTE1Njg5Mi4xLjAuMTczMTE1Njg5Mi4wLjAuMA..#inline-svg
+    const svg = this.parser.parseFromString(
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="45px" height="45px">
   <g fill="${color}">
   <circle cx="120" cy="120" opacity=".6" r="70" />
   <circle cx="120" cy="120" opacity=".3" r="90" />
@@ -69,12 +72,13 @@ class CustomClusterRenderer implements Renderer {
   <circle cx="120" cy="120" opacity=".1" r="130" />
   </g>
   <text x="50%" y="50%" fill="#EEE" text-anchor="middle" alignment-baseline="middle" font-size="60" font-family="Menlo, Monaco, 'Courier New', Consolas, monospace">${count}</text>
-</svg>`);
+</svg>`,
+      'image/svg+xml',
+    ).documentElement;
 
-    // create marker using svg icon
-    return new google.maps.Marker({
+    return new google.maps.marker.AdvancedMarkerElement({
       position: cluster.position,
-      icon: `data:image/svg+xml;base64,${svg}`,
+      content: svg,
     });
   }
 }
