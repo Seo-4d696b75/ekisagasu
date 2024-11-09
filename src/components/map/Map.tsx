@@ -143,7 +143,7 @@ const MapContainer: FC = () => {
    render section below
   ================================ */
 
-  useStationMarkers(googleMapRef.current)
+  const stationMarkers = useStationMarkers()
 
   const currentPositionMarker = useMemo(() => {
     if (isWatchCurrentPosition && currentPosition) {
@@ -370,6 +370,7 @@ const MapContainer: FC = () => {
         onIdle={onMapIdle}
         onMouseDown={onMouseDown}
       >
+        {stationMarkers}
         {currentPositionMarker}
         {currentHeadingMarker}
         {currentAccuracyCircle}
