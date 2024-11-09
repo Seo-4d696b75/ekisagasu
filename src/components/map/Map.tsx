@@ -1,4 +1,4 @@
-import { Circle, GoogleMap, Marker, Polygon, Polyline, useJsApiLoader } from "@react-google-maps/api"
+import { Circle, GoogleMap, Libraries, Marker, Polygon, Polyline, useJsApiLoader } from "@react-google-maps/api"
 import { FC, useEffect, useMemo, useRef, useState } from "react"
 import { useSelector } from "react-redux"
 import { CSSTransition } from "react-transition-group"
@@ -27,6 +27,13 @@ const VORONOI_COLOR = [
   "#FF0000",
   "#CCCC00"
 ]
+
+const apiLoaderOptions = {
+  id: 'google-map-script',
+  googleMapsApiKey: process.env.REACT_APP_API_KEY,
+  language: 'ja',
+  libraries: ['marker'] as Libraries,
+}
 
 const MapContainer: FC = () => {
 
@@ -342,11 +349,7 @@ const MapContainer: FC = () => {
     </div>
   )
 
-  const { isLoaded: isMapLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: process.env.REACT_APP_API_KEY,
-    language: 'ja',
-  })
+  const { isLoaded: isMapLoaded } = useJsApiLoader(apiLoaderOptions)
 
   return isMapLoaded ? (
     <div className='Map-container' ref={mapElementRef}>
