@@ -1,12 +1,6 @@
-
-// TODO Marker実装は本家のgooglemaps apiを直接使っている
-
 import { Cluster, ClusterStats, MarkerClusterer, Renderer, SuperClusterAlgorithm } from "@googlemaps/markerclusterer";
 import { useEffect, useRef, useState } from "react";
-
 import { useSelector } from "react-redux";
-import pin_station from "../../img/map_pin_station.svg";
-import pin_station_extra from "../../img/map_pin_station_extra.svg";
 import { selectMapState, selectStationState } from "../../redux/selector";
 import { NavType } from "../navState";
 
@@ -27,7 +21,7 @@ export const useStationMarkers = (
   // 初期化時に new MarkerClusterer() を呼ぶと ReferenceError になる
   const [clusterer, setClusterer] = useState<MarkerClusterer | null>(null)
 
-  const markersRef = useRef(new Map<number, google.maps.Marker>())
+  const markersRef = useRef(new Map<number, google.maps.marker.AdvancedMarkerElement>())
 
   // 初期化
   useEffect(() => {
@@ -56,8 +50,8 @@ export const useStationMarkers = (
     if (showMarker) {
       // MarkerClusterの仕様上、差分を検出する必要がある
       const exists = markersRef.current
-      const next = new Map<number, google.maps.Marker>()
-      const added: google.maps.Marker[] = []
+      const next = new Map<number, google.maps.marker.AdvancedMarkerElement>()
+      const added: google.maps.marker.AdvancedMarkerElement[] = []
 
       for (const s of stations) {
         const m = exists.get(s.code)
@@ -67,10 +61,10 @@ export const useStationMarkers = (
         } else {
           // TODO AdvancedMarkerElementへの移行
           // https://developers.google.com/maps/documentation/javascript/advanced-markers/migration?hl=ja
-          const marker = new google.maps.Marker({
+          const marker = new google.maps.marker.AdvancedMarkerElement({
             map: map,
             position: s.position,
-            icon: s.extra ? pin_station_extra : pin_station,
+            // icon: s.extra ? pin_station_extra : pin_station,
           })
           next.set(s.code, marker)
           added.push(marker)
@@ -79,9 +73,9 @@ export const useStationMarkers = (
 
       // データセット切替時に減少する場合もある
       const removed = Array.from(exists.values())
-      removed.forEach(m => m.setMap(null))
+      removed.forEach(m => m.map = null)
 
-      next.forEach(m => m.setMap(map))
+      next.forEach(m => m.map = map)
       clusterer.setMap(map)
 
       clusterer.removeMarkers(removed)
@@ -90,7 +84,7 @@ export const useStationMarkers = (
     } else {
       clusterer.setMap(null)
       clusterer.clearMarkers()
-      markersRef.current.forEach(m => m.setMap(null))
+      markersRef.current.forEach(m => m.map = null)
       markersRef.current.clear()
     }
   }, [map, stations, clusterer, showMarker, markersRef])
