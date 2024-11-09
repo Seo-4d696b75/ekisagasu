@@ -301,13 +301,15 @@ const MapContainer: FC = () => {
 
   // ダイアログを閉じる時アニメーションが終了するまえに nav.data.dialog が undefined になる
   // 動作が重くなる副作用もあるため閉じるアニメーションは無し
+  const infoDialogRef = useRef<HTMLDivElement>(null)
   const InfoDialog = (
     <div className="info-modal container">
       <CSSTransition
+        nodeRef={infoDialogRef}
         in={isInfoDialog(nav)}
         className="info-modal holder"
         timeout={300}>
-        <div className="info-modal holder">
+        <div ref={infoDialogRef} className="info-modal holder">
           {
             !isInfoDialog(nav)
               ? null
@@ -329,13 +331,15 @@ const MapContainer: FC = () => {
     </div>
   )
 
+  const currentPosDialogRef = useRef<HTMLDivElement>(null)
   const currentPosDialog = (
     <div className="info-modal container current-position">
       <CSSTransition
+        nodeRef={currentPosDialogRef}
         in={nav.type === NavType.IDLE && !!nav.data.dialog}
         className="info-modal holder current-position"
         timeout={300}>
-        <div className="info-modal holder current-position">
+        <div ref={currentPosDialogRef} className="info-modal holder current-position">
           {
             nav.type === NavType.IDLE && nav.data.dialog
               ? <CurrentPosDialog
