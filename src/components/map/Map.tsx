@@ -357,6 +357,7 @@ const MapContainer: FC = () => {
         mapContainerStyle={{ width: '100%', height: '100%' }}
         zoom={14}
         options={{
+          mapId: 'd31074a05ea0181c',
           mapTypeControlOptions: {
             position: google.maps.ControlPosition.TOP_RIGHT,
             style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
