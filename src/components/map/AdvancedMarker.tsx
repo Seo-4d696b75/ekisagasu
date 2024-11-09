@@ -1,6 +1,7 @@
 import { useGoogleMap } from "@react-google-maps/api"
-import React, { useEffect, useRef } from "react"
+import React, { useContext, useEffect, useRef } from "react"
 import { createRoot, Root } from "react-dom/client"
+import { MarkerClusterContext } from "./MarkerCluster"
 
 export interface AdvancedMarkerProps {
     position: google.maps.LatLngLiteral | null | undefined
@@ -15,6 +16,8 @@ export interface AdvancedMarkerProps {
 // https://github.com/JustFly1984/react-google-maps-api/issues/3250
 const AdvancedMarker: React.FC<AdvancedMarkerProps> = ({ position, children, anchorX, anchorY }) => {
     const map = useGoogleMap()
+    const cluster = useContext(MarkerClusterContext)
+
     const stateRef = useRef<{
         marker: google.maps.marker.AdvancedMarkerElement,
         root: Root,
@@ -36,6 +39,8 @@ const AdvancedMarker: React.FC<AdvancedMarkerProps> = ({ position, children, anc
                 marker.map = undefined
                 stateRef.current = undefined
                 setTimeout(() => root.unmount())
+                // clusterから削除
+                cluster?.onRemoved?.(marker)
             }
         }
     }, [map])
@@ -54,6 +59,13 @@ const AdvancedMarker: React.FC<AdvancedMarkerProps> = ({ position, children, anc
             )
         }
     }, [state, position, children])
+
+    // clusterへ追加
+    useEffect(() => {
+        if (state && cluster) {
+            cluster.onAdded(state.marker)
+        }
+    }, [state, cluster])
     return <></>
 }
 
