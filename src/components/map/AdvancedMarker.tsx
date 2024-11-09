@@ -40,8 +40,8 @@ const AdvancedMarker: React.FC<AdvancedMarkerProps> = ({ position, children, anc
         }
     }, [map])
     // マーカーの更新
+    const state = stateRef.current
     useEffect(() => {
-        const state = stateRef.current
         if (state) {
             state.marker.position = position
             // AdvancedMarkerElementでanchor位置を指定できない？
@@ -53,7 +53,7 @@ const AdvancedMarker: React.FC<AdvancedMarkerProps> = ({ position, children, anc
                 </div>
             )
         }
-    }, [position, children])
+    }, [state, position, children])
     return <></>
 }
 
