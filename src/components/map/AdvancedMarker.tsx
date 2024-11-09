@@ -5,11 +5,15 @@ import { createRoot, Root } from "react-dom/client"
 export interface AdvancedMarkerProps {
     position: google.maps.LatLngLiteral | null | undefined
     children: React.ReactNode | null | undefined
+    /** normalized horizontal position of anchor. default: 0.5 */
+    anchorX?: number | null | undefined
+    /** normalized vertical position of anchor. default: 1.0 */
+    anchorY?: number | null | undefined
 }
 
 // react-google-maps/api は AdvancedMarker に対応していないため独自実装で対応する
 // https://github.com/JustFly1984/react-google-maps-api/issues/3250
-const AdvancedMarker: React.FC<AdvancedMarkerProps> = ({ position, children }) => {
+const AdvancedMarker: React.FC<AdvancedMarkerProps> = ({ position, children, anchorX, anchorY }) => {
     const map = useGoogleMap()
     const stateRef = useRef<{
         marker: google.maps.marker.AdvancedMarkerElement,
@@ -40,7 +44,14 @@ const AdvancedMarker: React.FC<AdvancedMarkerProps> = ({ position, children }) =
         const state = stateRef.current
         if (state) {
             state.marker.position = position
-            state.root.render(children)
+            // AdvancedMarkerElementでanchor位置を指定できない？
+            const x = (0.5 - (anchorX ?? 0.5)) * 100
+            const y = (1 - (anchorY ?? 1)) * 100
+            state.root.render(
+                <div style={{ translate: `${x}% ${y}%` }}>
+                    {children}
+                </div>
+            )
         }
     }, [position, children])
     return <></>
