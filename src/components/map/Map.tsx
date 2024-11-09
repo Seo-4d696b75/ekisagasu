@@ -1,10 +1,12 @@
-import { Circle, GoogleMap, Libraries, Marker, Polygon, Polyline, useJsApiLoader } from "@react-google-maps/api"
+import { Circle, GoogleMap, Libraries, Polygon, Polyline, useJsApiLoader } from "@react-google-maps/api"
 import { FC, useEffect, useMemo, useRef, useState } from "react"
 import { useSelector } from "react-redux"
 import { CSSTransition } from "react-transition-group"
+import pin_heading from "../../img/heading_pin.svg"
 import pin_location from "../../img/map_pin.svg"
 import pin_station from "../../img/map_pin_station.svg"
 import pin_station_extra from "../../img/map_pin_station_extra.svg"
+import pin_position from "../../img/position_pin.svg"
 import locationRepository from "../../location/repository"
 import { logger } from "../../logger"
 import { selectMapState, selectStationState } from "../../redux/selector"
@@ -13,11 +15,12 @@ import { CurrentPosDialog } from "../dialog/CurrentPosDialog"
 import { LineDialog } from "../dialog/LineDialog"
 import { StationDialog } from "../dialog/StationDialog"
 import { DialogType, NavType, isInfoDialog, isStationDialog } from "../navState"
+import AdvancedMarker from "./AdvancedMarker"
 import "./Map.css"
-import { CurrentPosIcon } from "./PositionIcon"
 import { useMapCallback } from "./mapEventHook"
 import { useMapCenterChangeEffect, useMapOperator } from "./mapHook"
 import { useStationMarkers } from "./markerHook"
+import { CurrentPosIcon } from "./PositionIcon"
 import { useProgressBanner } from "./progressHook"
 import { useQueryEffect } from "./queryHook"
 
@@ -145,17 +148,12 @@ const MapContainer: FC = () => {
   const currentPositionMarker = useMemo(() => {
     if (isWatchCurrentPosition && currentPosition) {
       return (
-        <Marker
+        <AdvancedMarker
           position={currentPosition}
-          clickable={false}
-          icon={{
-            path: google.maps.SymbolPath.CIRCLE,
-            fillColor: "#154bb6",
-            fillOpacity: 1.0,
-            strokeColor: "white",
-            strokeWeight: 1.2,
-            scale: 8,
-          }}></Marker>
+          anchorX={0.5}
+          anchorY={0.5}>
+          <img src={pin_position} />
+        </AdvancedMarker>
       )
     } else {
       return null
@@ -166,20 +164,14 @@ const MapContainer: FC = () => {
   const currentHeadingMarker = useMemo(() => {
     if (isWatchCurrentPosition && currentPosition && currentHeading && !isNaN(currentHeading)) {
       return (
-        <Marker
+        <AdvancedMarker
           position={currentPosition}
-          clickable={false}
-          icon={{
-            //url: require("../img/direction_pin.svg"),
-            anchor: new google.maps.Point(64, 64),
-            path: "M 44 36 A 40 40 0 0 1 84 36 L 64 6 Z",
-            fillColor: "#154bb6",
-            fillOpacity: 1.0,
-            strokeColor: "white",
-            strokeWeight: 1.2,
-            scale: 0.3,
-            rotation: currentHeading,
-          }} />
+          anchorX={0.5}
+          anchorY={0.5}>
+          <img
+            src={pin_heading}
+            style={{ transform: `rotate(${currentHeading}deg)` }} />
+        </AdvancedMarker>
       )
     } else {
       return null
@@ -210,29 +202,29 @@ const MapContainer: FC = () => {
 
   const selectedPos = nav.type === NavType.DIALOG_SELECT_POS ? nav.data.dialog.props.position : undefined
   const selectedPosMarker = useMemo(() => selectedPos ? (
-    <Marker
-      position={selectedPos}
-      icon={pin_location} >
-    </Marker>
+    <AdvancedMarker
+      position={selectedPos}>
+      <img src={pin_location} />
+    </AdvancedMarker>
   ) : null, [selectedPos])
 
   const selectedStation = isStationDialog(nav) ? nav.data.dialog.props.station : undefined
   const selectedStationMarker = useMemo(() => selectedStation ? (
-    <Marker
-      position={selectedStation.position}
-      icon={selectedStation.extra ? pin_station_extra : pin_station} >
-    </Marker>
+    <AdvancedMarker
+      position={selectedStation.position}>
+      <img src={selectedStation.extra ? pin_station_extra : pin_station} />
+    </AdvancedMarker>
   ) : null, [selectedStation])
 
   const lineData = nav.type === NavType.DIALOG_LINE && nav.data.showPolyline ? nav.data : null
   const lineMarkers = useMemo(() => {
     if (lineData) {
       return lineData.stationMakers.map((s, i) => (
-        <Marker
+        <AdvancedMarker
           key={i}
-          position={s.position}
-          icon={s.extra ? pin_station_extra : pin_station}>
-        </Marker>
+          position={s.position} >
+          <img src={s.extra ? pin_station_extra : pin_station} />
+        </AdvancedMarker>
       ))
     } else {
       return null
