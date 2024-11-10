@@ -54,7 +54,7 @@ describe("StationDialog", () => {
     expect(screen.getByText(line.name)).toBeInTheDocument()
     expect(screen.getByText("100m")).toBeInTheDocument()
   })
-  test("ボタン押下", () => {
+  test("ボタン押下", async () => {
     render(<StationDialog
       info={stationPosDialogProps}
       onClosed={onClose}
@@ -62,15 +62,15 @@ describe("StationDialog", () => {
       onStationSelected={onStationSelected}
       onShowVoronoi={onShowVoronoi}
     />)
-    userEvent.click(screen.getByAltText("close dialog"))
+    await userEvent.click(screen.getByAltText("close dialog"))
     expect(onClose).toHaveBeenCalled()
-    userEvent.click(screen.getByAltText("show voronoi"))
+    await userEvent.click(screen.getByAltText("show voronoi"))
     expect(onShowVoronoi).toHaveBeenCalled()
     expect(onShowVoronoi.mock.lastCall?.[0]).toBe(station)
-    userEvent.click(screen.getByText(line.name))
+    await userEvent.click(screen.getByText(line.name))
     expect(onLineSelected).toHaveBeenCalled()
     expect(onLineSelected.mock.lastCall?.[0]).toBe(line)
-    userEvent.click(screen.getByText(new RegExp(`${station.name}\\s*${line.name}`)))
+    await userEvent.click(screen.getByText(new RegExp(`${station.name}\\s*${line.name}`)))
     expect(onStationSelected).toHaveBeenCalled()
     expect(onStationSelected.mock.lastCall?.[0]).toBe(station)
   })

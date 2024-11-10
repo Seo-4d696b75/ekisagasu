@@ -126,16 +126,16 @@ describe("StationDetail", () => {
     expect(screen.getByText("1.2km")).toBeInTheDocument()
     expect(screen.getByText(`E${currentPos.lng.toFixed(6)} N${currentPos.lat.toFixed(6)}`)).toBeInTheDocument()
   })
-  test("路線の選択", () => {
+  test("路線の選択", async () => {
     render(<StationDetails
       info={stationPosDialogProps}
       onLineSelected={onLineSelected} />)
     onLineSelected.mockClear()
-    stationPosDialogProps.props.lines.forEach(line => {
-      userEvent.click(screen.getByText(line.name))
+    for (const line of stationPosDialogProps.props.lines) {
+      await userEvent.click(screen.getByText(line.name))
       expect(onLineSelected).toHaveBeenCalled()
       expect(onLineSelected.mock.lastCall?.[0]).toBe(line)
-    })
+    }
   })
 })
 
@@ -155,17 +155,17 @@ describe("StationRadar", () => {
       expect(screen.getByText(`${e.dist}m`)).toBeInTheDocument()
     })
   })
-  test("ボタン押下", () => {
+  test("ボタン押下", async () => {
     render(<StationRadar
       info={stationPosDialogProps}
       show={true}
       onStationSelected={onStationSelected}
       onClose={onClose} />)
-    radarList.forEach(e => {
-      userEvent.click(screen.getByText(new RegExp(e.station.name)))
+    for (const e of radarList) {
+      await userEvent.click(screen.getByText(new RegExp(e.station.name)))
       expect(onStationSelected.mock.lastCall?.[0]).toBe(e.station)
-    })
-    userEvent.click(screen.getByAltText("close radar"))
+    }
+    await userEvent.click(screen.getByAltText("close radar"))
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 })
