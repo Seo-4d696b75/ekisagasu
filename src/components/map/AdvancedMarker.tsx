@@ -12,7 +12,7 @@ export interface AdvancedMarkerProps {
     anchorY?: number | null | undefined
 }
 
-// react-google-maps/api は AdvancedMarker に対応していないため独自実装で対応する
+// AdvancedMarker not supported yet in react-google-maps/api
 // https://github.com/JustFly1984/react-google-maps-api/issues/3250
 const AdvancedMarker: React.FC<AdvancedMarkerProps> = ({ position, children, anchorX, anchorY }) => {
     const map = useGoogleMap()
@@ -22,7 +22,7 @@ const AdvancedMarker: React.FC<AdvancedMarkerProps> = ({ position, children, anc
         marker: google.maps.marker.AdvancedMarkerElement,
         root: Root,
     }>()
-    // 初期化・後処理
+    // initialize
     useEffect(() => {
         if (map) {
             const container = document.createElement('div')
@@ -42,7 +42,7 @@ const AdvancedMarker: React.FC<AdvancedMarkerProps> = ({ position, children, anc
             }
         }
     }, [map])
-    // マーカーの更新
+    // update marker position and content
     useEffect(() => {
         if (state) {
             state.marker.position = position
@@ -57,7 +57,7 @@ const AdvancedMarker: React.FC<AdvancedMarkerProps> = ({ position, children, anc
         }
     }, [state, position, anchorX, anchorY, children])
 
-    // clusterへのマーカー追加・削除
+    // add and remove marker from its cluster (if needed)
     useEffect(() => {
         if (state && cluster) {
             const marker = state.marker

@@ -9,16 +9,17 @@ export interface MarkerClusterProps {
   children?: ReactNode | null | undefined,
 }
 
+// each marker inside a cluster needs to know the cluster
 export const MarkerClusterContext = createContext<{
   onAdded: (marker: google.maps.marker.AdvancedMarkerElement) => void,
   onRemoved: (marker: google.maps.marker.AdvancedMarkerElement) => void,
 } | undefined>(undefined)
 
-// react-google-maps/api は AdvancedMarker に対応していないためClustererも独自実装で対応する
 const MarkerCluster: React.FC<MarkerClusterProps> = ({ renderer, algorithm, children }) => {
   const map = useGoogleMap()
   const [clusterer, setClusterer] = useState<MarkerClusterer>()
-  // 初期化・後処理
+
+  // initialize
   useEffect(() => {
     if (map) {
       const clusterer = new MarkerClusterer({
@@ -35,7 +36,7 @@ const MarkerCluster: React.FC<MarkerClusterProps> = ({ renderer, algorithm, chil
     }
   }, [map, renderer, algorithm])
 
-  // マーカーの追加・削除
+  // add and remove marker from clusterer
   const queue = useRef<{
     added: google.maps.marker.AdvancedMarkerElement[],
     removed: google.maps.marker.AdvancedMarkerElement[],
@@ -59,7 +60,11 @@ const MarkerCluster: React.FC<MarkerClusterProps> = ({ renderer, algorithm, chil
       return undefined
     }
   }, [clusterer, queue, requestUpdate])
-  // ひとつずつ追加・削除するとパフォーマンスが悪い
+
+  // adding / removing markers one by one causes performance problem
+  // 1. queue a marker if needs to be added or removed
+  // 2. call setUpdate() and trigger a re-render
+  // 3. in useEffect(), add and remove all the markers that have been queued by the next re-render
   useEffect(() => {
     if (clusterer) {
       clusterer.addMarkers(queue.added)
