@@ -152,7 +152,7 @@ const MapContainer: FC = () => {
           position={currentPosition}
           anchorX={0.5}
           anchorY={0.5}>
-          <img src={pin_position} />
+          <img src={pin_position} alt='現在位置' />
         </AdvancedMarker>
       )
     } else {
@@ -170,6 +170,7 @@ const MapContainer: FC = () => {
           anchorY={0.5}>
           <img
             src={pin_heading}
+            alt='現在位置'
             style={{ transform: `rotate(${currentHeading}deg)` }} />
         </AdvancedMarker>
       )
@@ -204,7 +205,7 @@ const MapContainer: FC = () => {
   const selectedPosMarker = useMemo(() => selectedPos ? (
     <AdvancedMarker
       position={selectedPos}>
-      <img src={pin_location} />
+      <img src={pin_location} alt='選択地点' />
     </AdvancedMarker>
   ) : null, [selectedPos])
 
@@ -212,7 +213,7 @@ const MapContainer: FC = () => {
   const selectedStationMarker = useMemo(() => selectedStation ? (
     <AdvancedMarker
       position={selectedStation.position}>
-      <img src={selectedStation.extra ? pin_station_extra : pin_station} />
+      <img src={selectedStation.extra ? pin_station_extra : pin_station} alt={selectedStation.name} />
     </AdvancedMarker>
   ) : null, [selectedStation])
 
@@ -223,7 +224,7 @@ const MapContainer: FC = () => {
         <AdvancedMarker
           key={i}
           position={s.position} >
-          <img src={s.extra ? pin_station_extra : pin_station} />
+          <img src={s.extra ? pin_station_extra : pin_station} alt={s.name} />
         </AdvancedMarker>
       ))
     } else {

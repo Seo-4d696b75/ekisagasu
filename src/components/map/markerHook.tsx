@@ -41,7 +41,7 @@ export const useStationMarkers = () => {
         <AdvancedMarker
           key={`station marker ${s.code}`}
           position={s.position}>
-          <img src={s.extra ? pin_station_extra : pin_station} />
+          <img src={s.extra ? pin_station_extra : pin_station} alt={s.name} />
         </AdvancedMarker>
       )) : null}
     </MarkerCluster>
