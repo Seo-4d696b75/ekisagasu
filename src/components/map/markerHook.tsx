@@ -3,11 +3,9 @@ import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { selectMapState, selectStationState } from "../../redux/selector";
 import { NavType } from "../navState";
-import AdvancedMarker from "./AdvancedMarker";
 
-import pin_station from "../../img/map_pin_station.svg";
-import pin_station_extra from "../../img/map_pin_station_extra.svg";
 import MarkerCluster from "./MarkerCluster";
+import StationMarker from "./StationMarker";
 
 /*
   react-google-maps/api には以下の問題がある
@@ -36,14 +34,13 @@ export const useStationMarkers = () => {
   return (
     <MarkerCluster
       renderer={renderer}
-      algorithm={algorithm}>
-      {showMarker ? stations.map(s => (
-        <AdvancedMarker
+      algorithm={algorithm}
+      visible={showMarker}>
+      {stations.map(s => (
+        <StationMarker
           key={`station marker ${s.code}`}
-          position={s.position}>
-          <img src={s.extra ? pin_station_extra : pin_station} alt={s.name} />
-        </AdvancedMarker>
-      )) : null}
+          station={s} />
+      ))}
     </MarkerCluster>
   )
 }

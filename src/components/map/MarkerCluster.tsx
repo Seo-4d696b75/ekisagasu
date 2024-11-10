@@ -6,6 +6,7 @@ import { useRefCallback } from "../hooks"
 export interface MarkerClusterProps {
   renderer?: Renderer,
   algorithm?: Algorithm,
+  visible?: boolean | null | undefined,
   children?: ReactNode | null | undefined,
 }
 
@@ -15,9 +16,12 @@ export const MarkerClusterContext = createContext<{
   onRemoved: (marker: google.maps.marker.AdvancedMarkerElement) => void,
 } | undefined>(undefined)
 
-const MarkerCluster: React.FC<MarkerClusterProps> = ({ renderer, algorithm, children }) => {
+const MarkerCluster: React.FC<MarkerClusterProps> = ({ renderer, algorithm, children, visible = true }) => {
   const map = useGoogleMap()
   const [clusterer, setClusterer] = useState<MarkerClusterer>()
+
+  // same set of markers added for the clusterer
+  const markers = useRef(new Set<google.maps.marker.AdvancedMarkerElement>()).current
 
   // initialize
   useEffect(() => {
@@ -28,13 +32,14 @@ const MarkerCluster: React.FC<MarkerClusterProps> = ({ renderer, algorithm, chil
         map: map,
       })
       setClusterer(clusterer)
+      markers.clear()
       return () => {
         clusterer.clearMarkers()
         clusterer.setMap(null)
         setClusterer(undefined)
       }
     }
-  }, [map, renderer, algorithm])
+  }, [map, renderer, algorithm, markers])
 
   // add and remove marker from clusterer
   const queue = useRef<{
@@ -66,13 +71,30 @@ const MarkerCluster: React.FC<MarkerClusterProps> = ({ renderer, algorithm, chil
   // 2. call setUpdate() and trigger a re-render
   // 3. in useEffect(), add and remove all the markers that have been queued by the next re-render
   useEffect(() => {
-    if (clusterer) {
+    if (!map || !clusterer) return
+
+    if (visible) {
+      queue.added.forEach(m => {
+        m.map = map
+        markers.add(m)
+      })
+      queue.removed.forEach(m => {
+        m.map = null
+        markers.delete(m)
+      })
       clusterer.addMarkers(queue.added)
       clusterer.removeMarkers(queue.removed)
       queue.added.splice(0)
       queue.removed.slice(0)
+    } else {
+      clusterer.clearMarkers()
+      markers.forEach(m => {
+        m.map = null
+        queue.added.push(m)
+      })
+      markers.clear()
     }
-  }, [clusterer, updateCount, queue])
+  }, [map, clusterer, updateCount, queue, visible, markers])
 
   return <MarkerClusterContext.Provider value={context}>
     {children}

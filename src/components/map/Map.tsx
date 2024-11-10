@@ -4,8 +4,6 @@ import { useSelector } from "react-redux"
 import { CSSTransition } from "react-transition-group"
 import pin_heading from "../../img/heading_pin.svg"
 import pin_location from "../../img/map_pin.svg"
-import pin_station from "../../img/map_pin_station.svg"
-import pin_station_extra from "../../img/map_pin_station_extra.svg"
 import pin_position from "../../img/position_pin.svg"
 import locationRepository from "../../location/repository"
 import { logger } from "../../logger"
@@ -23,6 +21,7 @@ import { useStationMarkers } from "./markerHook"
 import { CurrentPosIcon } from "./PositionIcon"
 import { useProgressBanner } from "./progressHook"
 import { useQueryEffect } from "./queryHook"
+import StationMarker from "./StationMarker"
 
 const VORONOI_COLOR = [
   "#0000FF",
@@ -211,21 +210,16 @@ const MapContainer: FC = () => {
 
   const selectedStation = isStationDialog(nav) ? nav.data.dialog.props.station : undefined
   const selectedStationMarker = useMemo(() => selectedStation ? (
-    <AdvancedMarker
-      position={selectedStation.position}>
-      <img src={selectedStation.extra ? pin_station_extra : pin_station} alt={selectedStation.name} />
-    </AdvancedMarker>
+    <StationMarker station={selectedStation} />
   ) : null, [selectedStation])
 
   const lineData = nav.type === NavType.DIALOG_LINE && nav.data.showPolyline ? nav.data : null
   const lineMarkers = useMemo(() => {
     if (lineData) {
       return lineData.stationMakers.map((s, i) => (
-        <AdvancedMarker
+        <StationMarker
           key={i}
-          position={s.position} >
-          <img src={s.extra ? pin_station_extra : pin_station} alt={s.name} />
-        </AdvancedMarker>
+          station={s} />
       ))
     } else {
       return null
