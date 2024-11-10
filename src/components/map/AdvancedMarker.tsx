@@ -1,5 +1,5 @@
 import { useGoogleMap } from "@react-google-maps/api"
-import React, { useContext, useEffect, useRef } from "react"
+import React, { useContext, useEffect, useState } from "react"
 import { createRoot, Root } from "react-dom/client"
 import { MarkerClusterContext } from "./MarkerCluster"
 
@@ -18,7 +18,7 @@ const AdvancedMarker: React.FC<AdvancedMarkerProps> = ({ position, children, anc
     const map = useGoogleMap()
     const cluster = useContext(MarkerClusterContext)
 
-    const stateRef = useRef<{
+    const [state, setState] = useState<{
         marker: google.maps.marker.AdvancedMarkerElement,
         root: Root,
     }>()
@@ -31,21 +31,18 @@ const AdvancedMarker: React.FC<AdvancedMarkerProps> = ({ position, children, anc
                 map: map,
                 content: container,
             })
-            stateRef.current = {
+            setState({
                 marker: marker,
                 root: root,
-            }
+            })
             return () => {
                 marker.map = undefined
-                stateRef.current = undefined
+                setState(undefined)
                 setTimeout(() => root.unmount())
-                // clusterから削除
-                cluster?.onRemoved?.(marker)
             }
         }
     }, [map])
     // マーカーの更新
-    const state = stateRef.current
     useEffect(() => {
         if (state) {
             state.marker.position = position
@@ -58,12 +55,16 @@ const AdvancedMarker: React.FC<AdvancedMarkerProps> = ({ position, children, anc
                 </div>
             )
         }
-    }, [state, position, children])
+    }, [state, position, anchorX, anchorY, children])
 
-    // clusterへ追加
+    // clusterへのマーカー追加・削除
     useEffect(() => {
         if (state && cluster) {
-            cluster.onAdded(state.marker)
+            const marker = state.marker
+            cluster.onAdded(marker)
+            return () => {
+                cluster.onRemoved(marker)
+            }
         }
     }, [state, cluster])
     return <></>

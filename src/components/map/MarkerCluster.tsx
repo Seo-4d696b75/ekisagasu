@@ -17,7 +17,7 @@ export const MarkerClusterContext = createContext<{
 // react-google-maps/api は AdvancedMarker に対応していないためClustererも独自実装で対応する
 const MarkerCluster: React.FC<MarkerClusterProps> = ({ renderer, algorithm, children }) => {
   const map = useGoogleMap()
-  const clustererRef = useRef<MarkerClusterer>()
+  const [clusterer, setClusterer] = useState<MarkerClusterer>()
   // 初期化・後処理
   useEffect(() => {
     if (map) {
@@ -26,16 +26,14 @@ const MarkerCluster: React.FC<MarkerClusterProps> = ({ renderer, algorithm, chil
         algorithm: algorithm,
         map: map,
       })
-      clustererRef.current = clusterer
+      setClusterer(clusterer)
       return () => {
         clusterer.clearMarkers()
         clusterer.setMap(null)
-        clustererRef.current = undefined
+        setClusterer(undefined)
       }
     }
   }, [map, renderer, algorithm])
-
-  const clusterer = clustererRef.current
 
   // マーカーの追加・削除
   const queue = useRef<{
