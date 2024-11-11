@@ -32,7 +32,7 @@ const VORONOI_COLOR = [
 
 const apiLoaderOptions = {
   id: 'google-map-script',
-  googleMapsApiKey: process.env.REACT_APP_API_KEY,
+  googleMapsApiKey: import.meta.env.VITE_API_KEY,
   language: 'ja',
   libraries: ['marker'] as Libraries,
 }

@@ -61,8 +61,8 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
       logger.d('fetch suggestions', value)
       setLoading(true)
       Promise.all([
-        axios.get<ApiResponse[]>(`${process.env.REACT_APP_STATION_API_URL}/station/search?name=${value}&extra=${isDataExtra}`),
-        axios.get<ApiResponse[]>(`${process.env.REACT_APP_STATION_API_URL}/line/search?name=${value}&extra=${isDataExtra}`)
+        axios.get<ApiResponse[]>(`${import.meta.env.VITE_STATION_API_URL}/station/search?name=${value}&extra=${isDataExtra}`),
+        axios.get<ApiResponse[]>(`${import.meta.env.VITE_STATION_API_URL}/line/search?name=${value}&extra=${isDataExtra}`)
       ]).then(res => {
         const [stations, lines] = res
         setSuggestions([

@@ -34,6 +34,6 @@ class ProdLogger implements Logger {
   }
 }
 
-export const logger: Logger = process.env.NODE_ENV === 'development'
+export const logger: Logger = import.meta.env.NODE_ENV === 'development'
   ? new DebugLogger()
   : new ProdLogger()
