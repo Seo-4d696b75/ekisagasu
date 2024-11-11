@@ -1,4 +1,4 @@
-import { CircularProgress } from "@material-ui/core"
+import { CircularProgress } from "@mui/material"
 import { useMemo, useRef, useState } from "react"
 import { CSSTransition } from "react-transition-group"
 import { logger } from "../../logger"
