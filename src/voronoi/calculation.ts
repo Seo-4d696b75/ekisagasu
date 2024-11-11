@@ -1,10 +1,10 @@
-import VoronoiWorker from "worker-loader!./VoronoiWorker"; // eslint-disable-line import/no-webpack-loader-syntax
 import * as Rect from "../diagram/rect";
 import { LatLng } from "../location";
 import { logger } from "../logger";
 import { Station } from "../station";
 import stationRepository from "../station/repository";
 import { asyncIteratorSubject } from "./async";
+import VoronoiWorker from "./VoronoiWorker?worker";
 
 
 export class HightVoronoiCalculation {

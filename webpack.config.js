@@ -7,10 +7,6 @@ module.exports = {
     rules: [
       // Handle TypeScript
       {
-        test: /\.ts$/,
-        use: "worker-loader",
-      },
-      {
         loader: 'ts-loader',
         test: /\.tsx?$/,
         exclude: [
@@ -24,11 +20,5 @@ module.exports = {
   },
   resolve: {
     extensions: [".ts", ".js", ".tsx"],
-  },
-  output: {
-    // This is required so workers are known where to be loaded from
-    publicPath: "/",
-    filename: "bundle.js",
-    path: `${__dirname}/docs`,
   },
 };
