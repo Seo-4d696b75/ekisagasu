@@ -9,7 +9,12 @@ import Map from './map/Map';
 
 const APP: FC = () => {
   return (
-    <HashRouter basename='/'>
+    <HashRouter
+      basename='/'
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}>
       <div className="App">
         <Routes>
           <Route path='/' element={<RootPage />} />
