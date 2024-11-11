@@ -1,14 +1,18 @@
 /// <reference types="vite/client" />
 
-interface ImportMetaEnv {
-  readonly VITE_API_KEY: string
-  readonly VITE_RADAR_MIN: number
-  readonly VITE_RADAR_MAX: number
-  readonly VITE_DATA_BASE_URL: string
-  readonly VITE_STATION_API_URL: string
-  readonly NODE_ENV: 'development' | 'production'
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      VITE_API_KEY: string
+      VITE_RADAR_MIN: number
+      VITE_RADAR_MAX: number
+      VITE_DATA_BASE_URL: string
+      VITE_STATION_API_URL: string
+      NODE_ENV: 'development' | 'production'
+    }
+  }
 }
 
-interface ImportMeta {
-  readonly env: ImportMetaEnv
-}
+// If this file has no import/export statements (i.e. is a script)
+// convert it into a module by adding an empty export statement.
+export { }

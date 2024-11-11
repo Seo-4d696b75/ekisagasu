@@ -1,5 +1,6 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
+import env from "vite-plugin-env-compatible";
 
 // copy from https://zenn.dev/xronotech/articles/11e671bf0315e7
 export default defineConfig({
@@ -10,5 +11,11 @@ export default defineConfig({
   build: {
     outDir: 'build', // ビルドの出力先ディレクトリ
   },
-  plugins: [react()],
+  plugins: [
+    react(),
+    env({
+      prefix: 'VITE',
+      mountedPath: 'process.env',
+    })
+  ],
 });

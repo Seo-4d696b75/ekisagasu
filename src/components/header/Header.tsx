@@ -15,8 +15,8 @@ import { createEvent, createIdleEvent } from "../event";
 import "./Header.css";
 import StationSearchBox, { StationSuggestion } from "./StationSearchBox";
 
-const radarMin = import.meta.env.VITE_RADAR_MIN
-const radarMax = import.meta.env.VITE_RADAR_MAX
+const radarMin = process.env.VITE_RADAR_MIN
+const radarMax = process.env.VITE_RADAR_MAX
 
 const Header: FC = () => {
   const {
