@@ -1,5 +1,4 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
-import { StationSuggestion } from "../components/header/StationSearchBox";
 import { PolylineProps, measure } from "../components/map/diagram";
 import { DialogType, IdleNav, LineDialogNav, LineDialogProps, NavState, NavType, RadarStation, StationDialogNav, copyNavState } from "../components/navState";
 import { CurrentLocationState, LatLng, Location, MapCenter, isLatLng } from "../location";
@@ -224,18 +223,6 @@ export const startHighVoronoiCalculation = createAction<void>(
 export const setHighVoronoiPolygon = createAction<LatLng[]>(
   "map/setHighVoronoiPolygon"
 )
-
-export const requestShowStationItem = (item: StationSuggestion) => {
-  switch (item.type) {
-    case "station": {
-      return requestShowStation(item.code)
-    }
-    case "line": {
-      let line = stationRepository.getLine(item.code)
-      return requestShowLine(line)
-    }
-  }
-}
 
 export const setNavStateIdle = createAsyncThunk(
   "map/setNavStateIdle",

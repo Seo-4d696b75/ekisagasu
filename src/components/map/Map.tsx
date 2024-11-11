@@ -1,10 +1,10 @@
-import { Circle, GoogleMap, Marker, Polygon, Polyline, useJsApiLoader } from "@react-google-maps/api"
+import { Circle, GoogleMap, Libraries, Polygon, Polyline, useJsApiLoader } from "@react-google-maps/api"
 import { FC, useEffect, useMemo, useRef, useState } from "react"
 import { useSelector } from "react-redux"
 import { CSSTransition } from "react-transition-group"
+import pin_heading from "../../img/heading_pin.svg"
 import pin_location from "../../img/map_pin.svg"
-import pin_station from "../../img/map_pin_station.svg"
-import pin_station_extra from "../../img/map_pin_station_extra.svg"
+import pin_position from "../../img/position_pin.svg"
 import locationRepository from "../../location/repository"
 import { logger } from "../../logger"
 import { selectMapState, selectStationState } from "../../redux/selector"
@@ -13,13 +13,15 @@ import { CurrentPosDialog } from "../dialog/CurrentPosDialog"
 import { LineDialog } from "../dialog/LineDialog"
 import { StationDialog } from "../dialog/StationDialog"
 import { DialogType, NavType, isInfoDialog, isStationDialog } from "../navState"
+import AdvancedMarker from "./AdvancedMarker"
 import "./Map.css"
-import { CurrentPosIcon } from "./PositionIcon"
 import { useMapCallback } from "./mapEventHook"
 import { useMapCenterChangeEffect, useMapOperator } from "./mapHook"
 import { useStationMarkers } from "./markerHook"
+import { CurrentPosIcon } from "./PositionIcon"
 import { useProgressBanner } from "./progressHook"
 import { useQueryEffect } from "./queryHook"
+import StationMarker from "./StationMarker"
 
 const VORONOI_COLOR = [
   "#0000FF",
@@ -27,6 +29,13 @@ const VORONOI_COLOR = [
   "#FF0000",
   "#CCCC00"
 ]
+
+const apiLoaderOptions = {
+  id: 'google-map-script',
+  googleMapsApiKey: process.env.REACT_APP_API_KEY,
+  language: 'ja',
+  libraries: ['marker'] as Libraries,
+}
 
 const MapContainer: FC = () => {
 
@@ -133,22 +142,17 @@ const MapContainer: FC = () => {
    render section below
   ================================ */
 
-  useStationMarkers(googleMapRef.current)
+  const stationMarkers = useStationMarkers()
 
   const currentPositionMarker = useMemo(() => {
     if (isWatchCurrentPosition && currentPosition) {
       return (
-        <Marker
+        <AdvancedMarker
           position={currentPosition}
-          clickable={false}
-          icon={{
-            path: google.maps.SymbolPath.CIRCLE,
-            fillColor: "#154bb6",
-            fillOpacity: 1.0,
-            strokeColor: "white",
-            strokeWeight: 1.2,
-            scale: 8,
-          }}></Marker>
+          anchorX={0.5}
+          anchorY={0.5}>
+          <img src={pin_position} alt='現在位置' />
+        </AdvancedMarker>
       )
     } else {
       return null
@@ -159,20 +163,15 @@ const MapContainer: FC = () => {
   const currentHeadingMarker = useMemo(() => {
     if (isWatchCurrentPosition && currentPosition && currentHeading && !isNaN(currentHeading)) {
       return (
-        <Marker
+        <AdvancedMarker
           position={currentPosition}
-          clickable={false}
-          icon={{
-            //url: require("../img/direction_pin.svg"),
-            anchor: new google.maps.Point(64, 64),
-            path: "M 44 36 A 40 40 0 0 1 84 36 L 64 6 Z",
-            fillColor: "#154bb6",
-            fillOpacity: 1.0,
-            strokeColor: "white",
-            strokeWeight: 1.2,
-            scale: 0.3,
-            rotation: currentHeading,
-          }} />
+          anchorX={0.5}
+          anchorY={0.5}>
+          <img
+            src={pin_heading}
+            alt='現在位置'
+            style={{ transform: `rotate(${currentHeading}deg)` }} />
+        </AdvancedMarker>
       )
     } else {
       return null
@@ -203,29 +202,24 @@ const MapContainer: FC = () => {
 
   const selectedPos = nav.type === NavType.DIALOG_SELECT_POS ? nav.data.dialog.props.position : undefined
   const selectedPosMarker = useMemo(() => selectedPos ? (
-    <Marker
-      position={selectedPos}
-      icon={pin_location} >
-    </Marker>
+    <AdvancedMarker
+      position={selectedPos}>
+      <img src={pin_location} alt='選択地点' />
+    </AdvancedMarker>
   ) : null, [selectedPos])
 
   const selectedStation = isStationDialog(nav) ? nav.data.dialog.props.station : undefined
   const selectedStationMarker = useMemo(() => selectedStation ? (
-    <Marker
-      position={selectedStation.position}
-      icon={selectedStation.extra ? pin_station_extra : pin_station} >
-    </Marker>
+    <StationMarker station={selectedStation} />
   ) : null, [selectedStation])
 
   const lineData = nav.type === NavType.DIALOG_LINE && nav.data.showPolyline ? nav.data : null
   const lineMarkers = useMemo(() => {
     if (lineData) {
       return lineData.stationMakers.map((s, i) => (
-        <Marker
+        <StationMarker
           key={i}
-          position={s.position}
-          icon={s.extra ? pin_station_extra : pin_station}>
-        </Marker>
+          station={s} />
       ))
     } else {
       return null
@@ -294,13 +288,15 @@ const MapContainer: FC = () => {
 
   // ダイアログを閉じる時アニメーションが終了するまえに nav.data.dialog が undefined になる
   // 動作が重くなる副作用もあるため閉じるアニメーションは無し
+  const infoDialogRef = useRef<HTMLDivElement>(null)
   const InfoDialog = (
     <div className="info-modal container">
       <CSSTransition
+        nodeRef={infoDialogRef}
         in={isInfoDialog(nav)}
         className="info-modal holder"
         timeout={300}>
-        <div className="info-modal holder">
+        <div ref={infoDialogRef} className="info-modal holder">
           {
             !isInfoDialog(nav)
               ? null
@@ -322,13 +318,15 @@ const MapContainer: FC = () => {
     </div>
   )
 
+  const currentPosDialogRef = useRef<HTMLDivElement>(null)
   const currentPosDialog = (
     <div className="info-modal container current-position">
       <CSSTransition
+        nodeRef={currentPosDialogRef}
         in={nav.type === NavType.IDLE && !!nav.data.dialog}
         className="info-modal holder current-position"
         timeout={300}>
-        <div className="info-modal holder current-position">
+        <div ref={currentPosDialogRef} className="info-modal holder current-position">
           {
             nav.type === NavType.IDLE && nav.data.dialog
               ? <CurrentPosDialog
@@ -342,11 +340,7 @@ const MapContainer: FC = () => {
     </div>
   )
 
-  const { isLoaded: isMapLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: process.env.REACT_APP_API_KEY,
-    language: 'ja',
-  })
+  const { isLoaded: isMapLoaded } = useJsApiLoader(apiLoaderOptions)
 
   return isMapLoaded ? (
     <div className='Map-container' ref={mapElementRef}>
@@ -354,6 +348,7 @@ const MapContainer: FC = () => {
         mapContainerStyle={{ width: '100%', height: '100%' }}
         zoom={14}
         options={{
+          mapId: 'd31074a05ea0181c',
           mapTypeControlOptions: {
             position: google.maps.ControlPosition.TOP_RIGHT,
             style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
@@ -370,6 +365,7 @@ const MapContainer: FC = () => {
         onIdle={onMapIdle}
         onMouseDown={onMouseDown}
       >
+        {stationMarkers}
         {currentPositionMarker}
         {currentHeadingMarker}
         {currentAccuracyCircle}

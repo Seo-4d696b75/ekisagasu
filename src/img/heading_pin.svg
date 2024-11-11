@@ -1,0 +1,12 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32" height="32" viewBox="0 0 128 128"
+ preserveAspectRatio="xMidYMid meet">
+  <g stroke="none" fill="#154bb6">
+    <path d="M 40 32  A  50 50 0 0 1 88 32 L 64 4 Z" />
+  </g>
+  <circle cx="64" cy="64" r="38" fill="white"/>
+  <circle cx="64" cy="64" r="32" fill="#154bb6"/>
+</svg>

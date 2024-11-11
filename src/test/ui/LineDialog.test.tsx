@@ -78,20 +78,20 @@ describe("LineDialog", () => {
     expect(screen.getByText(station.name)).toBeInTheDocument()
     expect(screen.getByText(station.nameKana)).toBeInTheDocument()
   })
-  test("ボタン押下", () => {
+  test("ボタン押下", async () => {
     render(<LineDialog
       info={lineDetailDialogProps}
       onClosed={onClose}
       onStationSelected={onStationSelected}
       onShowPolyline={onShowPolyline}
     />)
-    userEvent.click(screen.getByAltText("close dialog"))
+    await userEvent.click(screen.getByAltText("close dialog"))
     expect(onClose).toHaveBeenCalled()
-    userEvent.click(screen.getByAltText("show polyline"))
+    await userEvent.click(screen.getByAltText("show polyline"))
     expect(onShowPolyline).toHaveBeenCalled()
-    expect(onShowPolyline.mock.lastCall[0]).toMatchObject(line)
-    userEvent.click(screen.getByText(station.name))
+    expect(onShowPolyline.mock.lastCall?.[0]).toMatchObject(line)
+    await userEvent.click(screen.getByText(station.name))
     expect(onStationSelected).toHaveBeenCalled()
-    expect(onStationSelected.mock.lastCall[0]).toBe(station)
+    expect(onStationSelected.mock.lastCall?.[0]).toBe(station)
   })
 })

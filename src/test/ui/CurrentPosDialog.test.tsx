@@ -58,20 +58,20 @@ describe("CurrentPosDialog", () => {
     expect(screen.getByText("現在位置")).toBeInTheDocument()
     expect(screen.getByText("1.2km")).toBeInTheDocument()
   })
-  test("ボタン押下-コールバック", () => {
+  test("ボタン押下-コールバック", async () => {
     render(<CurrentPosDialog
       info={currentPosDialogProps}
       onStationSelected={onStationSelected}
       onLineSelected={onLineSelected}
     />)
-    userEvent.click(screen.getByText(line.name))
+    await userEvent.click(screen.getByText(line.name))
     expect(onLineSelected).toHaveBeenCalled()
-    expect(onLineSelected.mock.lastCall[0]).toBe(line)
-    userEvent.click(screen.getByText(new RegExp(`${station.name}\\s*${line.name}`)))
+    expect(onLineSelected.mock.lastCall?.[0]).toBe(line)
+    await userEvent.click(screen.getByText(new RegExp(`${station.name}\\s*${line.name}`)))
     expect(onStationSelected).toHaveBeenCalled()
-    expect(onStationSelected.mock.lastCall[0]).toBe(station)
+    expect(onStationSelected.mock.lastCall?.[0]).toBe(station)
   })
-  test("ボタン-showDetail", () => {
+  test("ボタン-showDetail", async () => {
     render(<CurrentPosDialog
       info={currentPosDialogProps}
       onStationSelected={onStationSelected}
@@ -81,12 +81,12 @@ describe("CurrentPosDialog", () => {
     expect(screen.queryByAltText("close detail")).toBeInTheDocument()
     expect(screen.queryByAltText("show detail")).toBeNull()
     expect(screen.queryByAltText("show radar")).toBeInTheDocument()
-    userEvent.click(screen.getByAltText("close detail"))
+    await userEvent.click(screen.getByAltText("close detail"))
     // showDetail: false
     expect(screen.queryByAltText("close dialog")).toBeNull()
     expect(screen.queryByAltText("show detail")).toBeInTheDocument()
     expect(screen.queryByAltText("show radar")).toBeNull()
-    userEvent.click(screen.getByAltText("show detail"))
+    await userEvent.click(screen.getByAltText("show detail"))
     // showDetail: true
     expect(screen.queryByAltText("close detail")).toBeInTheDocument()
     expect(screen.queryByAltText("show detail")).toBeNull()

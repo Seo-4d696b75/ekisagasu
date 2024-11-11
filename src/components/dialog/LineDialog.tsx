@@ -1,4 +1,4 @@
-import React, { FC, useMemo, useState } from "react";
+import React, { FC, useMemo, useRef, useState } from "react";
 import { CSSTransition } from "react-transition-group";
 import img_delete from "../../img/ic_delete.png";
 import img_line from "../../img/ic_line.png";
@@ -69,9 +69,10 @@ export const LineDialog: FC<LineInfoProps> = ({ info, onClosed, onStationSelecte
 
   const onStationSelectedRef = useRefCallback((s: Station) => onStationSelected(s))
 
+  const transitionNodeRef = useRef<HTMLDivElement>(null)
   const stationListSection = useMemo(() => {
     return (
-      <div className="container-accordion station-list">
+      <div ref={transitionNodeRef} className="container-accordion station-list">
         {lineDetails ? (
           <div className="scroll-container stations">
             <table>
@@ -112,6 +113,7 @@ export const LineDialog: FC<LineInfoProps> = ({ info, onClosed, onStationSelecte
     <div className="info-dialog">
       {titleSection}
       <CSSTransition
+        nodeRef={transitionNodeRef}
         in={expand}
         className="container-accordion station-list"
         timeout={400}>

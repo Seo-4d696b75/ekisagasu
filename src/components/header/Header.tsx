@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useMemo, useState } from "react";
+import React, { FC, useCallback, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { CSSTransition } from "react-transition-group";
@@ -9,6 +9,8 @@ import img_setting from "../../img/ic_settings.png";
 import { logger } from "../../logger";
 import * as action from "../../redux/actions";
 import { selectMapState, selectStationState } from "../../redux/selector";
+import { AppDispatch } from "../../redux/store";
+import repository from "../../station/repository";
 import { createEvent, createIdleEvent } from "../event";
 import "./Header.css";
 import StationSearchBox, { StationSuggestion } from "./StationSearchBox";
@@ -28,7 +30,7 @@ const Header: FC = () => {
     dataType,
   } = useSelector(selectStationState)
 
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
 
   const [showSetting, setShowSetting] = useState(false)
   const [showSearchBox, setShowSearchBox] = useState(false)
@@ -41,21 +43,33 @@ const Header: FC = () => {
   }, [dispatch]) // dispatch reference is stable, but redux doesn't know it
 
   const showStationItem = useCallback((item: StationSuggestion) => {
-    dispatch(action.requestShowStationItem(item))
+    switch (item.type) {
+      case 'station': {
+        dispatch(action.requestShowStation(item.code))
+        break
+      }
+      case 'line': {
+        const line = repository.getLine(item.code)
+        dispatch(action.requestShowLine(line))
+        break
+      }
+    }
     setShowSearchBox(false)
   }, [dispatch])
 
+  const searchBoxTransitionRef = useRef<HTMLDivElement>(null)
   const searchBoxSection = useMemo(() => {
     return (
       <CSSTransition
+        nodeRef={searchBoxTransitionRef}
         in={showSearchBox}
         className="search-box"
         timeout={300}
         onEntered={() => setInputFocusRequest(createEvent<void>(undefined))}>
-        <div className="search-box">
+        <div ref={searchBoxTransitionRef} className="search-box">
           <StationSearchBox
             inputFocusRequested={inputFocusRequest}
-            onSuggestionSelected={showStationItem}> </StationSearchBox>
+            onSuggestionSelected={showStationItem} />
         </div>
       </CSSTransition>
     )
@@ -166,6 +180,8 @@ const Header: FC = () => {
     </div>
   ), [dataType, dispatch])
 
+  const settingTransitionRef = useRef<HTMLDivElement>(null)
+
   return (
     <div className='Map-header'>
       <div className="Header-frame">
@@ -175,10 +191,11 @@ const Header: FC = () => {
       </div>
       <div className="setting container">
         <CSSTransition
+          nodeRef={settingTransitionRef}
           in={showSetting}
           className="setting modal"
           timeout={400}>
-          <div className="setting modal">
+          <div ref={settingTransitionRef} className="setting modal">
             <img
               src={img_delete}
               alt="close dialog"
