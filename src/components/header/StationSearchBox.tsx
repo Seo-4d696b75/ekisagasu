@@ -1,4 +1,4 @@
-import { CircularProgress } from "@material-ui/core"
+import { CircularProgress } from "@mui/material"
 import axios from "axios"
 import { FC, useCallback, useMemo, useRef, useState } from "react"
 import Autosuggest from 'react-autosuggest'
