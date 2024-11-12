@@ -25,13 +25,13 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v2
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version-file: ".node-version"
       - name: Install Dependencies
         run: npm install
       - name: Setup API key
-        run: echo "REACT_APP_API_KEY=${{ secrets.API_KEY }}" > .env.production
+        run: echo "VITE_API_KEY=${{ secrets.API_KEY }}" > .env.production
       - name: Build
         run: npm run build
       - name: Upload artifact

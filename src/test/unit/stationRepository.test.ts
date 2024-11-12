@@ -11,7 +11,7 @@ export { }
 
 describe("StationRepository", () => {
 
-  const path = `${process.env.REACT_APP_STATION_API_URL}/info`
+  const path = `${process.env.VITE_STATION_API_URL}/info`
   mock.onGet(path).reply(200, { data_version: 20221030 })
   const onStationCleared = jest.fn<void, []>(() => null)
   const onStationLoaded = jest.fn<void, [Station[]]>((_) => null)
@@ -66,7 +66,7 @@ describe("StationRepository", () => {
       expect(s).toBe(r)
     })
     test("getStationOrNull > API > not found", async () => {
-      const path = `${process.env.REACT_APP_STATION_API_URL}/station?code=${target.code}`
+      const path = `${process.env.VITE_STATION_API_URL}/station?code=${target.code}`
       mock.onGet(path).reply(404)
       let r = await repository.getStationOrNull(target.code)
       expect(r).toBeUndefined()
@@ -74,7 +74,7 @@ describe("StationRepository", () => {
       expect(mock.history.get[0].url).toBe(path)
     })
     test("getStationOrNull > API > found", async () => {
-      const path = `${process.env.REACT_APP_STATION_API_URL}/station?code=${target.code}`
+      const path = `${process.env.VITE_STATION_API_URL}/station?code=${target.code}`
       mock.onGet(path).reply(200, targetData)
       let r = await repository.getStationOrNull(target.code)
       expect(r).toBe(target)
@@ -89,7 +89,7 @@ describe("StationRepository", () => {
       expect(s).toBe(r)
     })
     test("getStation > not found", async () => {
-      const path = `${process.env.REACT_APP_STATION_API_URL}/station?code=${target.code}`
+      const path = `${process.env.VITE_STATION_API_URL}/station?code=${target.code}`
       mock.onGet(path).reply(404)
       await expect(repository.getStation(target.code)).rejects.toThrowError()
       expect(mock.history.get.length).toBe(1)
@@ -109,14 +109,14 @@ describe("StationRepository", () => {
       await expect(repository.getStationById("hogehoge")).rejects.toThrowError()
     })
     test("getStationById > API > not found", async () => {
-      const path = `${process.env.REACT_APP_STATION_API_URL}/station?id=${target.id}`
+      const path = `${process.env.VITE_STATION_API_URL}/station?id=${target.id}`
       mock.onGet(path).reply(404)
       await expect(repository.getStationById(target.id)).rejects.toThrowError()
       expect(mock.history.get.length).toBe(1)
       expect(mock.history.get[0].url).toBe(path)
     })
     test("getStationById > API >  found", async () => {
-      const path = `${process.env.REACT_APP_STATION_API_URL}/station?id=${target.id}`
+      const path = `${process.env.VITE_STATION_API_URL}/station?id=${target.id}`
       mock.onGet(path).reply(200, targetData)
       let r = await repository.getStationById(target.id)
       expect(r).toBe(target)

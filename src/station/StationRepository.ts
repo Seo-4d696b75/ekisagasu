@@ -47,7 +47,7 @@ export class StationRepository {
     this.onStationLoaded = onStationLoaded
 
     // APIがコールドスタートのためWebApp起動時にウォームアップしておく
-    this.get(`${process.env.REACT_APP_STATION_API_URL}/info`).then(info => {
+    this.get(`${process.env.VITE_STATION_API_URL}/info`).then(info => {
       logger.i("station api data version:", info)
     }).catch(e => {
       logger.w("fail to warm-up api by calling /api/info", e)
@@ -103,7 +103,7 @@ export class StationRepository {
       // API接続先の初期化
       this.dataAPI = {
         type: type,
-        baseURL: process.env.REACT_APP_DATA_BASE_URL,
+        baseURL: process.env.VITE_DATA_BASE_URL,
       }
 
       // 内部情報の初期化
@@ -138,7 +138,7 @@ export class StationRepository {
       if (id.match(/^[0-9a-f]{6}$/)) {
         let s = this.stationsId.get(id)
         if (s) return s
-        const res = await this.get<StationAPIResponse>(`${process.env.REACT_APP_STATION_API_URL}/station?id=${id}`)
+        const res = await this.get<StationAPIResponse>(`${process.env.VITE_STATION_API_URL}/station?id=${id}`)
         let pos = {
           lat: res.data.lat,
           lng: res.data.lng,
@@ -162,7 +162,7 @@ export class StationRepository {
     // step 2: update neighbor stations
     return this.sync(`getStationOrNull-${code}`, async () => {
       try {
-        const res = await this.get<StationAPIResponse>(`${process.env.REACT_APP_STATION_API_URL}/station?code=${code}`)
+        const res = await this.get<StationAPIResponse>(`${process.env.VITE_STATION_API_URL}/station?code=${code}`)
         let pos = {
           lat: res.data.lat,
           lng: res.data.lng,
