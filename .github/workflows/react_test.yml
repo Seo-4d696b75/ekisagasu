@@ -6,7 +6,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    steps: 
+    steps:
       - uses: actions/checkout@v2
         with:
           ref: ${{github.head_ref}}
@@ -14,8 +14,12 @@ jobs:
       - name: setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '16.14.0'
+          node-version: "16.14.0"
       - name: setup node modules
         run: npm install
       - name: run jest
         run: npm run test
+      - name: check build
+        run: |
+          echo "VITE_API_KEY=dummy" > .env.production
+          npm run build
