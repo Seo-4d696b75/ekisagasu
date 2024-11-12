@@ -88,10 +88,8 @@ const MarkerCluster: React.FC<MarkerClusterProps> = ({ renderer, algorithm, chil
       queue.removed.slice(0)
     } else {
       clusterer.clearMarkers()
-      markers.forEach(m => {
-        m.map = null
-        queue.added.push(m)
-      })
+      markers.forEach(m => queue.added.push(m))
+      queue.added.forEach(m => m.map = null)
       markers.clear()
     }
   }, [map, clusterer, updateCount, queue, visible, markers])

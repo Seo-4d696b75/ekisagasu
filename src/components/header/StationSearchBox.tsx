@@ -116,7 +116,10 @@ const StationSearchBox: FC<SearchProps> = ({ onSuggestionSelected, inputFocusReq
         onSuggestionsClearRequested={onSuggestionsClearRequested}
         multiSection={true}
         getSuggestionValue={(suggestion) => suggestion.name}
-        getSectionSuggestions={(section) => section.list}
+        // workaround for bug
+        // undefined may be passed only on mobile devices with React 18
+        // https://github.com/moroshko/react-autosuggest/issues/853
+        getSectionSuggestions={(section) => section?.list ?? []}
         renderSectionTitle={renderSectionTitle}
         renderSuggestion={renderSuggestion}
         onSuggestionSelected={(_, data) => onSuggestionSelected(data.suggestion)}
