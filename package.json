@@ -42,7 +42,7 @@
     "web-vitals": "^4.2.4"
   },
   "scripts": {
-    "start": "vite",
+    "start": "vite --host",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "jest --silent",
