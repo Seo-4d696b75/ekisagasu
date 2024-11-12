@@ -26,7 +26,7 @@
 2. API keyは.gitignoreに指定されている`.env.development.local`に追加する
 
 ```txt
-REACT_APP_API_KEY=${API_KEY}
+VITE_API_KEY=${API_KEY}
 ```
 
 ### 開発用サーバの立ち上げ
