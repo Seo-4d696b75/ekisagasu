@@ -11,10 +11,11 @@ export interface StationMarkerProps {
 const StationMarker: React.FC<StationMarkerProps> = ({ station }) => {
     const icon = useMemo(() => (
         <img src={station.extra ? pin_station_extra : pin_station} alt={station.name} />
-    ), [station])
+    ), [station.extra, station.name])
 
     return (
         <AdvancedMarker
+            key={station.code}
             position={station.position}>
             {icon}
         </AdvancedMarker>
