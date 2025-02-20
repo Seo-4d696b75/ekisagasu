@@ -41,11 +41,6 @@ const MarkerCluster: React.FC<MarkerClusterProps> = ({ renderer, algorithm, chil
     }
   }, [map, renderer, algorithm, markers])
 
-  // add and remove marker from clusterer
-  const queue = useRef<{
-    added: google.maps.marker.AdvancedMarkerElement[],
-    removed: google.maps.marker.AdvancedMarkerElement[],
-  }>({ added: [], removed: [] }).current
   const [updateCount, setUpdate] = useState(0)
   const requestUpdate = useRefCallback(() => setUpdate(updateCount + 1))
 
@@ -53,46 +48,40 @@ const MarkerCluster: React.FC<MarkerClusterProps> = ({ renderer, algorithm, chil
     if (clusterer) {
       return {
         onAdded: (marker: google.maps.marker.AdvancedMarkerElement) => {
-          queue.added.push(marker)
+          markers.add(marker)
           requestUpdate()
         },
         onRemoved: (marker: google.maps.marker.AdvancedMarkerElement) => {
-          queue.removed.push(marker)
+          markers.delete(marker)
           requestUpdate()
         },
       }
     } else {
       return undefined
     }
-  }, [clusterer, queue, requestUpdate])
+  }, [clusterer, markers, requestUpdate])
 
-  // adding / removing markers one by one causes performance problem
-  // 1. queue a marker if needs to be added or removed
+  // rendering the clusterer every time a marker is added/removed causes performance problems
+  // 1. add or remove each marker without clusterer rendering
   // 2. call setUpdate() and trigger a re-render
-  // 3. in useEffect(), add and remove all the markers that have been queued by the next re-render
+  // 3. in useEffect(), render the cluster
   useEffect(() => {
     if (!map || !clusterer) return
 
     if (visible) {
-      queue.added.forEach(m => {
+      clusterer.clearMarkers(true)
+      markers.forEach(m => {
         m.map = map
-        markers.add(m)
+        clusterer.addMarker(m, true)
       })
-      queue.removed.forEach(m => {
-        m.map = null
-        markers.delete(m)
-      })
-      clusterer.addMarkers(queue.added)
-      clusterer.removeMarkers(queue.removed)
-      queue.added.splice(0)
-      queue.removed.slice(0)
+      // render only once after all the markers added/removed.
+      clusterer.render()
     } else {
+      // clear markers and render
       clusterer.clearMarkers()
-      markers.forEach(m => queue.added.push(m))
-      queue.added.forEach(m => m.map = null)
-      markers.clear()
+      markers.forEach(m => m.map = null)
     }
-  }, [map, clusterer, updateCount, queue, visible, markers])
+  }, [map, clusterer, updateCount, visible, markers])
 
   return <MarkerClusterContext.Provider value={context}>
     {children}
