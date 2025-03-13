@@ -3,8 +3,9 @@
   "version": "0.2.1",
   "private": true,
   "dependencies": {
-    "@emotion/react": "^11.13.3",
-    "@emotion/styled": "^11.13.0",
+    "@babel/runtime": "^7.26.10",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@googlemaps/markerclusterer": "^2.5.3",
     "@mui/material": "^6.1.6",
     "@mui/styles": "^6.1.6",
