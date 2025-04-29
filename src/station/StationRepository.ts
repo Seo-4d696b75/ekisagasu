@@ -25,10 +25,10 @@ export class StationRepository {
   dataAPI: DataAPIOption | null = null
 
   stations: Map<number, Station> = new Map()
-  stationsId: Map<string, Station> = new Map()
+  stationsId: Map<number, Station> = new Map()
   stationPoints: Map<number, DelaunayStation> | undefined = undefined
   lines: Map<number, Line> = new Map()
-  linesId: Map<string, Line> = new Map()
+  linesId: Map<number, Line> = new Map()
   prefecture: Map<number, string> = new Map()
 
   root: StationNodeImpl | null = null
@@ -133,9 +133,11 @@ export class StationRepository {
     return this.stations.get(code) as Station
   }
 
-  async getStationById(id: string): Promise<Station> {
+  async getStationById(id: number): Promise<Station> {
     return this.sync(`getStationById-${id}`, async () => {
-      if (id.match(/^[0-9a-f]{6}$/)) {
+      if (0 < id && id < 100000) {
+        // 路線IDは1始まりの連番、extraは20000始まりの連番
+        // 路線コードは最小でも100201
         let s = this.stationsId.get(id)
         if (s) return s
         const res = await this.get<StationAPIResponse>(`${process.env.VITE_STATION_API_URL}/station?id=${id}`)
@@ -147,11 +149,7 @@ export class StationRepository {
         await this.search(pos, 1)
         return this.stationsId.get(id) as Station
       }
-      const code = parseInt(id)
-      if (!isNaN(code)) {
-        return await this.getStation(code)
-      }
-      throw Error(`station not found. id:${id}`)
+      return await this.getStation(id)
     })
   }
 
@@ -194,16 +192,14 @@ export class StationRepository {
     return this.lines.get(code)
   }
 
-  getLineById(id: string): Line {
-    if (id.match(/^[0-9a-f]{6}$/)) {
+  getLineById(id: number): Line {
+    if (id < 1000 || (2000 <= id && id < 10000)) {
+      // 路線idは１始まりの連番, extra路線のidは2000始まりの連番
+      // 注意：新幹線のみ路線コードが1000番台
       let line = this.linesId.get(id)
       if (line) return line
     }
-    const code = parseInt(id)
-    if (!isNaN(code)) {
-      return this.getLine(code)
-    }
-    throw Error(`line not found id:${id}`)
+    return this.getLine(id)
   }
 
   async getLineDetail(code: number): Promise<Line> {

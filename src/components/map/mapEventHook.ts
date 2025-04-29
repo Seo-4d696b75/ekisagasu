@@ -160,7 +160,8 @@ export const useMapCallback = (
         "路線情報を取得しています",
         async () => {
           try {
-            const result = await dispatch(action.requestShowLine(queryLine)).unwrap()
+            const codeOrId = parseInt(queryLine)
+            const result = await dispatch(action.requestShowLine(codeOrId)).unwrap()
             // マップ中心位置を路線ポリラインに合わせる
             showPolylineRef(result.line)
             queryResolved = true
@@ -178,7 +179,8 @@ export const useMapCallback = (
         "駅情報を取得しています",
         async () => {
           try {
-            const result = await dispatch(action.requestShowStation(queryStation)).unwrap()
+            const codeOrId = parseInt(queryStation)
+            const result = await dispatch(action.requestShowStation(codeOrId)).unwrap()
             if (parseQueryBoolean(query.get('voronoi'))) {
               showRadarVoronoiRef(result.station)
             }
