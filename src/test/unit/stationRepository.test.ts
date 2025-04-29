@@ -97,7 +97,7 @@ describe("StationRepository", () => {
     })
     test("getStationById code > found", async () => {
       let s = stations[0]
-      let r = await repository.getStationById(s.code.toString())
+      let r = await repository.getStationById(s.code)
       expect(s).toBe(r)
     })
     test("getStationById id > found", async () => {
@@ -106,7 +106,7 @@ describe("StationRepository", () => {
       expect(s).toBe(r)
     })
     test("getStationById invalid id > Error", async () => {
-      await expect(repository.getStationById("hogehoge")).rejects.toThrowError()
+      await expect(repository.getStationById(-1)).rejects.toThrowError()
     })
     test("getStationById > API > not found", async () => {
       const path = `${process.env.VITE_STATION_API_URL}/station?id=${target.id}`
