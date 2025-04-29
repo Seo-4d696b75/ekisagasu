@@ -3,7 +3,7 @@ import { parseStation, Station, StationAPIResponse } from "./station"
 
 export interface Line {
 
-  id: string
+  id: number
   code: number
   name: string
   nameKana: string
@@ -24,7 +24,7 @@ export interface LineDetail {
 }
 
 export interface LineAPIResponse {
-  id: string
+  id: number
   code: number
   name: string
   name_kana: string

@@ -10,7 +10,7 @@ export interface DelaunayStation {
 
 export interface Station {
   code: number
-  id: string
+  id: number
   name: string
   position: LatLng
   nameKana: string
@@ -25,7 +25,7 @@ export interface Station {
 
 export interface StationAPIResponse {
   code: number
-  id: string
+  id: number
   name: string
   lat: number
   lng: number
