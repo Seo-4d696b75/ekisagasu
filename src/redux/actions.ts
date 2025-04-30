@@ -146,14 +146,12 @@ export const requestShowSelectedPosition = createAsyncThunk(
 
 export const requestShowStation = createAsyncThunk(
   "map/requestShowStation",
-  async (station: Station | LatLng | string | number, thunkAPI) => {
-    const s = (typeof station === 'string')
+  async (station: Station | LatLng | number, thunkAPI) => {
+    const s = (typeof station === 'number')
       ? await stationRepository.getStationById(station)
-      : (typeof station === 'number')
-        ? await stationRepository.getStation(station)
-        : isLatLng(station)
-          ? (await stationRepository.search(station, 1))[0].station
-          : station
+      : isLatLng(station)
+        ? (await stationRepository.search(station, 1))[0].station
+        : station
     const { mapState } = thunkAPI.getState() as RootState
     let next: NavState = {
       type: NavType.DIALOG_STATION_POS,
@@ -181,8 +179,8 @@ export const requestShowStation = createAsyncThunk(
 
 export const requestShowLine = createAsyncThunk(
   "map/requestShowLine",
-  async (line: Line | string) => {
-    const l = (typeof line === 'string')
+  async (line: Line | number) => {
+    const l = (typeof line === 'number')
       ? stationRepository.getLineById(line)
       : line
     const detail = await stationRepository.getLineDetail(l.code)
