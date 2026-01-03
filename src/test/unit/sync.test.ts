@@ -26,7 +26,7 @@ describe("sync", () => {
   const tag = "tag"
   test("単独", async () => {
     let result = new Object()
-    let task = jest.fn(() => result)
+    let task = vi.fn(() => result)
     let r = await sync(tag, async () => {
       return task()
     })
@@ -35,7 +35,7 @@ describe("sync", () => {
   })
   test("単独 例外", async () => {
     let err = Error()
-    let task = jest.fn(() => {
+    let task = vi.fn(() => {
       throw err
     })
     await expect(sync(tag, async () => {
@@ -46,12 +46,12 @@ describe("sync", () => {
   test("ふたつ 待機", async () => {
     const latch = initLatch()
     let result1 = new Object()
-    let task1 = jest.fn(async () => {
+    let task1 = vi.fn(async () => {
       await latch.wait
       return result1
     })
     let result2 = new Object()
-    let task2 = jest.fn(() => Promise.resolve(result2))
+    let task2 = vi.fn(() => Promise.resolve(result2))
 
     // call sync without async
     let r1 = sync(tag, task1)
@@ -76,14 +76,14 @@ describe("sync", () => {
   test("みっつ 待機", async () => {
     const latch = initLatch()
     let result1 = new Object()
-    let task1 = jest.fn(async () => {
+    let task1 = vi.fn(async () => {
       await latch.wait
       return result1
     })
     let result2 = new Object()
-    let task2 = jest.fn(() => Promise.resolve(result2))
+    let task2 = vi.fn(() => Promise.resolve(result2))
     let result3 = new Object()
-    let task3 = jest.fn(() => Promise.resolve(result3))
+    let task3 = vi.fn(() => Promise.resolve(result3))
 
     // call runSync without async
     let r1 = sync(tag, task1)
@@ -113,12 +113,12 @@ describe("sync", () => {
   test("ふたつ 待機-rejectあり", async () => {
     const latch = initLatch()
     let error1 = new Error()
-    let task1 = jest.fn(async () => {
+    let task1 = vi.fn(async () => {
       await latch.wait
       throw error1
     })
     let result2 = new Object()
-    let task2 = jest.fn(() => Promise.resolve(result2))
+    let task2 = vi.fn(() => Promise.resolve(result2))
 
     // call runSync without async
     let r1 = sync(tag, task1)

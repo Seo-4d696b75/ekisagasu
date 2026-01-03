@@ -8,7 +8,7 @@ describe("kdTree", () => {
   let data: StationTreeSegmentResponse
   const stations = new Map<number, Station>()
   const nodes = new Map<number, StationNodeResponse>()
-  const nodeMapSpy = jest.spyOn(nodes, "get")
+  const nodeMapSpy = vi.spyOn(nodes, "get")
 
   const stationProviderImpl = (code: number): Station => {
     return stations.get(code)!!
@@ -33,8 +33,8 @@ describe("kdTree", () => {
     }
   }
   const provider = {
-    station: jest.fn(stationProviderImpl),
-    segment: jest.fn(treeSegmentProviderImpl),
+    station: vi.fn(stationProviderImpl),
+    segment: vi.fn(treeSegmentProviderImpl),
   }
 
   beforeAll(async () => {
@@ -76,7 +76,7 @@ describe("kdTree", () => {
       expect(provider.station.mock.calls.length).toBe(1)
       expect(provider.station.mock.calls[0][0]).toBe(1190533)
       expect(provider.segment.mock.calls.length).toBe(0)
-      let nodeSpy = jest.spyOn(node, "build")
+      let nodeSpy = vi.spyOn(node, "build")
       let station = await node.station()
       expect(station).toBe(s)
       expect(nodeSpy.mock.calls.length).toBe(0)
@@ -109,7 +109,7 @@ describe("kdTree", () => {
       expect(provider.station.mock.calls[1][0]).toBe(9992111)
       expect(provider.station.mock.calls[2][0]).toBe(1190533)
       expect(provider.segment.mock.calls.length).toBe(0)
-      let nodeSpy = jest.spyOn(node, "build")
+      let nodeSpy = vi.spyOn(node, "build")
       let station = await node.station()
       expect(station).toBe(s)
       expect(nodeSpy.mock.calls.length).toBe(0)
@@ -140,7 +140,7 @@ describe("kdTree", () => {
       expect(nodeMapSpy.mock.calls.length).toBe(0)
       expect(provider.station.mock.calls.length).toBe(0)
       expect(provider.segment.mock.calls.length).toBe(0)
-      let nodeSpy = jest.spyOn(node, "build")
+      let nodeSpy = vi.spyOn(node, "build")
       let station = await node.station()
       expect(station).toBe(s)
       expect(nodeSpy.mock.calls.length).toBe(1)

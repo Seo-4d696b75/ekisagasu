@@ -1,8 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-
-import '@testing-library/jest-dom'
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { StationDialog } from "../../components/dialog/StationDialog"
@@ -38,10 +33,10 @@ const stationPosDialogProps: StationPosDialogProps = {
 }
 
 describe("StationDialog", () => {
-  const onClose = jest.fn(() => { })
-  const onLineSelected = jest.fn((line: Line) => { })
-  const onStationSelected = jest.fn((s: Station) => { })
-  const onShowVoronoi = jest.fn((s: Station) => { })
+  const onClose = vi.fn(() => { })
+  const onLineSelected = vi.fn((line: Line) => { })
+  const onStationSelected = vi.fn((s: Station) => { })
+  const onShowVoronoi = vi.fn((s: Station) => { })
   test("表示テキスト", () => {
     render(<StationDialog
       info={stationPosDialogProps}
