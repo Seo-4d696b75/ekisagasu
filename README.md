@@ -29,6 +29,9 @@
 VITE_API_KEY=${API_KEY}
 ```
 
+3. Node準備 `mise install`
+4. 依存の準備 `npm install`
+
 ### 開発用サーバの立ち上げ
 ```bash
 npm run start
