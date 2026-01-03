@@ -1,8 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-
-import '@testing-library/jest-dom'
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { CurrentPosDialog } from "../../components/dialog/CurrentPosDialog"
@@ -45,8 +40,8 @@ const currentPosDialogProps: CurrentPosDialogProps = {
 }
 
 describe("CurrentPosDialog", () => {
-  const onLineSelected = jest.fn((line: Line) => { })
-  const onStationSelected = jest.fn((s: Station) => { })
+  const onLineSelected = vi.fn((line: Line) => { })
+  const onStationSelected = vi.fn((s: Station) => { })
   test("表示テキスト", () => {
     render(<CurrentPosDialog
       info={currentPosDialogProps}

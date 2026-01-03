@@ -1,8 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-
-import '@testing-library/jest-dom'
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { LineDialog } from "../../components/dialog/LineDialog"
@@ -50,9 +45,9 @@ const lineDetailDialogProps: LineDialogProps = {
 }
 
 describe("LineDialog", () => {
-  const onClose = jest.fn(() => { })
-  const onStationSelected = jest.fn((s: Station) => { })
-  const onShowPolyline = jest.fn((l: Line) => { })
+  const onClose = vi.fn(() => { })
+  const onStationSelected = vi.fn((s: Station) => { })
+  const onShowPolyline = vi.fn((l: Line) => { })
   test("表示テキストの確認", () => {
     render(<LineDialog
       info={lineDialogProps}

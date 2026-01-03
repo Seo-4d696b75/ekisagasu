@@ -1,8 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-
-import '@testing-library/jest-dom'
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { StationDetails, StationRadar, StationTitle } from "../../components/dialog/DialogSections"
@@ -97,7 +92,7 @@ const currentPosDialogProps: CurrentPosDialogProps = {
   }
 }
 
-const onLineSelected = jest.fn((line: Line) => { })
+const onLineSelected = vi.fn((line: Line) => { })
 
 describe("StationDetail", () => {
   test("表示テキストの確認", () => {
@@ -139,8 +134,8 @@ describe("StationDetail", () => {
   })
 })
 
-const onStationSelected = jest.fn((s: Station) => { })
-const onClose = jest.fn(() => { })
+const onStationSelected = vi.fn((s: Station) => { })
+const onClose = vi.fn(() => { })
 
 describe("StationRadar", () => {
   test("表示テキストの確認", () => {

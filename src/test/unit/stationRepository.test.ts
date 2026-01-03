@@ -13,8 +13,8 @@ describe("StationRepository", () => {
 
   const path = `${process.env.VITE_STATION_API_URL}/info`
   mock.onGet(path).reply(200, { data_version: 20221030 })
-  const onStationCleared = jest.fn<void, []>(() => null)
-  const onStationLoaded = jest.fn<void, [Station[]]>((_) => null)
+  const onStationCleared = vi.fn(() => null)
+  const onStationLoaded = vi.fn((_) => null)
   const repository = new StationRepository(onStationCleared, onStationLoaded)
 
   describe("駅・路線データ読み出し", () => {
@@ -22,7 +22,7 @@ describe("StationRepository", () => {
     let targetData: StationAPIResponse
     let target: Station
     const stations: Station[] = []
-    const mockSearch = jest.spyOn(repository, "search").mockImplementation(async () => {
+    const mockSearch = vi.spyOn(repository, "search").mockImplementation(async () => {
       // update & load station data
       repository.stations.set(target.code, target)
       repository.stationsId.set(target.id, target)
