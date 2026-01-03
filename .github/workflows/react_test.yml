@@ -14,10 +14,11 @@ jobs:
       - name: setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".node-version"
+          node-version-file: ".tool-versions"
+          cache: "npm"
       - name: setup node modules
         run: npm install
-      - name: run jest
+      - name: run tests
         run: npm run test
       - name: check build
         run: |
