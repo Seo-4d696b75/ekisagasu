@@ -30,7 +30,7 @@ jobs:
           node-version-file: ".tool-versions"
           cache: "npm"
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
       - name: Setup API key
         run: echo "VITE_API_KEY=${{ secrets.API_KEY }}" > .env.production
       - name: Build
