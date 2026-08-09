@@ -29,6 +29,8 @@ jobs:
         with:
           node-version-file: ".tool-versions"
           cache: "npm"
+      - name: Install safe-chain
+        run: curl -fsSL https://github.com/AikidoSec/safe-chain/releases/latest/download/install-safe-chain.sh | sh -s -- --ci
       - name: Install Dependencies
         run: npm ci
       - name: Setup API key
