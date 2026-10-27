@@ -209,6 +209,37 @@ describe("kdTree", () => {
       let result = await tree.search(pos, 1, 0)
       expect(result[0].station).toBe(s)
     })
+
+    const searchOrderN = (pos: LatLng, k: number, r: number) => {
+      const list = Array.from(stations.values())
+        .map(s => tree.measure(pos, s.position))
+        .sort((a, b) => a - b)
+      const size = Math.max(k, list.filter(d => d <= r).length)
+      return list.slice(0, size)
+    }
+
+    const positions = () => [
+      { lat: 35.68139312179635, lng: 139.76720604605077 },
+      { lat: 35.18238486018337, lng: 136.90724090952892 },
+      { lat: 34.70136715329247, lng: 135.50068730795476 },
+      ...Array.from(stations.values()).map(s => s.position),
+    ]
+
+    test.each([2, 3, 5, 10, 20])("k=%i 全探索の結果と一致する", async (k) => {
+      for (const pos of positions()) {
+        const expected = searchOrderN(pos, k, 0)
+        const result = await tree.search(pos, k, 0)
+        expect(result.map(e => e.dist)).toEqual(expected)
+      }
+    })
+
+    test.each([0.1, 0.5, 1.0])("r=%f 全探索の結果と一致する", async (r) => {
+      for (const pos of positions()) {
+        const expected = searchOrderN(pos, 3, r)
+        const result = await tree.search(pos, 3, r)
+        expect(result.map(e => e.dist)).toEqual(expected)
+      }
+    })
   })
 
 })

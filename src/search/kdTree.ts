@@ -80,18 +80,14 @@ export class StationKdTree {
 
     const s = await node.station()
     const d = this.measure(position, s.position)
-    let index = -1
     let size = dst.length
-    if (size > 0 && d < dst[size - 1].dist) {
-      index = size - 1
+    // k個以上揃っていて最大距離以上かつ距離r外なら追加しない
+    if (size < k || d < dst[size - 1].dist || d <= r) {
+      let index = size
       while (index > 0) {
         if (d >= dst[index - 1].dist) break
         index -= 1
       }
-    } else if (size === 0) {
-      index = 0
-    }
-    if (index >= 0) {
       let e = {
         dist: d,
         station: s
@@ -113,7 +109,9 @@ export class StationKdTree {
     let value = div.value
     let th = div.threshold
     next = (value < th) ? node.right() : node.left()
-    if (next && Math.abs(value - th) < Math.max(dst[dst.length - 1].dist, r)) {
+    // k個揃うまでは枝切りしない
+    const maxDist = dst.length < k ? Number.POSITIVE_INFINITY : dst[dst.length - 1].dist
+    if (next && Math.abs(value - th) < Math.max(maxDist, r)) {
       await this._search(next, position, k, r, dst)
     }
   }
